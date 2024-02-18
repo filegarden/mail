@@ -1,0 +1,8 @@
+services:
+  mail:
+    restart: always
+    build:
+      args:
+        HOSTNAME: filegarden.com
+    ports:
+      - 3587:587

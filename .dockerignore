@@ -1,0 +1,5 @@
+**/.*
+**/compose.yaml
+**/compose.*.yaml
+**/Dockerfile
+**/Dockerfile.*

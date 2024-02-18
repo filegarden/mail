@@ -1,0 +1,5 @@
+# Pin this Postfix version so we're warned before config defaults change.
+compatibility_level = 3.8
+
+# Log all Postfix output to the container's output.
+maillog_file = /dev/stdout
