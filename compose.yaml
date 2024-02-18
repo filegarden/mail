@@ -1,8 +1,7 @@
 services:
   mail:
     restart: always
-    build:
-      args:
-        HOSTNAME: filegarden.com
+    hostname: filegarden.com
+    build: .
     ports:
       - 3587:587
