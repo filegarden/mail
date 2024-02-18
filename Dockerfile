@@ -13,4 +13,4 @@ RUN --mount=type=bind,target=./build.sh,source=./build.sh \
 
 COPY /etc /etc
 
-CMD [ "parallel", "--line-buffer", "--halt", "now,done=1", ":::", "postfix start-fg", "dovecot -F" ]
+CMD parallel --line-buffer --halt now,done=1 ::: 'postfix start-fg' 'dovecot -F'
