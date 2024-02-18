@@ -5,3 +5,9 @@ services:
     build: .
     ports:
       - 3587:587
+    volumes:
+      # Persist Postfix's queue directory so queued mail isn't lost on restart.
+      - postfix-queue:/var/spool/postfix
+
+volumes:
+  postfix-queue:
