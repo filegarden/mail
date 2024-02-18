@@ -3,3 +3,13 @@ compatibility_level = 3.8
 
 # Log all Postfix output to the container's output.
 maillog_file = /dev/stdout
+
+# Don't accept mail from the network. This server isn't for receiving mail.
+inet_interfaces = loopback-only
+
+# Disable local mail delivery to the file system.
+mydestination =
+
+# Disable "new mail" notifications. It's useless without local delivery, and
+# it's useless in a container where there are no users to see it.
+biff = no
