@@ -7,9 +7,23 @@ maillog_file = /dev/stdout
 # Don't accept mail from the network. This server isn't for receiving mail.
 inet_interfaces = loopback-only
 
-# Disable local mail delivery to the file system.
+# Prevent Postfix from ever storing mail locally on the server.
 mydestination =
 
-# Disable "new mail" notifications. It's useless without local delivery, and
-# it's useless in a container where there are no users to see it.
+# Disable "new mail" notifications. It's useless without local mail, and it's
+# useless in a container where there are no users to see it.
 biff = no
+
+# Allow incoming traffic to use TLS encryption.
+smtpd_tls_security_level = may
+# Require TLS encryption for SASL authentication.
+smtpd_tls_auth_only = yes
+
+# Enable SASL authentication, which is what we'll use to sign into our email.
+smtpd_sasl_auth_enable = yes
+# Set Dovecot as the program managing SASL authentication.
+smtpd_sasl_type = dovecot
+# Tell Postfix to communicate with Dovecot about SASL through this path.
+smtpd_sasl_path = private/auth
+# Use the hostname as the domain for SASL authentication.
+smtpd_sasl_local_domain = $myhostname
