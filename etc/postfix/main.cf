@@ -16,6 +16,10 @@ biff = no
 
 # Allow outbound traffic to use TLS encryption.
 smtp_tls_security_level = may
+# Load CA certificates for TLS encryption from this directory.
+smtp_tls_CApath=/etc/ssl/certs
+# Cache TLS sessions here.
+smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
 
 # Allow inbound traffic to use TLS encryption.
 smtpd_tls_security_level = may
