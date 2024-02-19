@@ -14,7 +14,10 @@ mydestination =
 # useless in a container where there are no users to see it.
 biff = no
 
-# Allow incoming traffic to use TLS encryption.
+# Allow outbound traffic to use TLS encryption.
+smtp_tls_security_level = may
+
+# Allow inbound traffic to use TLS encryption.
 smtpd_tls_security_level = may
 # Require TLS encryption for SASL authentication.
 smtpd_tls_auth_only = yes
