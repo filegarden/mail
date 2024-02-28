@@ -4,7 +4,13 @@ services:
     hostname: filegarden.com
     build: .
     ports:
-      - 3587:587
+      # As per RFC 8314 (section 3.3), port 465 is preferred over port 587, but
+      # both should be supported.
+
+      # SMTP submission through implicit TLS.
+      - "465:465"
+      # SMTP submission with STARTTLS.
+      - "587:587"
     volumes:
       # Persist Postfix's queue directory so queued mail isn't lost on restart.
       - postfix-queue:/var/spool/postfix
