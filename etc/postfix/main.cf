@@ -20,6 +20,12 @@ recipient_delimiter = +
 # Don't restrict local mailbox file sizes.
 mailbox_size_limit = 0
 
+tls_ssl_options =
+    # Improve CPU usage.
+    NO_COMPRESSION
+    # Reduce opportunities for a potential CPU exhaustion attack.
+    NO_RENEGOTIATION
+
 # Allow outbound traffic to use TLS encryption.
 smtp_tls_security_level = may
 # Load CA certificates for TLS encryption from this directory.
@@ -36,6 +42,16 @@ smtpd_tls_security_level = may
 smtpd_tls_auth_only = yes
 # Cache TLS server sessions here.
 smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
+# Give Postfix our private key and certificate for TLS.
+# TODO: Set a real path here.
+smtpd_tls_chain_files =
+    /etc/ssl/private/ssl-cert-snakeoil.key /etc/ssl/certs/ssl-cert-snakeoil.pem
+
+# Restrict authenticated users from using a MAIL FROM address they don't own.
+# TODO: Set `smtpd_sender_login_maps`, which this relies on.
+smtpd_sender_restrictions =
+    reject_authenticated_sender_login_mismatch
+    reject_known_sender_login_mismatch
 
 # Enable SASL authentication, which is what we'll use to sign into our email.
 smtpd_sasl_auth_enable = yes
