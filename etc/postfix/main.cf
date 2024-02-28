@@ -4,9 +4,6 @@ compatibility_level = 3.8
 # Log all Postfix output to the container's output.
 maillog_file = /dev/stdout
 
-# Don't accept mail from the network. This server isn't for receiving mail.
-inet_interfaces = loopback-only
-
 # Prevent Postfix from ever storing mail locally on the server.
 mydestination =
 
@@ -14,17 +11,31 @@ mydestination =
 # useless in a container where there are no users to see it.
 biff = no
 
+# This is needed for Dovecot compatibility, as it doesn't support SMTPUTF8.
+smtputf8_enable = no
+
+# Enable "plus addressing".
+recipient_delimiter = +
+
+# Don't restrict local mailbox file sizes.
+mailbox_size_limit = 0
+
 # Allow outbound traffic to use TLS encryption.
 smtp_tls_security_level = may
 # Load CA certificates for TLS encryption from this directory.
 smtp_tls_CApath=/etc/ssl/certs
-# Cache TLS sessions here.
+# Cache TLS client sessions here.
 smtp_tls_session_cache_database = btree:${data_directory}/smtp_scache
+
+# Remove "Postfix" from the banner text.
+smtpd_banner = $myhostname ESMTP
 
 # Allow inbound traffic to use TLS encryption.
 smtpd_tls_security_level = may
 # Require TLS encryption for SASL authentication.
 smtpd_tls_auth_only = yes
+# Cache TLS server sessions here.
+smtpd_tls_session_cache_database = btree:${data_directory}/smtpd_scache
 
 # Enable SASL authentication, which is what we'll use to sign into our email.
 smtpd_sasl_auth_enable = yes
