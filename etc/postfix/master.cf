@@ -3,11 +3,6 @@
 #               (yes)   (yes)   (no)    (never) (100)
 # ==========================================================================
 
-# Any config overrides that increase security restrictions in the two services
-# below aren't in the main config because the main config needs to maximize
-# deliverability from arbitrary mail clients and to arbitrary mail servers,
-# while these services only need to serve privileged users.
-
 # Port 465: SMTP submission through implicit TLS.
 submissions inet n      -       n       -       -       smtpd
   # Add this prefix to logs from this service.

@@ -35,7 +35,10 @@ smtpd_sender_restrictions =
 # Prevent some techniques used to harvest email addresses.
 disable_vrfy_command = no
 
-# Allow TLS encryption.
+# Enable opportunistic TLS encryption by default. TLS isn't mandatory by default
+# because opportunistic encryption maximizes deliverability from mail clients
+# and to mail servers that don't support TLS. Other services in `master.cf` that
+# only serve privileged users should override this to make TLS mandatory.
 smtp_tls_security_level = may
 smtpd_tls_security_level = may
 
