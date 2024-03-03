@@ -64,6 +64,10 @@ smtpd_tls_protocols = >=TLSv1.2
 smtp_tls_mandatory_protocols = >=TLSv1.2
 smtpd_tls_mandatory_protocols = >=TLSv1.2
 
+# Use the `ffdhe2048` DH parameters from RFC 7919 (appendix A.1), as recommended
+# by https://wiki.mozilla.org/Security/Server_Side_TLS ("Intermediate").
+smtpd_tls_dh1024_param_file = /etc/postfix/ffdhe2048.pem
+
 # Give Postfix our private key and certificate for TLS.
 # TODO: Set a real path here.
 smtpd_tls_chain_files =
