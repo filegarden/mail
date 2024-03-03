@@ -32,6 +32,9 @@ smtpd_sender_restrictions =
     reject_authenticated_sender_login_mismatch
     reject_known_sender_login_mismatch
 
+# Prevent some techniques used to harvest email addresses.
+disable_vrfy_command = no
+
 # Allow TLS encryption.
 smtp_tls_security_level = may
 smtpd_tls_security_level = may
