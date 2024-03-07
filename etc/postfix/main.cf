@@ -58,6 +58,19 @@ smtpd_data_restrictions =
     # that to increase delivery speed.
     reject_unauth_pipelining
 
+# Disable some ESMTP features by default.
+smtpd_discard_ehlo_keywords =
+    # Don't log anything when disabling these features.
+    silent-discard
+    # Delivery status notifications (DSN) let mail clients ask us to send mail
+    # back to them to notify them of a successful, failed, or delayed delivery.
+    # We disable it because a malicious client using a spoofed address can ask
+    # our server to include their message content in our notification, causing
+    # us to sign and send a phishing message to the real user at the spoofed
+    # address, which would also lower our mail server's reputation. DSN messages
+    # can also reveal excessive information about our server and the recipient.
+    dsn
+
 # Prevent some techniques used to harvest email addresses.
 disable_vrfy_command = no
 
