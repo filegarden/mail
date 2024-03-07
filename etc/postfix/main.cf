@@ -71,7 +71,8 @@ smtpd_discard_ehlo_keywords =
     # can also reveal excessive information about our server and the recipient.
     dsn
 
-# Prevent some techniques used to harvest email addresses.
+# The VRFY command lets mail clients check if an address exists on our server.
+# Disabling this prevents some techniques used to harvest email addresses.
 disable_vrfy_command = no
 
 # Enable opportunistic TLS encryption by default. TLS isn't mandatory by default
