@@ -26,11 +26,37 @@ smtpd_banner = $myhostname ESMTP
 # Only accept mail sent locally from this machine by default.
 smtpd_client_restrictions = permit_mynetworks, reject
 
-# Restrict authenticated users from using a MAIL FROM address they don't own.
-# TODO: Set `smtpd_sender_login_maps`, which this relies on.
+# Reject clients trying to skip the HELO/EHLO command. Spammers do that to
+# increase delivery speed. This also enforces that the `smtpd_helo_restrictions`
+# aren't skipped too.
+smtpd_helo_required = yes
+
+# Restrict how clients can introduce themselves in the HELO/EHLO command.
+smtpd_helo_restrictions =
+    # Reject invalid hostnames.
+    reject_invalid_helo_hostname
+    reject_non_fqdn_helo_hostname
+
+# Restrict the address specified in the sender's MAIL FROM command.
 smtpd_sender_restrictions =
+    # Don't let authenticated clients use an address they don't own.
+    # TODO: Set `smtpd_sender_login_maps`, which this relies on.
     reject_authenticated_sender_login_mismatch
-    reject_known_sender_login_mismatch
+    # Reject mail from an invalid domain.
+    reject_non_fqdn_sender
+
+# Restrict recipient addresses specified in the RCPT TO command.
+smtpd_recipient_restrictions =
+    # Reject mail to an invalid domain.
+    reject_non_fqdn_recipient
+    # Reject mail to domains missing the DNS records needed to receive mail.
+    reject_unknown_recipient_domain
+
+# Restrict how clients can submit an email's content using the DATA command.
+smtpd_data_restrictions =
+    # Reject clients that use this command earlier than allowed. Spammers do
+    # that to increase delivery speed.
+    reject_unauth_pipelining
 
 # Prevent some techniques used to harvest email addresses.
 disable_vrfy_command = no
