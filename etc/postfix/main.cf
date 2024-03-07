@@ -11,7 +11,7 @@ mydestination =
 # useless in a container where there are no users to see it.
 biff = no
 
-# This is needed for Dovecot compatibility, as it doesn't support SMTPUTF8.
+# This is needed for Dovecot compatibility, as Dovecot doesn't support SMTPUTF8.
 smtputf8_enable = no
 
 # Enable "plus addressing".
