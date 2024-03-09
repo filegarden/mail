@@ -1,4 +1,7 @@
-# Pin this Postfix version so we're warned before config defaults change.
+# Pin this Postfix version so we're warned before config defaults change. When
+# Postfix updates, read the release announcement, check the container's logs for
+# warnings, consider if anything should be changed accordingly, and then
+# increase this value.
 compatibility_level = 3.8
 
 # Log all Postfix output to the container's output.
