@@ -1,7 +1,7 @@
 services:
   mail:
     restart: always
-    hostname: filegarden.com
+    hostname: mail.example.com
     build: .
     ports:
       # As per RFC 8314 (section 3.3), port 465 is preferred over port 587, but
