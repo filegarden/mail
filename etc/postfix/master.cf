@@ -22,6 +22,12 @@ submissions inet n      -       n       -       -       smtpd
   # Require SASL authentication for all connections to this port.
   -o { smtpd_client_restrictions = permit_sasl_authenticated, reject }
 
+  # A Postfix cleanup service is a service that processes inbound mail by
+  # transforming it in certain ways before our server receives or relays it.
+  # Here we set this port's cleanup service to `submission-cleanup`, which is
+  # defined later in this file with comments to explain its purpose.
+  -o { cleanup_service_name = submission-cleanup }
+
 # `submission` means port 587. It handles SMTP mail submission, with encryption
 # required using STARTTLS (explained below) and authentication required using
 # SASL (explained in the previous service above).
@@ -40,6 +46,20 @@ submission inet n       -       n       -       -       smtpd
   # All below options for this service are the same as the previous service.
   -o { smtpd_sasl_auth_enable = yes }
   -o { smtpd_client_restrictions = permit_sasl_authenticated, reject }
+  -o { cleanup_service_name = submission-cleanup }
+
+# This service transforms inbound mail submitted by authenticated mail clients.
+submission-cleanup unix n -     n       -       0       cleanup
+  # Add this prefix to logs from this service.
+  -o { syslog_name = postfix/submission-cleanup }
+
+  # Filter out inbound SMTP headers that can contain private information about
+  # mail clients signed into our server. Otherwise, such headers would be shared
+  # with recipients. The file at the below path specifies the filters, with
+  # comments explaining them. This is set here and not on submission services
+  # directly because otherwise it'd filter outbound headers too, despite
+  # receiving servers needing them or them not being set by our server anyway.
+  -o { header_checks = pcre:/etc/postfix/submission-cleanup/header_checks }
 
 # The below services are Postfix defaults.
 pickup    unix  n       -       n       60      1       pickup
