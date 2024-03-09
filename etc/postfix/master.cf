@@ -3,24 +3,41 @@
 #               (yes)   (yes)   (no)    (never) (100)
 # ==========================================================================
 
-# Port 465: SMTP submission through implicit TLS.
+# `submissions` means port 465. It handles SMTP mail submission, with encryption
+# required using implicit TLS (explained below) and authentication required
+# using SASL (also explained below).
 submissions inet n      -       n       -       -       smtpd
   # Add this prefix to logs from this service.
   -o { syslog_name = postfix/submissions }
-  # Require encryption through implicit TLS.
+
+  # Require encryption through implicit TLS. Implicit TLS means wrapping all
+  # traffic between a mail client and our server (the entire SMTP conversation)
+  # with an encryption layer using TLS.
   -o { smtpd_tls_wrappermode = yes }
-  # Enable SASL authentication, which is what we'll use to sign into our email.
+
+  # Enable authentication using SASL. This lets mail clients attempt to sign
+  # into an email account on our server in order to send mail from it.
   -o { smtpd_sasl_auth_enable = yes }
-  # Require SASL authentication for all connections to this service.
+
+  # Require SASL authentication for all connections to this port.
   -o { smtpd_client_restrictions = permit_sasl_authenticated, reject }
 
-# Port 587: SMTP submission with STARTTLS.
+# `submission` means port 587. It handles SMTP mail submission, with encryption
+# required using STARTTLS (explained below) and authentication required using
+# SASL (explained in the previous service above).
 submission inet n       -       n       -       -       smtpd
   # Add this prefix to logs from this service.
   -o { syslog_name = postfix/submission }
-  # Require encryption with STARTTLS.
+
+  # Require encryption with STARTTLS. STARTTLS is a command mail clients can
+  # send our server during an SMTP conversation which enables encryption using
+  # TLS for the rest of the conversation afterwards. The STARTTLS command must
+  # be sent after EHLO (the initial command a mail client uses to introduce its
+  # identity to a mail server) and before MAIL FROM (the command a client uses
+  # to tell a server the address its mail will be from before sending the mail).
   -o { smtpd_tls_security_level = encrypt }
-  # All below options for this service are set the same as the previous service.
+
+  # All below options for this service are the same as the previous service.
   -o { smtpd_sasl_auth_enable = yes }
   -o { smtpd_client_restrictions = permit_sasl_authenticated, reject }
 

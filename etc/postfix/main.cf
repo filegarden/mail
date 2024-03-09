@@ -127,5 +127,6 @@ smtpd_sasl_type = dovecot
 # Tell Postfix to communicate with Dovecot about SASL through this path.
 smtpd_sasl_path = private/auth
 
-# Use the hostname as the domain for SASL authentication.
-smtpd_sasl_local_domain = ${myhostname}
+# Automatically append "@" followed by our server's hostname when it's omitted
+# from the name a mail client tries to sign into via SASL.
+smtpd_sasl_local_domain = $myhostname
