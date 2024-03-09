@@ -62,6 +62,10 @@ smtpd_data_restrictions =
     # that to increase delivery speed.
     reject_unauth_pipelining
 
+# Stop mail from poorly written software using incorrect address formats, since
+# it's most likely from a spammer.
+strict_rfc821_envelopes = yes
+
 # Disable some ESMTP features by default.
 smtpd_discard_ehlo_keywords =
     # Don't log anything when disabling these features.
