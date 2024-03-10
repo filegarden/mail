@@ -19,4 +19,4 @@ CMD parallel \
     --line-buffer \
     # Run these commands in parallel, and in the foreground so GNU Parallel
     # can detect when they exit and stay open as long as they're open.
-    ::: 'postfix start-fg' 'dovecot -F'
+    ::: "postfix start-fg" "dovecot -F"
