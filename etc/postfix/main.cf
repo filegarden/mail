@@ -138,7 +138,20 @@ smtpd_sasl_path = private/auth
 # from the name a mail client tries to sign into via SASL.
 smtpd_sasl_local_domain = $myhostname
 
-# Process our mail through local port 8891, where OpenDKIM cryptographically
-# signs our mail via DKIM so recipients can verify it's truly ours, untampered.
-smtpd_milters = inet:localhost:8891
-non_smtpd_milters = inet:localhost:8891
+# Tell Postfix where it can find milters (mail filters) for processing and
+# checking mail coming into our server.
+smtpd_milters =
+    # On this port, OpenDKIM cryptographically signs our mail via DKIM so
+    # recipients can verify it's truly ours, untampered. Mail without a DKIM
+    # signature is often marked as spam or rejected. OpenDKIM also rejects mail
+    # with an incorrect DKIM signature.
+    inet:localhost:8891
+
+# Apply the above milters to mail sent locally from our server too.
+non_smtpd_milters = $smtpd_milters
+
+# Apply the above milters to Postfix's internally generated mail. Otherwise
+# OpenDKIM can't sign it, so it might not reach us. Be careful: with this set,
+# `non_smtpd_milters`, `header_checks`, and `body_checks` can cause internally
+# generated mail to be rejected and lost, so make sure that can't happen!
+internal_mail_filter_classes = bounce notify
