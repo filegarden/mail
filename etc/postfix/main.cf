@@ -137,3 +137,8 @@ smtpd_sasl_path = private/auth
 # Automatically append "@" followed by our server's hostname when it's omitted
 # from the name a mail client tries to sign into via SASL.
 smtpd_sasl_local_domain = $myhostname
+
+# Process our mail through local port 8891, where OpenDKIM cryptographically
+# signs our mail via DKIM so recipients can verify it's truly ours, untampered.
+smtpd_milters = inet:localhost:8891
+non_smtpd_milters = inet:localhost:8891
