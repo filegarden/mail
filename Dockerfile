@@ -5,20 +5,17 @@ FROM alpine
 # This installs the following:
 # - Postfix, the heart of the mail server (the mail transfer agent).
 # - Dovecot, to authenticate you when signing into your email (via SASL).
-# - GNU Parallel, to run both Postfix and Dovecot and combine their output.
+# - GNU Parallel, to run all of these and combine their output.
 RUN apk add --no-cache postfix dovecot parallel
-
-RUN --mount=type=bind,target=./build.sh,source=./build.sh \
-    ./build.sh
 
 COPY etc /etc
 
 CMD parallel \
-    # If either Postfix or Dovecot exits, also halt the other so the container
+    # If one of the below processes exits, also halt the others so the container
     # can restart.
     --halt now,done=1 \
     # Ensure different lines logged at the same time don't intermingle.
     --line-buffer \
-    # Run Postfix and Dovecot both in the foreground so their output appears in
-    # the container logs.
+    # Run these commands in parallel, and in the foreground so GNU Parallel
+    # can detect when they exit and stay open as long as they're open.
     ::: 'postfix start-fg' 'dovecot -F'
