@@ -138,7 +138,7 @@ smtpd_sasl_path = private/auth
 # from the name a mail client tries to sign into via SASL.
 smtpd_sasl_local_domain = $myhostname
 
-# Tell Postfix where it can find milters (mail filters) for processing and
+# Tell Postfix where it can find Milters (mail filters) for processing and
 # checking mail coming into our server.
 smtpd_milters =
     # On this port, OpenDKIM cryptographically signs our mail via DKIM so
@@ -147,10 +147,10 @@ smtpd_milters =
     # with an incorrect DKIM signature.
     inet:localhost:8891
 
-# Apply the above milters to mail sent locally from our server too.
+# Apply the above Milters to mail sent locally from our server too.
 non_smtpd_milters = $smtpd_milters
 
-# Apply the above milters to Postfix's internally generated mail. Otherwise
+# Apply the above Milters to Postfix's internally generated mail. Otherwise
 # OpenDKIM can't sign it, so it might not reach us. Be careful: with this set,
 # `non_smtpd_milters`, `header_checks`, and `body_checks` can cause internally
 # generated mail to be rejected and lost, so make sure that can't happen!
