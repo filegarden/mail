@@ -4,7 +4,7 @@ FROM alpine
 
 # This installs the following:
 # - Postfix, the heart of the mail server (the mail transfer agent).
-# - Dovecot, to authenticate you when signing into your email (via SASL).
+# - Dovecot, to authenticate you when logging into your email (via SASL).
 # - GNU Parallel, to run all of these and combine their output.
 # - OpenDKIM, to cryptographically sign outbound emails (via DKIM).
 RUN apk add --no-cache postfix dovecot opendkim parallel

@@ -18,8 +18,8 @@ submissions inet n      -       n       -       -       smtpd
   # with an encryption layer using TLS.
   -o { smtpd_tls_wrappermode = yes }
 
-  # Enable authentication using SASL. This lets mail clients attempt to sign
-  # into an email account on our server in order to send mail from it.
+  # Enable authentication using SASL. This lets mail clients attempt to log into
+  # an email account on our server in order to send mail from it.
   -o { smtpd_sasl_auth_enable = yes }
 
   # Require SASL authentication for all connections to this port.
@@ -57,7 +57,7 @@ submission-cleanup unix n -     n       -       0       cleanup
   -o { syslog_name = postfix/submission-cleanup }
 
   # Filter out inbound SMTP headers that can contain private information about
-  # mail clients signed into our server. Otherwise, such headers would be shared
+  # mail clients logged into our server. Otherwise, such headers would be shared
   # with recipients. The file at the below path specifies the filters, with
   # comments explaining them. This is set here and not on submission services
   # directly because otherwise it'd filter outbound headers too, despite

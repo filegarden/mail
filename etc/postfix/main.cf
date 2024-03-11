@@ -132,7 +132,7 @@ smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 
 # Automatically append "@" followed by our server's hostname when it's omitted
-# from the name a mail client tries to sign into via SASL.
+# from the name a mail client tries to log into via SASL.
 smtpd_sasl_local_domain = $myhostname
 
 # Tell Postfix where it can find Milters (mail filters) for processing and
