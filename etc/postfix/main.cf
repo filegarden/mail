@@ -20,9 +20,6 @@ smtputf8_enable = no
 # Enable "plus addressing".
 recipient_delimiter = +
 
-# Don't restrict local mailbox file sizes.
-mailbox_size_limit = 0
-
 # Remove "Postfix" from the banner text.
 smtpd_banner = $myhostname ESMTP
 
