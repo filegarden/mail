@@ -7,6 +7,13 @@ compatibility_level = 3.8
 # Log all Postfix output to the container's output.
 maillog_file = /dev/stdout
 
+# Postfix automatically sets `myhostname` to the `hostname` value specified in
+# `compose.yaml` (e.g. `mail.example.com`). Then it strips the first component
+# off and sets that value (e.g. `example.com`) into `mydomain`. Finally, we copy
+# that into `myorigin` here. Postfix uses this as the default domain for our
+# server's mail addresses (e.g. `user@example.com`).
+myorigin = $mydomain
+
 # Prevent Postfix from ever storing mail locally on the server.
 mydestination =
 
@@ -131,9 +138,10 @@ smtpd_sasl_type = dovecot
 # Tell Postfix to communicate with Dovecot about SASL through this path.
 smtpd_sasl_path = private/auth
 
-# Automatically append "@" followed by our server's hostname when it's omitted
-# from the name a mail client tries to log into via SASL.
-smtpd_sasl_local_domain = $myhostname
+# Automatically append "@" followed by `myorigin`'s value (set earlier) to a
+# SASL login name when its domain portion is omitted. For example, logging into
+# our mail server as `user` would instead log you in as `user@example.com`.
+smtpd_sasl_local_domain = $myorigin
 
 # Tell Postfix where it can find Milters (mail filters) for processing and
 # checking mail coming into our server.
