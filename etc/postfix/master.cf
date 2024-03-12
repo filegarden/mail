@@ -62,7 +62,7 @@ submission-cleanup unix n -     n       -       0       cleanup
   # comments explaining them. This is set here and not on submission services
   # directly because otherwise it'd filter outbound headers too, despite
   # receiving servers needing them or them not being set by our server anyway.
-  -o { header_checks = pcre:/etc/postfix/submission-cleanup/header_checks }
+  -o { header_checks = regexp:/etc/postfix/submission-cleanup/header_checks }
 
 # The below services are Postfix defaults.
 pickup    unix  n       -       n       60      1       pickup

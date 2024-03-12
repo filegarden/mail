@@ -57,7 +57,7 @@ smtpd_sender_restrictions =
 # login names own which addresses. Our SASL login names are already addresses
 # (as enforced by `smtpd_sasl_local_domain`, set later), so this code just takes
 # every possible login name and sets itself as the address it owns.
-smtpd_sender_login_maps = pcre:{ { /^(.*)$$/ $$1 } }
+smtpd_sender_login_maps = regexp:{ { /^(.*)$$/ $$1 } }
 
 # Restrict recipient addresses specified in the RCPT TO command.
 smtpd_recipient_restrictions =
