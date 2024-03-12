@@ -7,13 +7,6 @@ compatibility_level = 3.8
 # Log all Postfix output to the container's output.
 maillog_file = /dev/stdout
 
-# Postfix automatically sets `myhostname` to the `hostname` value specified in
-# `compose.yaml` (e.g. `mail.example.com`). Then it strips the first component
-# off and sets that value (e.g. `example.com`) into `mydomain`. Finally, we copy
-# that into `myorigin` here. Postfix uses this as the default domain for our
-# server's mail addresses (e.g. `user@example.com`).
-myorigin = $mydomain
-
 # Prevent Postfix from ever storing mail locally on the server.
 mydestination =
 
@@ -29,6 +22,22 @@ recipient_delimiter = +
 
 # Remove "Postfix" from the banner text.
 smtpd_banner = $myhostname ESMTP
+
+# Postfix automatically sets `myhostname` to the `hostname` value specified in
+# `compose.yaml` (e.g. `mail.example.com`). Then it strips the first component
+# off and sets that value (e.g. `example.com`) into `mydomain`. Finally, we copy
+# that into `myorigin` here. Postfix uses this as the default domain for our
+# server's mail addresses (e.g. `user@example.com`), like sender addresses for
+# Postfix's internally generated messages (such as error notifications).
+myorigin = $mydomain
+
+# Automatically append "@" followed by the `mydomain` value (explained above) to
+# SASL login names when their domain part is omitted. For example, if our mail
+# server's hostname is `mail.example.com`, logging into it as `user` instead
+# logs in as `user@example.com`. This is needed for `smtpd_sender_login_maps` to
+# work consistently (as explained where it's set later), and also it's just
+# convenient not to have to write `@example.com` when signing in.
+smtpd_sasl_local_domain = $mydomain
 
 # Only accept mail sent locally from this machine by default.
 smtpd_client_restrictions = permit_mynetworks, reject
@@ -144,14 +153,6 @@ smtpd_sasl_type = dovecot
 
 # Tell Postfix to communicate with Dovecot about SASL through this path.
 smtpd_sasl_path = private/auth
-
-# Automatically append "@" followed by `myorigin`'s value (set earlier) to a
-# SASL login name when its domain portion is omitted. For example, logging into
-# our mail server as `user` would instead log you in as `user@example.com`. This
-# is needed to make `smtpd_sender_login_maps` work consistently (as explained
-# where it's set, earlier in this file), and also it's just convenient not to
-# have to write `@example.com` when signing in.
-smtpd_sasl_local_domain = $myorigin
 
 # Tell Postfix where it can find Milters (mail filters) for processing and
 # checking mail coming into our server.
