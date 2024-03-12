@@ -46,11 +46,18 @@ smtpd_helo_restrictions =
 
 # Restrict the address specified in the sender's MAIL FROM command.
 smtpd_sender_restrictions =
-    # Don't let authenticated clients use an address they don't own.
-    # TODO: Set `smtpd_sender_login_maps`, which this relies on.
+    # Don't let authenticated clients use an address they don't own. Which SASL
+    # login names own which addresses is defined by `smtpd_sender_login_maps`
+    # below.
     reject_authenticated_sender_login_mismatch
     # Reject mail from an invalid domain.
     reject_non_fqdn_sender
+
+# This is used in `smtpd_sender_restrictions` above to determine which SASL
+# login names own which addresses. Our SASL login names are already addresses
+# (as enforced by `smtpd_sasl_local_domain`, set later), so this code just takes
+# every possible login name and sets itself as the address it owns.
+smtpd_sender_login_maps = pcre:{ { /^(.*)$$/ $$1 } }
 
 # Restrict recipient addresses specified in the RCPT TO command.
 smtpd_recipient_restrictions =
@@ -140,7 +147,10 @@ smtpd_sasl_path = private/auth
 
 # Automatically append "@" followed by `myorigin`'s value (set earlier) to a
 # SASL login name when its domain portion is omitted. For example, logging into
-# our mail server as `user` would instead log you in as `user@example.com`.
+# our mail server as `user` would instead log you in as `user@example.com`. This
+# is needed to make `smtpd_sender_login_maps` work consistently (as explained
+# where it's set, earlier in this file), and also it's just convenient not to
+# have to write `@example.com` when signing in.
 smtpd_sasl_local_domain = $myorigin
 
 # Tell Postfix where it can find Milters (mail filters) for processing and
