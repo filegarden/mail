@@ -1,8 +1,13 @@
 services:
   mail:
-    restart: always
+    # Our mail server's hostname.
     hostname: mail.example.com
+
+    # Build the image from this directory.
     build: .
+
+    # If the container stops, restart it automatically.
+    restart: always
 
     ports:
       # Postfix listens to these ports, as defined in `etc/postfix/master.cf`:
@@ -15,6 +20,7 @@ services:
     volumes:
       # Persist Postfix's queue directory so queued mail isn't lost on restart.
       - postfix-queue:/var/spool/postfix
+
       # Persist our Dovecot database.
       - dovecot-db:/etc/dovecot/db
 
