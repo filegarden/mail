@@ -15,6 +15,9 @@ services:
     volumes:
       # Persist Postfix's queue directory so queued mail isn't lost on restart.
       - postfix-queue:/var/spool/postfix
+      # Persist our Dovecot database.
+      - dovecot-db:/etc/dovecot/db
 
 volumes:
   postfix-queue:
+  dovecot-db:
