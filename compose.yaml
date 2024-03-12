@@ -1,6 +1,7 @@
 services:
   mail:
-    # Our mail server's hostname.
+    # Our mail server's hostname. For important information on choosing this
+    # value, please see the README.
     hostname: mail.example.com
 
     # Build the image from this directory.
