@@ -24,7 +24,7 @@ Then change `mail.example.com` to your mail server's hostname. Generally, your h
   > Currently, the default domain is used
   >
   > * in the sender address of internally generated mail. For example, if `example.com` is the default domain, error messages can come from `root@example.com`.
-  > * when logging into your mail server. For example, you can use the login name `user` rather than specifying a full address. When the domain part (`@example.com`) in the login name is omitted, the server automatically uses the default domain, logging you in as `user@example.com`.
+  > * when logging into your mail server. For example, you can log in as `user` rather than specifying a full address like `user@example.com`. When the domain part is omitted from a login name, the server automatically appends "@" followed by the default domain.
   >
   > It's not strictly necessary to include an extra subdomain in your hostname, but if you don't, you'll need to set `mydomain = $myhostname` in `etc/postfix/main.cf` to prevent the hostname's first component from being automatically removed. Note that doing this may cause difficulty [configuring your PTR record](#configure-your-ptr-record) if your domain points to something other than your mail server, such as a separate web server or a proxy like Cloudflare. If your domain's DNS A record doesn't point to your mail server directly, you won't be able to create a PTR record, because PTR records require your domain's A record to point to the same IP address used in the PTR record.
 </details>
