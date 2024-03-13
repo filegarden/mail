@@ -1,4 +1,4 @@
 #!/bin/sh
 
-# Exit this script if an error occurs or an unset variable is referenced.
+# Exit if an error occurs or an unset variable is referenced.
 set -eu
