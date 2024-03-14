@@ -25,10 +25,10 @@ services:
       # Persist our Dovecot database.
       - dovecot-db:/etc/dovecot/db
 
-      # Persist our OpenDKIM keys.
-      - opendkim-keys:/var/db/dkim
+      # Persist our DKIM private keys.
+      - dkim-db:/var/db/dkim
 
 volumes:
   postfix-queue:
   dovecot-db:
-  opendkim-keys:
+  dkim-db:
