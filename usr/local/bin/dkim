@@ -26,9 +26,10 @@ public_key="$(
 	openssl base64 -A
 )"
 
-# Only let OpenDKIM access our private key directory.
+# Only let OpenDKIM access our private keys.
 chown -R opendkim:opendkim .
-chmod -R 0700 .
+chmod -R 0600 .
+chmod 0700 .
 
 # Get our mail server's hostname (e.g. `mail.example.com`).
 hostname="$(hostname)"
