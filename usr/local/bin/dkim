@@ -17,11 +17,11 @@ selector=default
 
 # Generate a private key using RSA. We use a 2048-bit key because that's the
 # largest size that RFC 6376 (section 3.3.3) requires DKIM verifiers to support.
-openssl genrsa -out "$selector.pem" 2048
+openssl genrsa -out "$selector.private" 2048
 
 public_key="$(
 	# Generate a public key from the private key in binary format.
-	openssl rsa -in "$selector.pem" -pubout -outform der 2> /dev/null |
+	openssl rsa -in "$selector.private" -pubout -outform der 2> /dev/null |
 	# Convert it to Base64, the format required in a DKIM DNS record.
 	openssl base64 -A
 )"
