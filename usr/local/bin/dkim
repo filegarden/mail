@@ -34,13 +34,11 @@ chmod -R 0700 .
 hostname="$(hostname)"
 
 # Generate the DKIM DNS record name. Even though most DNS interfaces let users
-# omit `.$hostname.`, it can't be omitted if `$hostname` has a subdomain like
-# `mail.`, which mail servers usually do. For example, if our hostname is
-# `mail.example.com`.
-# `y.z`'s record names can only omit the `.y.z` part, so the name must still
-# contain at least `$selector._domainkey.x`, not just `$selector._domainkey`.
-# This can't easily be determined automatically, so it's simpler and more
-# reliable to always print the full record name.
+# omit `.$hostname.`, a subdomain in `$hostname` still can't be omitted. For
+# example, if our hostname is `mail.example.com`, omitting the domain from this
+# name results in `$selector._domainkey.mail`, not just `$selector._domainkey`.
+# Since part of the hostname must be included, it's simpler and more reliable to
+# just include the whole thing.
 record_name="$selector._domainkey.$hostname."
 
 # Generate the DKIM DNS record data containing the public key.
