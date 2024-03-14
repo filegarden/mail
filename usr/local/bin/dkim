@@ -8,7 +8,7 @@ gray="$(printf '\e[90m')"
 lblue="$(printf '\e[1;34m')"
 
 # Go to our OpenDKIM private key directory.
-cd /etc/opendkim/keys
+cd /var/db/dkim
 
 # A DKIM selector is what identifies which public key in the mail server's DNS
 # records to use for verifying an email's signature. To make things simple,

@@ -26,7 +26,7 @@ services:
       - dovecot-db:/etc/dovecot/db
 
       # Persist our OpenDKIM keys.
-      - opendkim-keys:/etc/opendkim/keys
+      - opendkim-keys:/var/db/dkim
 
 volumes:
   postfix-queue:
