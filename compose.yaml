@@ -23,7 +23,7 @@ services:
       - postfix-queue:/var/spool/postfix
 
       # Persist our Dovecot database.
-      - dovecot-db:/etc/dovecot/db
+      - dovecot-db:/etc/auth
 
       # Persist our DKIM private keys.
       - dkim-db:/var/db/dkim
