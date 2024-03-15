@@ -15,8 +15,9 @@ COPY etc /etc
 # Copy our scripts into the image, and set permissions to allow executing them.
 COPY --chmod=0700 usr/local/bin /usr/local/bin
 
-# Create an initial DKIM private key, or else OpenDKIM won't start.
-RUN /usr/local/bin/dkim
+# Run our image build script.
+RUN --mount=type=bind,target=./build.sh,source=./build.sh \
+    ./build.sh
 
 CMD parallel \
     # If one of the below processes exits, also halt the others so the container
