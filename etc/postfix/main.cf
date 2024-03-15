@@ -155,16 +155,13 @@ smtpd_sasl_type = dovecot
 smtpd_sasl_path = private/auth
 
 # Tell Postfix where it can find Milters (mail filters) for processing and
-# checking mail coming into our server.
-smtpd_milters =
+# checking mail originating from our server.
+non_smtpd_milters =
     # On this port, OpenDKIM cryptographically signs our mail via DKIM so
     # recipients can verify it's truly ours, untampered. Mail without a DKIM
     # signature is often marked as spam or rejected. OpenDKIM also rejects mail
     # with an incorrect DKIM signature.
     inet:localhost:8891
-
-# Apply the above Milters to mail sent locally from our server too.
-non_smtpd_milters = $smtpd_milters
 
 # Apply the above Milters to Postfix's internally generated mail. Otherwise
 # OpenDKIM can't sign it, so it might not reach us. Be careful: with this set,
