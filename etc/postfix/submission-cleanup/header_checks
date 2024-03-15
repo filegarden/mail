@@ -1,10 +1,7 @@
-# All patterns start with `^[[:space:]]*` because SMTP headers can start with
-# arbitrary whitespace.
-
 # These headers can reveal the user's IP.
-/^[[:space:]]*Received:/ IGNORE
-/^[[:space:]]*X-Originating-IP:/ IGNORE
+/^*Received:/ IGNORE
+/^*X-Originating-IP:/ IGNORE
 
 # These headers can reveal the software the user sent the mail from.
-/^[[:space:]]*User-Agent:/ IGNORE
-/^[[:space:]]*X-Mailer:/ IGNORE
+/^*User-Agent:/ IGNORE
+/^*X-Mailer:/ IGNORE
