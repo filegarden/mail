@@ -16,8 +16,7 @@ COPY etc /etc
 COPY --chmod=0700 usr/local/bin /usr/local/bin
 
 # Run our image build script.
-RUN --mount=type=bind,target=./build.sh,source=./build.sh \
-    ./build.sh
+RUN /usr/local/bin/build
 
 CMD parallel \
     # If one of the below processes exits, also halt the others so the container

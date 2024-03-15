@@ -8,3 +8,6 @@ newaliases
 
 # Create an initial DKIM private key, or else OpenDKIM won't start.
 /usr/local/bin/dkim
+
+# Delete this script. It only needs to run initially for the Docker image build.
+rm "$0"
