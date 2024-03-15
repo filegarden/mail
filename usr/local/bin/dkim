@@ -50,7 +50,7 @@ record_data="v=DKIM1; k=rsa; p=$public_key"
 
 # Display the final instructions for setting up the DKIM DNS record.
 printf '%s' "\
-${reset}Set the following DNS record for ${lblue}$hostname${reset}.
+Set the following DNS record for ${lblue}$hostname${reset}.
 
 ${gray}If your server needs to handle mail for other domains, also see:
 https://github.com/filegarden/mail/blob/main/README.md${reset}
