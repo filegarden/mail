@@ -9,11 +9,14 @@ FROM alpine
 # - GNU Parallel, to run all of these and combine their output.
 RUN apk add --no-cache postfix dovecot opendkim parallel
 
+# Copy our config files into the image.
 COPY etc /etc
-COPY usr /usr
 
-RUN --mount=type=bind,target=./build.sh,source=./build.sh \
-    ./build.sh
+# Copy our scripts into the image, and set permissions to allow executing them.
+COPY --chmod=0700 usr /usr
+
+# Create an initial DKIM private key, or else OpenDKIM won't start.
+RUN /usr/local/bin/dkim
 
 CMD parallel \
     # If one of the below processes exits, also halt the others so the container
