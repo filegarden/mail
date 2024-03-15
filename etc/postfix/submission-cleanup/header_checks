@@ -1,7 +1,7 @@
 # These headers can reveal the user's IP.
-/^*Received:/ IGNORE
-/^*X-Originating-IP:/ IGNORE
+/^Received:/ IGNORE
+/^X-Originating-IP:/ IGNORE
 
 # These headers can reveal the software the user sent the mail from.
-/^*User-Agent:/ IGNORE
-/^*X-Mailer:/ IGNORE
+/^User-Agent:/ IGNORE
+/^X-Mailer:/ IGNORE
