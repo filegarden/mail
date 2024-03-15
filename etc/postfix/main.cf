@@ -159,8 +159,7 @@ smtpd_sasl_path = private/auth
 non_smtpd_milters =
     # On this port, OpenDKIM cryptographically signs our mail via DKIM so
     # recipients can verify it's truly ours, untampered. Mail without a DKIM
-    # signature is often marked as spam or rejected. OpenDKIM also rejects mail
-    # with an incorrect DKIM signature.
+    # signature is often marked as spam or rejected.
     inet:localhost:8891
 
 # Apply the above Milters to Postfix's internally generated mail. Otherwise
