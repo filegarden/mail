@@ -13,7 +13,7 @@ RUN apk add --no-cache postfix dovecot opendkim parallel
 COPY etc /etc
 
 # Copy our scripts into the image, and set permissions to allow executing them.
-COPY --chmod=0700 usr /usr
+COPY --chmod=0700 usr/local/bin /usr/local/bin
 
 # Create an initial DKIM private key, or else OpenDKIM won't start.
 RUN /usr/local/bin/dkim
