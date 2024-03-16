@@ -18,9 +18,12 @@ selector=default
 # Use a private key path based on the (above) selector.
 private_key_path="./$selector.private"
 
-# Generate a private key using RSA. We use a 2048-bit key because that's the
-# largest size that RFC 6376 (section 3.3.3) requires DKIM verifiers to support.
-openssl genrsa -out "$private_key_path" 2048
+if ! [ -e "$private_key_path" ]; then
+	# Generate a private key using RSA. We use a 2048-bit key because that's
+	# the largest size that RFC 6376 (section 3.3.3) requires DKIM verifiers
+	# to support.
+	openssl genrsa -out "$private_key_path" 2048
+fi
 
 public_key="$(
 	# Generate a public key from the private key in binary format.
