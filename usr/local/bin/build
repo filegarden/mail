@@ -7,7 +7,15 @@ set -eu
 newaliases
 
 # Create an initial DKIM private key, or else OpenDKIM won't start.
-/usr/local/bin/dkim
+/usr/local/bin/dkim > /dev/null
+
+# Create an initial password database for Dovecot.
+mkdir -p /etc/auth
+touch /etc/auth/passwd
+
+# Only let Dovecot access the password database.
+chown -R dovecot:dovecot /etc/auth
+chmod -R 0700 /etc/auth
 
 # Delete this script. It only needs to run initially for the Docker image build.
 rm "$0"
