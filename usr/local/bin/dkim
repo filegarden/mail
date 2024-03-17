@@ -23,9 +23,9 @@ private_key_path="./$selector.private"
 touch "$private_key_path"
 
 # Only let OpenDKIM access our private keys.
-chown -R opendkim:opendkim .
 chmod -R 0600 .
 chmod 0700 .
+chown -R opendkim:opendkim .
 
 if ! [ -e "$private_key_path" ]; then
 	# Generate a private key using RSA. We use a 2048-bit key because that's

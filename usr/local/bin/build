@@ -11,8 +11,8 @@ mkdir -p /etc/auth
 touch /etc/auth/passwd
 
 # Only let Dovecot access the password database.
-chown -R dovecot:dovecot /etc/auth
 chmod -R 0700 /etc/auth
+chown -R dovecot:dovecot /etc/auth
 
 # Create the Postfix TLS chain file directory, and give `acme.sh` access so it
 # can output new certificates there. (Postfix outputs warnings due to anyone but
