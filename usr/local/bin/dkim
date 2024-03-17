@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/busybox sh
 
 # Exit if an error occurs or an unset variable is referenced.
-set -eu
+set -euo pipefail
 
 reset="$(printf '\e[0m')"
 gray="$(printf '\e[90m')"

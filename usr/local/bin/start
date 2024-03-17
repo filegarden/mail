@@ -1,7 +1,7 @@
-#!/bin/sh
+#!/bin/busybox sh
 
 # Exit if an error occurs or an unset variable is referenced.
-set -eu
+set -euo pipefail
 
 # Remove all public access permissions for everything in `acme.sh`'s home
 # directory, since our Cloudflare token is saved there. (Note our private key
