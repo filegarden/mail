@@ -38,15 +38,16 @@ services:
       # Persist `acme.sh`'s configuration along with copies of our private key
       # and certificate files for TLS, so `acme.sh` remembers what certificates
       # to renew, how to renew them, and when they'll expire.
-      - acme.sh-home:/root/.acme.sh
+      - acme.sh-home:/home/acme-sh/.acme.sh
 
     secrets:
       # The Cloudflare API token for our domain, so the server can set our DNS
       # records automatically when needed.
       - source: CF_API_TOKEN
-        # Don't let anything in the container without `root` privileges access
-        # this value.
-        mode: 0400
+        # Only let the `cf-api-token` user created by our
+        # `usr/local/bin/prebuild` script access this secret's value.
+        gid: "10001"
+        mode: 0440
 
 volumes:
   postfix-queue:

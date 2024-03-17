@@ -14,13 +14,23 @@ RUN apk add --no-cache \
     parallel \
     # Automatically obtains and renews our hostname's TLS certificates for
     # encrypting mail in transit.
-    acme.sh
-
-# Copy our config files into the image.
-COPY etc /etc
+    acme.sh \
+    # Allows `cron`, the tool we use to schedule automatic TLS certificate
+    # renewal, to work for unprivileged users.
+    busybox-suid
 
 # Copy our scripts into the image, and set permissions to allow executing them.
 COPY --chmod=0700 usr/local/bin /usr/local/bin
+
+# Run our image prebuild script.
+RUN /usr/local/bin/prebuild
+
+# Copy our config files into the image.w
+COPY etc /etc
+
+# Copy our `acme.sh` scripts into the image. Give our `acme-sh` user permission
+# to execute them.
+COPY --chmod=0700 --chown=acme-sh home/acme-sh/bin /home/acme-sh/bin
 
 # Run our image build script.
 RUN /usr/local/bin/build

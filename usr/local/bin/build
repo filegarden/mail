@@ -6,9 +6,6 @@ set -euo pipefail
 # Build our `etc/postfix/aliases` file so Postfix can use it.
 newaliases
 
-# Create an initial DKIM private key, or else OpenDKIM won't start.
-/usr/local/bin/dkim > /dev/null
-
 # Create an initial password database for Dovecot.
 mkdir -p /etc/auth
 touch /etc/auth/passwd
@@ -17,26 +14,18 @@ touch /etc/auth/passwd
 chown -R dovecot:dovecot /etc/auth
 chmod -R 0700 /etc/auth
 
-# Create the file `acme.sh` saves our Cloudflare API token to, so we can
-# restrict its permissions before our token is ever written to it. Currently,
-# `acme.sh` enables all read permissions on this file by default, which isn't
-# strict enough.
-mkdir -p /root/.acme.sh
-touch /root/.acme.sh/account.conf
+# Create the Postfix TLS chain file directory, and give `acme.sh` access so it
+# can output new certificates there. (Postfix outputs warnings due to anyone but
+# `root` having access, but the alternative is making a `setuid` `root` program
+# that only the `acme-sh` user can execute, just to copy `acme.sh`'s files into
+# the directory. There's no reason for that, and in fact that would increase our
+# server's attack surface.)
+mkdir -p /etc/postfix/smtpd_tls_chain_files
+chmod 770 /etc/postfix/smtpd_tls_chain_files
+chown root:acme-sh /etc/postfix/smtpd_tls_chain_files
 
-# Disallow any unprivileged user from accessing any of `acme.sh`'s files,
-# including the file created above.
-chmod -R go= /root/.acme.sh
-
-# Set `acme.sh`'s default certificate authority to Let's Encrypt.
-acme.sh --set-default-ca --server letsencrypt
-
-# Install `acme.sh`'s `cron` job, which automatically checks every 24 hours if
-# TLS certificates need to be renewed. `acme.sh` renews certificates after 60
-# days. (Let's Encrypt certificates expire after 90 days, so this renews them a
-# month prior.) Normally, installing `acme.sh` would install this automatically,
-# but for whatever reason, `acme.sh`'s Alpine Linux package doesn't do that.
-acme.sh --install-cronjob
+# Run our build script for `acme.sh` as an unprivileged user.
+su acme-sh -s /bin/sh -c /home/acme-sh/bin/build
 
 # Delete this script. It only needs to run initially for the Docker image build.
 rm "$0"

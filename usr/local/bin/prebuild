@@ -1,0 +1,20 @@
+#!/bin/busybox sh
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# Create a group with permission to read the `CF_API_TOKEN` Docker secret.
+addgroup --gid 10001 cf-api-token
+
+# Create an unprivileged user for `acme.sh` to run under.
+adduser \
+    --disabled-password \
+    --gecos "" \
+    --shell /sbin/nologin \
+    acme-sh
+
+# Give `acme.sh` access to our `CF_API_TOKEN` secret.
+adduser acme-sh cf-api-token
+
+# Delete this script. It only needs to run initially for the Docker image build.
+rm "$0"
