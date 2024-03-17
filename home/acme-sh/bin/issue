@@ -3,15 +3,8 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# Remove all public access permissions for everything in `acme.sh`'s home
-# directory, since our Cloudflare token is saved there. (Note our private key
-# file already doesn't have these permissions, so this isn't meant for that.)
-chmod -R o= ~/.acme.sh
-
-# Reset any Cloudflare information `acme.sh` has stored in case we changed our
-# Cloudflare API token.
-# TODO: This might break renewals, since they won't know our CF token anymore.
-sed -i "/^SAVED_CF_/d" ~/.acme.sh/account.conf
+# By default, don't let `acme.sh` create files accessible to anyone but itself.
+umask 0007
 
 # Get our mail server's hostname (e.g. `mail.example.com`).
 # TODO: Make `acme.sh` stop renewing for an old hostname when this changes.

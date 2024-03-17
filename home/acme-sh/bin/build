@@ -3,6 +3,9 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
+# By default, don't let `acme.sh` create files accessible to anyone but itself.
+umask 0007
+
 # Create the file `acme.sh` saves our Cloudflare API token to, so we can
 # restrict its permissions before our token is ever written to it. Currently,
 # `acme.sh` enables all read permissions on this file by default, which isn't
@@ -10,20 +13,28 @@ set -euo pipefail
 mkdir -p ~/.acme.sh
 touch ~/.acme.sh/account.conf
 
-# Disallow any unprivileged user from accessing any of `acme.sh`'s files,
-# including the file created above.
-chmod -R go= ~/.acme.sh
-
 # Set `acme.sh`'s default certificate authority to Let's Encrypt.
 # TODO: Remove `_test`.
 acme.sh --set-default-ca --server letsencrypt_test
 
-# Install `acme.sh`'s `cron` job, which automatically checks every 24 hours if
-# TLS certificates need to be renewed. `acme.sh` renews certificates after 60
-# days. (Let's Encrypt certificates expire after 90 days, so this renews them a
-# month prior.) Normally, installing `acme.sh` would install this automatically,
-# but for whatever reason, `acme.sh`'s Alpine Linux package doesn't do that.
-acme.sh --install-cronjob
+# Create a `cron` job to automatically check every 24 hours if TLS certificates
+# need to be renewed. `acme.sh` renews certificates after 60 days. (Let's
+# Encrypt certificates expire after 90 days, so this renews them a month prior.)
+
+# First, generate a random minute (0-59) and hour (0-23) number. This will be
+# the time of day at which renewal will be checked every 24 hours. It's best to
+# randomize this to reduce load on the certificate authority (Let's Encrypt) due
+# to the massive number of servers renewing at midnight or at a precise hour.
+random_minute="$(shuf -i 0-59 -n 1)"
+random_hour="$(shuf -i 0-23 -n 1)"
+
+# Normally, installing `acme.sh` would install a `cron` job automatically, but
+# `acme.sh`'s Alpine Linux package doesn't do that. You can install `acme.sh`'s
+# built-in `cron` job using `acme.sh --install-cronjob`, but we actually don't
+# want that because the built-in job doesn't update `acme.sh`'s configuration
+# with new arguments (domain, Cloudflare API token, etc.) automatically. Our
+# custom issuing script can.
+echo "$random_minute $random_hour * * * ~/bin/issue" | crontab -
 
 # Delete this script. It only needs to run initially for the Docker image build.
 rm "$0"
