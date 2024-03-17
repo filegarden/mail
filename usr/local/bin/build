@@ -17,5 +17,26 @@ touch /etc/auth/passwd
 chown -R dovecot:dovecot /etc/auth
 chmod -R 0700 /etc/auth
 
+# Create the file `acme.sh` saves our Cloudflare API token to, so we can
+# restrict its permissions before our token is ever written to it. Currently,
+# `acme.sh` enables all read permissions on this file by default, which isn't
+# strict enough.
+mkdir -p /root/.acme.sh
+touch /root/.acme.sh/account.conf
+
+# Disallow any unprivileged user from accessing any of `acme.sh`'s files,
+# including the file created above.
+chmod -R go= /root/.acme.sh
+
+# Set `acme.sh`'s default certificate authority to Let's Encrypt.
+acme.sh --set-default-ca --server letsencrypt
+
+# Install `acme.sh`'s `cron` job, which automatically checks every 24 hours if
+# TLS certificates need to be renewed. `acme.sh` renews certificates after 60
+# days. (Let's Encrypt certificates expire after 90 days, so this renews them a
+# month prior.) Normally, installing `acme.sh` would install this automatically,
+# but for whatever reason, `acme.sh`'s Alpine Linux package doesn't do that.
+acme.sh --install-cronjob
+
 # Delete this script. It only needs to run initially for the Docker image build.
 rm "$0"

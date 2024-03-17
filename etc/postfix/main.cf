@@ -136,10 +136,11 @@ smtpd_tls_protocols = >=TLSv1.2
 smtp_tls_mandatory_protocols = >=TLSv1.2
 smtpd_tls_mandatory_protocols = >=TLSv1.2
 
-# Give Postfix our private key and certificate for TLS.
-# TODO: Set a real path here.
+# Give Postfix our private key and certificate for TLS, which are automatically
+# issued and renewed using `acme.sh`.
 smtpd_tls_chain_files =
-    /etc/ssl/private/ssl-cert-snakeoil.key /etc/ssl/certs/ssl-cert-snakeoil.pem
+    /etc/postfix/smtpd_tls_chain_files/key.pem
+    /etc/postfix/smtpd_tls_chain_files/cert.pem
 
 # Enable these options for OpenSSL.
 tls_ssl_options =

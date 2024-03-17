@@ -18,9 +18,16 @@ services:
       # SMTP submission with STARTTLS.
       - "587:587"
 
+    # Runs Tini as the container's init process. For more information, see:
+    # https://github.com/krallin/tini#why-tini
+    init: true
+
     volumes:
       # Persist Postfix's queue directory so queued mail isn't lost on restart.
       - postfix-queue:/var/spool/postfix
+
+      # Persist Postfix's copy of our private key and certificate files for TLS.
+      - postfix-tls:/etc/postfix/smtpd_tls_chain_files
 
       # Persist our Dovecot database.
       - dovecot-db:/etc/auth
@@ -28,7 +35,29 @@ services:
       # Persist our DKIM private keys.
       - dkim-db:/var/db/dkim
 
+      # Persist `acme.sh`'s configuration along with copies of our private key
+      # and certificate files for TLS, so `acme.sh` remembers what certificates
+      # to renew, how to renew them, and when they'll expire.
+      - acme.sh-home:/root/.acme.sh
+
+    secrets:
+      # The Cloudflare API token for our domain, so the server can set our DNS
+      # records automatically when needed.
+      - source: CF_API_TOKEN
+        # Don't let anything in the container without `root` privileges access
+        # this value.
+        mode: 0400
+
 volumes:
   postfix-queue:
+  postfix-tls:
   dovecot-db:
   dkim-db:
+  acme.sh-home:
+
+# All secrets should be loaded from environment variables. You can load the
+# environment variables from your `.env` file by writing `source .env && `
+# before the `docker compose up` command when starting this container.
+secrets:
+  CF_API_TOKEN:
+    environment: CF_API_TOKEN
