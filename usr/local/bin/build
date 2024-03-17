@@ -27,5 +27,9 @@ chown root:acme-sh /etc/postfix/smtpd_tls_chain_files
 # Run our build script for `acme.sh` as an unprivileged user.
 su acme-sh -s /bin/sh -c /home/acme-sh/bin/build
 
+# Only let OpenDKIM access our private keys.
+chmod 0700 /var/db/dkim
+chown opendkim:opendkim /var/db/dkim
+
 # Delete this script. It only needs to run initially for the Docker image build.
 rm "$0"

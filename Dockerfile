@@ -28,9 +28,10 @@ RUN /usr/local/bin/prebuild
 # Copy our config files into the image.w
 COPY etc /etc
 
-# Copy our `acme.sh` scripts into the image. Give our `acme-sh` user permission
-# to execute them.
-COPY --chmod=0700 --chown=acme-sh home/acme-sh/bin /home/acme-sh/bin
+# Copy all files specific to unprivileged users into the image, changing the
+# owner of each set of files to the user those files are specific to.
+COPY --chown=acme-sh home/acme-sh /home/acme-sh
+COPY --chown=opendkim home/opendkim /home/opendkim
 
 # Run our image build script.
 RUN /usr/local/bin/build
