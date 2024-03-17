@@ -18,6 +18,15 @@ selector=default
 # Use a private key path based on the (above) selector.
 private_key_path="./$selector.private"
 
+# Create our private key file, so we can restrict its permissions before the
+# private key is ever written to it.
+touch "$private_key_path"
+
+# Only let OpenDKIM access our private keys.
+chown -R opendkim:opendkim .
+chmod -R 0600 .
+chmod 0700 .
+
 if ! [ -e "$private_key_path" ]; then
 	# Generate a private key using RSA. We use a 2048-bit key because that's
 	# the largest size that RFC 6376 (section 3.3.3) requires DKIM verifiers
@@ -31,11 +40,6 @@ public_key="$(
 	# Convert it to Base64, the format required in a DKIM DNS record.
 	openssl base64 -A
 )"
-
-# Only let OpenDKIM access our private keys.
-chown -R opendkim:opendkim .
-chmod -R 0600 .
-chmod 0700 .
 
 # Get our mail server's hostname (e.g. `mail.example.com`).
 hostname="$(hostname)"
