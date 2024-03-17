@@ -21,7 +21,7 @@ chown -R dovecot:dovecot /etc/auth
 # the directory. There's no reason for that, and in fact that would increase our
 # server's attack surface.)
 mkdir -p /etc/postfix/smtpd_tls_chain_files
-chmod 770 /etc/postfix/smtpd_tls_chain_files
+chmod 0770 /etc/postfix/smtpd_tls_chain_files
 chown root:acme-sh /etc/postfix/smtpd_tls_chain_files
 
 # Run our build script for `acme.sh` as an unprivileged user.
