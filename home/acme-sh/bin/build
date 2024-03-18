@@ -6,13 +6,6 @@ set -euo pipefail
 # By default, don't let `acme.sh` create files accessible to anyone but itself.
 umask 0007
 
-# Create the file `acme.sh` saves our Cloudflare API token to, so we can
-# restrict its permissions before our token is ever written to it. Currently,
-# `acme.sh` enables all read permissions on this file by default, which isn't
-# strict enough.
-mkdir -p ~/.acme.sh
-touch ~/.acme.sh/account.conf
-
 # Set `acme.sh`'s default certificate authority to Let's Encrypt.
 # TODO: Remove `_test`.
 acme.sh --set-default-ca --server letsencrypt_test
