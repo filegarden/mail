@@ -1,0 +1,17 @@
+#!/bin/busybox sh
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# By default, don't let `acme.sh` create files accessible to anyone but itself.
+umask 0007
+
+# Attempt to issue our TLS certificate.
+~/bin/issue
+
+# Load the ACME account email from our Docker secrets so `acme.sh` can tell
+# Let's Encrypt where they can send us important notifications.
+acme_account_email="$(cat /run/secrets/ACME_ACCOUNT_EMAIL)"
+
+# Update our ACME account email to the above value.
+acme.sh --update-account --email "$acme_account_email"
