@@ -18,5 +18,5 @@ addgroup --gid 20001 cf-api-token
 # Give `acme.sh` access to our `CF_API_TOKEN` secret.
 adduser acme-sh cf-api-token
 
-# Delete this script. It only needs to run initially for the Docker image build.
+# Delete this script. It only needs to exist during the Docker image build.
 rm "$0"

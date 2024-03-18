@@ -33,5 +33,5 @@ su acme-sh -s /bin/sh -c /home/acme-sh/bin/build
 chmod 0700 /var/db/dkim
 chown opendkim:opendkim /var/db/dkim
 
-# Delete this script. It only needs to run initially for the Docker image build.
+# Delete this script. It only needs to exist during the Docker image build.
 rm "$0"

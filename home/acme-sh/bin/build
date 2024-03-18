@@ -17,5 +17,5 @@ mkdir -p ~/.acme.sh
 # TODO: Remove `_test`.
 acme.sh --set-default-ca --server letsencrypt_test
 
-# Delete this script. It only needs to run initially for the Docker image build.
+# Delete this script. It only needs to exist during the Docker image build.
 rm "$0"
