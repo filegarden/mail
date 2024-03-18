@@ -11,7 +11,8 @@ adduser \
     --uid 10001 \
     acme-sh
 
-# Create a group with permission to read the `CF_API_TOKEN` Docker secret.
+# Create a group with permission to read the `CF_API_TOKEN` Docker secret, as
+# specified in `compose.yaml`.
 addgroup --gid 20001 cf-api-token
 
 # Give `acme.sh` access to our `CF_API_TOKEN` secret.
