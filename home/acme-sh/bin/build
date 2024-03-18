@@ -4,7 +4,14 @@
 set -euo pipefail
 
 # By default, don't let `acme.sh` create files accessible to anyone but itself.
+# Otherwise, for example, the file it saves our Cloudflare API token to has all
+# read permissions enabled by default, which is needlessly lenient.
 umask 0007
+
+# Create `acme.sh`'s configuration directory as the `acme-sh` user this script
+# runs under, so that `acme.sh` will have access to it. Otherwise, it's created
+# as a Docker volume automatically, and only the `root` user is given access.
+mkdir -p ~/.acme.sh
 
 # Set `acme.sh`'s default certificate authority to Let's Encrypt.
 # TODO: Remove `_test`.
