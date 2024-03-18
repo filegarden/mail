@@ -7,13 +7,10 @@ set -euo pipefail
 umask 0007
 
 # Get our mail server's hostname (e.g. `mail.example.com`).
-# TODO: Make `acme.sh` stop renewing for an old hostname when this changes.
 hostname="$(hostname)"
 
 # Load the Cloudflare API token from our Docker secrets so `acme.sh` can use it.
 cf_api_token="$(cat /run/secrets/CF_API_TOKEN)"
-
-# TODO: Set an account email for `acme.sh`.
 
 # Set the Postfix TLS chain file path to the same one used in the `postfix-tls`
 # Docker volume defined in `compose.yaml`.
