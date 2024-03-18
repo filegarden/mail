@@ -15,8 +15,8 @@ RUN apk add --no-cache \
     # Automatically obtains and renews our hostname's TLS certificates for
     # encrypting mail in transit.
     acme.sh \
-    # Allows `cron`, the tool we use to schedule automatic TLS certificate
-    # renewal, to work for unprivileged users.
+    # Allows `cron`, the tool we use to schedule automatic jobs to run
+    # periodically, to work for unprivileged users.
     busybox-suid
 
 # Copy our scripts into the image, and set permissions to allow executing them.
