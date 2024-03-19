@@ -16,15 +16,15 @@ cf_api_token="$(cat /run/secrets/CF_API_TOKEN)"
 # Docker volume defined in `compose.yaml`.
 postfix_tls_path=/etc/postfix/smtpd_tls_chain_files
 
-# - Use `acme.sh` to issue a new TLS certificate.
-# - Use our domain's DNS records in Cloudflare to prove to Let's Encrypt that we
+# * Use `acme.sh` to issue a new TLS certificate.
+# * Use our domain's DNS records in Cloudflare to prove to Let's Encrypt that we
 #   own the domain we're requesting a certificate for.
-# - Generate a new private key for each renew to limit the risk of a compromised
+# * Generate a new private key for each renew to limit the risk of a compromised
 #   key.
-# - Upon renewal, copy the new private key and certificate files to the location
+# * Upon renewal, copy the new private key and certificate files to the location
 #   we configured Postfix to use (in `etc/postfix/main.cf`), since the location
 #   `acme.sh` saves to by default is intentionally unreliable.
-# - Tell `acme.sh` to reload Postfix whenever it renews our certificate so that
+# * Tell `acme.sh` to reload Postfix whenever it renews our certificate so that
 #   Postfix always uses the latest certificate files.
 CF_Token="$cf_api_token" \
 acme.sh \
