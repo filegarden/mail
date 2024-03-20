@@ -12,9 +12,12 @@ su opendkim -s /bin/sh -c /home/opendkim/bin/genkey
 # * If one of the below processes exits, also halt the others so the container
 #   can restart.
 # * Ensure different lines logged at the same time don't intermingle.
+# * Don't limit the number of simultaneous commands to one per CPU thread. All
+#   these commands must run unconditionally.
 # * Run these commands in parallel, and in the foreground so GNU Parallel can
 #   detect when they exit and stay open as long as they're open.
 parallel \
     --halt now,done=1 \
     --line-buffer \
+    --jobs 0 \
     ::: "postfix start-fg" "dovecot -F" "opendkim -f"
