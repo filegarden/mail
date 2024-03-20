@@ -31,14 +31,6 @@ smtpd_banner = $myhostname ESMTP
 # Postfix's internally generated messages (such as error notifications).
 myorigin = $mydomain
 
-# Automatically append "@" followed by the `mydomain` value (explained above) to
-# SASL login names when their domain part is omitted. For example, if our mail
-# server's hostname is `mail.example.com`, logging into it as `user` instead
-# logs in as `user@example.com`. This is needed for `smtpd_sender_login_maps` to
-# work consistently (as explained where it's set later), and also it's just
-# convenient not to have to write `@example.com` when signing in.
-smtpd_sasl_local_domain = $mydomain
-
 # Only accept mail sent locally from this machine by default.
 smtpd_client_restrictions = permit_mynetworks, reject
 
@@ -64,7 +56,7 @@ smtpd_sender_restrictions =
 
 # This is used in `smtpd_sender_restrictions` above to determine which SASL
 # login names own which addresses. Our SASL login names are already addresses
-# (as enforced by `smtpd_sasl_local_domain`, set later), so this code just takes
+# (as enforced by our script for creating SASL logins), so this code just takes
 # every possible login name and sets itself as the address it owns.
 smtpd_sender_login_maps = regexp:{ { /^(.*)$$/ $$1 } }
 
