@@ -20,7 +20,7 @@ RUN apk add --no-cache \
     busybox-suid
 
 # Copy our scripts into the image, and set permissions to allow executing them.
-COPY --chmod=0700 usr/local/bin /usr/local/bin
+COPY --chmod=0500 usr/local/bin /usr/local/bin
 
 # Run our image prebuild script.
 RUN /usr/local/bin/prebuild
@@ -28,10 +28,10 @@ RUN /usr/local/bin/prebuild
 # Copy our config files into the image.w
 COPY etc /etc
 
-# Copy all scripts for unprivileged users into the image, setting permissions so
-# that only the user each script is for can execute that script.
-COPY --chmod=700 --chown=acme-sh home/acme-sh/bin /home/acme-sh/bin
-COPY --chmod=700 --chown=opendkim home/opendkim/bin /home/opendkim/bin
+# Copy all scripts for unprivileged users into the image, setting permissions
+# only so the user each script is for can execute that script.
+COPY --chmod=0500 --chown=acme-sh home/acme-sh/bin /home/acme-sh/bin
+COPY --chmod=0500 --chown=opendkim home/opendkim/bin /home/opendkim/bin
 
 # Run our image build script.
 RUN /usr/local/bin/build
