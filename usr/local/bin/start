@@ -14,10 +14,20 @@ su opendkim -s /bin/sh -c /home/opendkim/bin/genkey
 # * Ensure different lines logged at the same time don't intermingle.
 # * Don't limit the number of simultaneous commands to one per CPU thread. All
 #   these commands must run unconditionally.
-# * Run these commands in parallel, and in the foreground so GNU Parallel can
-#   detect when they exit and stay open as long as they're open.
+# * Run these commands simultaneously, and in the foreground so `parallel` can
+#   detect when they exit and stay open as long as they're open. Running these
+#   in the foreground also makes their output appear in the container's output.
+#   * `syslogd` is what handles system logs. `-n` runs it in the foreground, and
+#     `-O /dev/stdout` tells it to output all logs to the container's output.
+#     This is only needed for OpenDKIM. We configured the other programs not to
+#     rely on syslog.
+#   * The other programs listed here are described in our `Dockerfile`.
 parallel \
     --halt now,done=1 \
     --line-buffer \
     --jobs 0 \
-    ::: "postfix start-fg" "dovecot -F" "opendkim -f"
+    ::: \
+    "syslogd -n -O /dev/stdout" \
+    "postfix start-fg" \
+    "dovecot -F" \
+    "opendkim -f"
