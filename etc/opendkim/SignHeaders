@@ -1,0 +1,44 @@
+# Directly below are the headers RFC 6376 (section 5.4.1) recommends signing.
+# OpenDKIM signs these by default, but we have to write them explicitly since
+# we're changing from the default in order to add more.
+from
+reply-to
+subject
+date
+to
+cc
+resent-date
+resent-from
+resent-sender
+resent-to
+resent-cc
+in-reply-to
+references
+list-id
+list-help
+list-unsubscribe
+list-subscribe
+list-post
+list-owner
+list-archive
+
+# Also sign all the below headers so they can't be tampered with, for the
+# commented reasons.
+
+# Tampering with a message ID would cause it to be inconsistent between the
+# sender and recipients. For example, if a recipient replies to a message whose
+# ID is tampered, the sender's mail client may act as if the reply is actually
+# meant for a message at the tampered ID, rather than for the original message,
+# possibly causing the sender not to find the reply where they expect it.
+message-id
+
+# If more MIME versions are ever created, then letting a message's MIME version
+# be tampered with could have future implications similar to those of tampering
+# with `Content-Type` (see below).
+mime-version
+
+# Letting a message's content type be tampered with could let a middleman change
+# the way its content is interpreted by other mail servers and clients. That
+# could affect the message's validity (and thus deliverability), or it could
+# affect a recipient's ability to read it properly.
+content-type
