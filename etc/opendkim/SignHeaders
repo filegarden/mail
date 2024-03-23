@@ -41,3 +41,6 @@ mime-version
 # the way the content is interpreted by other mail servers and clients, and it
 # could affect how the message appears to a recipient.
 content-type
+
+# Same as previous.
+content-transfer-encoding
