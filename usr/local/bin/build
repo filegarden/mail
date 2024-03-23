@@ -24,10 +24,10 @@ mkdir -p "$postfix_tls_path"
 touch "$postfix_tls_path/key.pem" "$postfix_tls_path/cert.pem"
 chmod -R 0660 "$postfix_tls_path"
 chmod 0750 "$postfix_tls_path"
-chown -R root:acme-sh "$postfix_tls_path"
+chown -R root:acme "$postfix_tls_path"
 
 # Run our build script for `acme.sh` as an unprivileged user.
-su acme-sh -s /bin/sh -c /home/acme-sh/bin/build
+su acme -s /bin/sh -c /home/acme/bin/build
 
 # Only let OpenDKIM access our private keys.
 chmod 0700 /var/db/dkim

@@ -38,14 +38,14 @@ services:
       # Persist `acme.sh`'s configuration along with copies of our private key
       # and certificate files for TLS, so `acme.sh` remembers what certificates
       # to renew, how to renew them, and when they'll expire.
-      - acme.sh-home:/home/acme-sh/.acme.sh
+      - acme.sh-home:/home/acme/.acme.sh
 
     secrets:
       # The account email to give to Let's Encrypt, so that it can send us
       # important notifications like expiring TLS certificates that failed to
       # renew.
       - source: ACME_ACCOUNT_EMAIL
-        # Let the `acme-sh` user created in our `usr/local/bin/prebuild` script
+        # Let the `acme` user created in our `usr/local/bin/prebuild` script
         # access this secret's value.
         uid: "10001"
         mode: 0400

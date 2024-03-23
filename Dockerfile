@@ -30,7 +30,7 @@ COPY etc /etc
 
 # Copy all scripts for unprivileged users into the image, setting permissions
 # only so the user each script is for can execute that script.
-COPY --chmod=0500 --chown=acme-sh home/acme-sh/bin /home/acme-sh/bin
+COPY --chmod=0500 --chown=acme home/acme/bin /home/acme/bin
 COPY --chmod=0500 --chown=opendkim home/opendkim/bin /home/opendkim/bin
 
 # Run our image build script.
