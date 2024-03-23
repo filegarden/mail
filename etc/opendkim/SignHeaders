@@ -40,9 +40,14 @@ content-alternative
 content-md5
 content-duration
 
+# Since we already sign `reply-to`, the same should be signed for manually
+# forwarded messages.
+resent-reply-to
+
 # Tampering with a message ID would cause it to be inconsistent between the
 # sender and recipients. For example, if a recipient replies to a message whose
 # ID is tampered, the sender's mail client may act as if the reply is actually
 # meant for a message at the tampered ID, rather than for the original message,
 # possibly causing the sender not to find the reply where they expect it.
 message-id
+resent-message-id
