@@ -23,14 +23,6 @@ recipient_delimiter = +
 # Remove "Postfix" from the banner text.
 smtpd_banner = $myhostname ESMTP
 
-# Postfix automatically sets `myhostname` to the `hostname` value specified in
-# `compose.yaml` (e.g. `mail.example.com`). Then it strips the first component
-# off and sets that value (e.g. `example.com`) into `mydomain`. Finally, we copy
-# that into `myorigin` here. Postfix uses this as the default domain for our
-# server's mail addresses (e.g. `user@example.com`), like sender addresses for
-# Postfix's internally generated messages (such as error notifications).
-myorigin = $mydomain
-
 # Only accept mail sent locally from this machine by default.
 smtpd_client_restrictions = permit_mynetworks, reject
 
