@@ -4,4 +4,10 @@
 
 # These headers can reveal the software the user sent the mail from.
 /^User-Agent:/ IGNORE
+/^X-User-Agent:/ IGNORE
+# Here are more from RFC 2076 (section 3.4, "Information about the client ...").
+/^Version:/ IGNORE
+/^Mailer:/ IGNORE
+/^Originating-Client:/ IGNORE
 /^X-Mailer:/ IGNORE
+/^X-Newsreader:/ IGNORE
