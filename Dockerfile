@@ -25,7 +25,7 @@ COPY --chmod=0500 usr/local/bin /usr/local/bin
 # Run our image prebuild script.
 RUN /usr/local/bin/prebuild
 
-# Copy our config files into the image.w
+# Copy our config files into the image.
 COPY etc /etc
 
 # Copy all scripts for unprivileged users into the image, setting permissions
