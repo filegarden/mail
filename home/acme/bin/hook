@@ -7,7 +7,7 @@ set -euo pipefail
 deploy_cert() {
 	# Connect to the TCP server we created in our `usr/local/bin/start`
 	# script so it knows to update our certificates.
-	nc 127.0.0.1 13414 <<< "" ||
+	nc 127.0.0.1 38368 <<< "" ||
 	# Don't exit with an error if it fails to connect. That just means the
 	# TCP server isn't running yet. Our `start` script updates our
 	# certificate files before starting the TCP server anyway, so it's fine

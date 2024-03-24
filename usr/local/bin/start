@@ -39,7 +39,7 @@ parallel \
     --jobs 0 \
     ::: \
     "syslogd -n -O /dev/stdout" \
-    "nc -lk -s 127.0.0.1 -p 13414 -e update_certs" \
+    "nc -lk -s 127.0.0.1 -p 38368 -e update_certs" \
     "postfix start-fg" \
     "dovecot -F" \
     "opendkim -f"
