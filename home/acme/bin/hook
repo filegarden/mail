@@ -1,0 +1,25 @@
+#!/bin/bash
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# `dehydrated` runs this after issuing or renewing certificates.
+deploy_cert() {
+	# Connect to the TCP server we created in our `usr/local/bin/start`
+	# script so it knows to update our certificates.
+	nc 127.0.0.1 13414 <<< "" ||
+	# Don't exit with an error if it fails to connect. That just means the
+	# TCP server isn't running yet. Our `start` script updates our
+	# certificate files before starting the TCP server anyway, so it's fine
+	# if it fails to update here first.
+	:
+}
+
+case "$1" in
+deploy_cert)
+	"$@"
+	;;
+*)
+	~/bin/cf_hook "$@"
+	;;
+esac

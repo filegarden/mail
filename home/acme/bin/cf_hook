@@ -11,86 +11,13 @@ umask 0077
 # but still needs to delete.
 dns_cleanup_path="$BASEDIR/cf_dns_cleanup"
 
-# Makes a request to the Cloudflare API.
-cf_api() {
-	local path="$1"
-	# Shift off `$1` from this function's arguments so `$@` can refer to all
-	# the arguments except `$path`.
-	shift
-
-	local cf_api_base_url
-	cf_api_base_url=https://api.cloudflare.com/client/v4
-
-	# Load the Cloudflare API token from our Docker secrets.
-	local cf_api_token
-	cf_api_token="$(< /run/secrets/CF_API_TOKEN)"
-
-	local response_json
-	response_json="$(
-		curl -s "$cf_api_base_url$path" \
-			-H "Authorization: Bearer $cf_api_token" \
-			"$@"
-	)"
-
-	# Output any errors from the API response.
-	jq -cr '.errors[]' <<< "$response_json" |
-	while read -r error; do
-		echo "ERROR: $error" >&2
-	done
-
-	# If the request wasn't successful, exit the script.
-	if [[ "$(jq '.success' <<< "$response_json")" != "true" ]]; then
-		exit 1
-	fi
-
-	echo "$response_json"
-}
-
-# Gets the Cloudflare zone ID for a domain.
-get_zone_id() {
-	local domain="$1"
-
-	local zone_id
-	zone_id="$(
-		cf_api /zones --url-query "name=$domain" |
-		jq -r '.result[0].id'
-	)" || exit 1
-
-	if [[ "$zone_id" == "null" ]]; then
-		# If no zone is found, try again with one subdomain component
-		# removed. For example, Cloudflare won't find a zone for
-		# `mail.example.com`, but it can find a zone for `example.com`.
-		domain_without_subdomain="${domain#*.}"
-
-		# This is the initial domain from before any subdomain
-		# components were removed.
-		initial_domain="${INITIAL_DOMAIN:-$domain}"
-
-		# If removing a component from the domain results in a string
-		# with no periods, it's not even a valid domain anymore, so the
-		# failure to find a zone isn't merely a result of a subdomain's
-		# presence.
-		if [[ "$domain_without_subdomain" != *.* ]]; then
-			echo "ERROR: No Cloudflare zone found for domain '$initial_domain'." >&2
-			exit 1
-		fi
-
-		# Call this function again with one subdomain component removed.
-		INITIAL_DOMAIN="$initial_domain" \
-		get_zone_id "$domain_without_subdomain"
-		return 0
-	fi
-
-	echo "$zone_id"
-}
-
 # Deletes a DNS record and removes its information from our DNS cleanup file.
-clean_dns_record() {
+_clean_dns_record() {
 	local zone_id="$1" dns_record_name="$2" token_value="$3"
 
 	local dns_record_id
 	dns_record_id="$(
-		cf_api "/zones/$zone_id/dns_records" \
+		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
 			--url-query "name=$dns_record_name" \
 			--url-query "content=$token_value" |
@@ -99,7 +26,7 @@ clean_dns_record() {
 
 	# Only try to delete the DNS record if it was found.
 	if [[ "$dns_record_id" != "null" ]]; then
-		cf_api "/zones/$zone_id/dns_records/$dns_record_id" \
+		cf api "/zones/$zone_id/dns_records/$dns_record_id" \
 			-X DELETE > /dev/null
 	fi
 
@@ -120,7 +47,7 @@ clean_dns_record() {
 
 # Deletes any DNS records previously created by this script that never got
 # cleaned up.
-clean_old_challenges() {
+_clean_old_challenges() {
 	# Create our DNS cleanup file if it doesn't already exist.
 	touch "$dns_cleanup_path"
 
@@ -130,7 +57,7 @@ clean_old_challenges() {
 	while read -ra dns_record_info; do
 		# Pass the words in the array as arguments to our DNS cleanup
 		# function.
-		clean_dns_record "${dns_record_info[@]}"
+		_clean_dns_record "${dns_record_info[@]}"
 	done < "$dns_cleanup_path"
 }
 
@@ -142,7 +69,7 @@ deploy_challenge() {
 	# Create the `_acme-challenge` DNS record requested by `dehydrated`.
 
 	local zone_id
-	zone_id="$(get_zone_id "$domain")" || exit 1
+	zone_id="$(cf zone_id "$domain")" || exit 1
 
 	local dns_record_name
 	dns_record_name="_acme-challenge.$domain"
@@ -158,7 +85,7 @@ deploy_challenge() {
 	# don't lose this information, and we can still remove the record.
 	echo "$zone_id $dns_record_name $token_value" >> "$dns_cleanup_path"
 
-	cf_api "/zones/$zone_id/dns_records" \
+	cf api "/zones/$zone_id/dns_records" \
 		-X POST \
 		-H "Content-Type: application/json" \
 		--data-raw "$dns_record_data" > /dev/null
@@ -173,24 +100,12 @@ clean_challenge() {
 	local domain="$1" token_value="$3"
 
 	local zone_id
-	zone_id="$(get_zone_id "$domain")" || exit 1
+	zone_id="$(cf zone_id "$domain")" || exit 1
 
 	local dns_record_name
 	dns_record_name="_acme-challenge.$domain"
 
-	clean_dns_record "$zone_id" "$dns_record_name" "$token_value"
-}
-
-# `dehydrated` runs this after issuing or renewing certificates.
-deploy_cert() {
-	# Connect to the TCP server we created in our `usr/local/bin/start`
-	# script so it knows to update our certificates.
-	nc 127.0.0.1 13414 <<< "" ||
-	# Don't exit with an error if it fails to connect. That just means the
-	# TCP server isn't running yet. Our `start` script updates our
-	# certificate files before starting the TCP server anyway, so it's fine
-	# if it fails to update here first.
-	:
+	_clean_dns_record "$zone_id" "$dns_record_name" "$token_value"
 }
 
 # `dehydrated` runs this on each attempt to issue certificates before running
@@ -198,11 +113,11 @@ deploy_cert() {
 startup_hook() {
 	# Delete any DNS records previously created by this script that never
 	# got cleaned up.
-	clean_old_challenges
+	_clean_old_challenges
 }
 
 case "$1" in
-deploy_challenge | clean_challenge | deploy_cert | startup_hook)
+deploy_challenge | clean_challenge | startup_hook)
 	"$@"
 	;;
 esac

@@ -7,6 +7,11 @@ set -euo pipefail
 # script.
 umask 0077
 
+# Give users with access to our Cloudflare API token permission to use our
+# Cloudflare API script.
+chmod g+rx /usr/local/bin/cf
+chown root:cf-api-token /usr/local/bin/cf
+
 # Build our `etc/postfix/aliases` file so Postfix can use it.
 newaliases
 

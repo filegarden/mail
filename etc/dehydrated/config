@@ -22,7 +22,7 @@ BASEDIR=/home/acme/dehydrated
 
 # Tell `dehydrated` to use this script to automatically manage DNS records for
 # domain verification.
-HOOK=/home/acme/bin/cf_hook
+HOOK=/home/acme/bin/hook
 
 # Load the ACME account email from our Docker secrets so `dehydrated` can tell
 # our certificate authority where they can send us important notifications.

@@ -1,0 +1,86 @@
+#!/bin/bash
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# Makes a request to the Cloudflare API.
+api() {
+	local path="$1"
+	# Shift off `$1` from this function's arguments so `$@` can refer to all
+	# the arguments except `$path`.
+	shift
+
+	local cf_api_base_url
+	cf_api_base_url=https://api.cloudflare.com/client/v4
+
+	# Load the Cloudflare API token from our Docker secrets.
+	local cf_api_token
+	cf_api_token="$(< /run/secrets/CF_API_TOKEN)"
+
+	local response_json
+	response_json="$(
+		curl -s "$cf_api_base_url$path" \
+			-H "Authorization: Bearer $cf_api_token" \
+			"$@"
+	)"
+
+	# Output any errors from the API response.
+	jq -cr '.errors[]' <<< "$response_json" |
+	while read -r error; do
+		echo "ERROR: $error" >&2
+	done
+
+	# If the request wasn't successful, exit the script.
+	if [[ "$(jq '.success' <<< "$response_json")" != "true" ]]; then
+		exit 1
+	fi
+
+	echo "$response_json"
+}
+
+# Gets the Cloudflare zone ID for a domain.
+zone_id() {
+	local domain="$1"
+
+	local zone_id
+	zone_id="$(
+		api /zones --url-query "name=$domain" |
+		jq -r '.result[0].id'
+	)" || exit 1
+
+	# If no zone is found, try again with one subdomain component removed.
+	# For example, Cloudflare won't find a zone for `mail.example.com`, but
+	# it can find a zone for `example.com`.
+	if [[ "$zone_id" == "null" ]]; then
+		domain_without_subdomain="${domain#*.}"
+
+		# This is the initial domain from before any subdomain
+		# components were removed.
+		initial_domain="${INITIAL_DOMAIN:-$domain}"
+
+		# If removing a component from the domain results in a string
+		# with no periods, it's not even a valid domain anymore, so the
+		# failure to find a zone isn't merely a result of a subdomain's
+		# presence.
+		if [[ "$domain_without_subdomain" != *.* ]]; then
+			echo "ERROR: No Cloudflare zone found for domain '$initial_domain'." >&2
+			exit 1
+		fi
+
+		# Call this function again with one subdomain component removed.
+		INITIAL_DOMAIN="$initial_domain" \
+		zone_id "$domain_without_subdomain"
+		return 0
+	fi
+
+	echo "$zone_id"
+}
+
+case "$1" in
+api | zone_id)
+	"$@"
+	;;
+*)
+	exit 1
+	;;
+esac
