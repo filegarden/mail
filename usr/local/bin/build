@@ -3,6 +3,10 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
+# By default, don't let any non-privileged user access files created by this
+# script.
+umask 0077
+
 # Build our `etc/postfix/aliases` file so Postfix can use it.
 newaliases
 
@@ -14,17 +18,10 @@ touch /etc/auth/passwd
 chmod -R 0700 /etc/auth
 chown -R dovecot:dovecot /etc/auth
 
-# Create Postfix's TLS chain files, and give `dehydrated` only the bare minimum
-# access needed to output to them. (Postfix logs warnings if anyone but `root`
-# has any access, but the alternative is making a `setuid` `root` program only
-# `dehydrated` can execute, just to create the same effect anyway. There's no
-# reason for that, and in fact that would increase our attack surface.)
+# Create the Postfix TLS chain file directory with restricted permissions,
+# thanks to the `umask` this script sets above.
 postfix_tls_path=/etc/postfix/smtpd_tls_chain_files
 mkdir -p "$postfix_tls_path"
-touch "$postfix_tls_path/privkey.pem" "$postfix_tls_path/fullchain.pem"
-chmod -R 0660 "$postfix_tls_path"
-chmod 0750 "$postfix_tls_path"
-chown -R root:acme "$postfix_tls_path"
 
 # Run our build script for `dehydrated` as an unprivileged user.
 su acme -s /bin/sh -c /home/acme/bin/build

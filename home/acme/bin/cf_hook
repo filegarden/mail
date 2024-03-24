@@ -181,20 +181,16 @@ clean_challenge() {
 	clean_dns_record "$zone_id" "$dns_record_name" "$token_value"
 }
 
-# `dehydrated` runs this after our certificates are renewed.
+# `dehydrated` runs this after issuing or renewing certificates.
 deploy_cert() {
-	# These arguments are passed in by `dehydrated`.
-	local keyfile="$2" fullchainfile="$4"
-
-	# Set the Postfix TLS chain file path to the directory used in the
-	# `smtpd_tls_chain_files` option from `etc/postfix/main.cf`.
-	postfix_tls_path=/etc/postfix/smtpd_tls_chain_files
-
-	cat "$keyfile" > "$postfix_tls_path/privkey.pem"
-	cat "$fullchainfile" > "$postfix_tls_path/fullchain.pem"
-
-	# Reload Postfix after renewal so it can use the updated TLS files.
-	postfix reload
+	# Connect to the TCP server we created in our `usr/local/bin/start`
+	# script so it knows to update our certificates.
+	nc 127.0.0.1 13414 <<< "" ||
+	# Don't exit with an error if it fails to connect. That just means the
+	# TCP server isn't running yet. Our `start` script updates our
+	# certificate files before starting the TCP server anyway, so it's fine
+	# if it fails to update here first.
+	:
 }
 
 # `dehydrated` runs this on each attempt to issue certificates before running
