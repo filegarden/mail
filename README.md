@@ -1,5 +1,7 @@
 This README walks you through setting up your own instance of our mail server.
 
+**By using this, you agree to the Let's Encrypt Subscriber Agreement.**
+
 ## Configure your hostname
 
 Create a file named `compose.override.yaml` in your own copy of this repository, and paste the following into it:

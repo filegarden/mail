@@ -3,19 +3,21 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# By default, don't let `acme.sh` create files accessible to anyone but itself.
-# Otherwise, for example, the file it saves our Cloudflare API token to has all
-# read permissions enabled by default, which is needlessly lenient.
-umask 0007
+# By default, don't give created files access to anyone but the `acme` user this
+# script runs as.
+umask 0077
 
-# Create `acme.sh`'s configuration directory as the `acme` user this script runs
-# under, so that `acme.sh` will have access to it. Otherwise, it's created as a
-# Docker volume automatically, and only the `root` user is given access.
-mkdir -p ~/.acme.sh
+# Download the `dehydrated` script.
+dehydrated_url=https://raw.githubusercontent.com/dehydrated-io/dehydrated/master/dehydrated
+wget -O ~/bin/dehydrated "$dehydrated_url"
 
-# Set `acme.sh`'s default certificate authority to Let's Encrypt.
-# TODO: Remove `_test`.
-acme.sh --set-default-ca --server letsencrypt_test
+# Let the `acme` user execute the script.
+chmod 0700 ~/bin/dehydrated
+
+# Create `dehydrated`'s base directory under the `acme` user so `dehydrated` can
+# access it. Otherwise, it's created as a Docker volume automatically, and only
+# the `root` user is given access.
+mkdir -p ~/dehydrated
 
 # Delete this script. It only needs to exist during the Docker image build.
 rm "$0"

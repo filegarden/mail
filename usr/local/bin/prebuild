@@ -3,7 +3,7 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# Create an unprivileged user for `acme.sh` to run under.
+# Create an unprivileged user for `dehydrated` to run under.
 adduser \
     --disabled-password \
     --gecos "" \
@@ -15,7 +15,7 @@ adduser \
 # specified in `compose.yaml`.
 addgroup --gid 20001 cf-api-token
 
-# Give `acme.sh` access to our `CF_API_TOKEN` secret.
+# Give `dehydrated` access to our `CF_API_TOKEN` secret.
 adduser acme cf-api-token
 
 # Delete this script. It only needs to exist during the Docker image build.

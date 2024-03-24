@@ -1,0 +1,32 @@
+#!/bin/bash
+# This file is inlined into `dehydrated` to load the config, so the above
+# shebang must be compatible with `dehydrated`'s.
+
+# Disable unused variable warnings. These variables are used by `dehydrated`.
+# shellcheck disable=SC2034
+
+# The unprivileged user to run `dehydrated` under.
+DEHYDRATED_USER=acme
+DEHYDRATED_GROUP=acme
+
+# The certificate authority to request certificates from.
+CA=letsencrypt-test
+
+# Use our domain's DNS records to prove to the certificate authority (above)
+# that we own the domain we're requesting certificates for.
+CHALLENGETYPE=dns-01
+
+# Let `dehydrated` save files here so that it remembers what certificates to
+# renew, how to renew them, and when they'll expire.
+BASEDIR=/home/acme/dehydrated
+
+# Tell `dehydrated` to use this script to automatically manage DNS records for
+# domain verification.
+HOOK=/home/acme/bin/cf_hook
+
+# Load the ACME account email from our Docker secrets so `dehydrated` can tell
+# our certificate authority where they can send us important notifications.
+CONTACT_EMAIL="$(< /run/secrets/ACME_ACCOUNT_EMAIL)"
+
+# Automatically remove outdated certificate files not in use anymore.
+AUTO_CLEANUP=yes

@@ -35,10 +35,9 @@ services:
       # Persist our DKIM private keys.
       - dkim-db:/var/db/dkim
 
-      # Persist `acme.sh`'s configuration along with copies of our private key
-      # and certificate files for TLS, so `acme.sh` remembers what certificates
-      # to renew, how to renew them, and when they'll expire.
-      - acme.sh-home:/home/acme/.acme.sh
+      # Persist `dehydrated`'s base directory so it can remember what
+      # certificates to renew, how to renew them, and when they'll expire.
+      - dehydrated-basedir:/home/acme/dehydrated
 
     secrets:
       # The account email to give to Let's Encrypt, so that it can send us
@@ -63,7 +62,7 @@ volumes:
   postfix-tls:
   dovecot-db:
   dkim-db:
-  acme.sh-home:
+  dehydrated-basedir:
 
 # All secrets should be loaded from environment variables. You can load the
 # environment variables from your `.env` file by writing `source .env && `

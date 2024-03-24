@@ -12,12 +12,19 @@ RUN apk add --no-cache \
     opendkim \
     # Runs these simultaneously and combines their output.
     parallel \
-    # Automatically obtains and renews our hostname's TLS certificates for
-    # encrypting mail in transit.
-    acme.sh \
-    # Allows `cron`, the tool we use to schedule automatic jobs to run
-    # periodically, to work for unprivileged users.
-    busybox-suid
+    # The scripting language required to run `dehydrated`, which automatically
+    # obtains and renews our hostname's TLS certificates for encrypting mail in
+    # transit.
+    bash \
+    # The tool `dehydrated` uses to communicate with our certificate authority
+    # in order to issue and renew certificates.
+    curl \
+    # Allows `cron`, the tool we use to schedule automatic TLS certificate
+    # renewal, to work for unprivileged users.
+    busybox-suid \
+    # Lets us parse JSON results from Cloudflare's API, which we use to prove to
+    # Let's Encrypt that we own the domain we're requesting certificates for.
+    jq
 
 # Copy our scripts into the image, and set permissions to allow executing them.
 COPY --chmod=0500 usr/local/bin /usr/local/bin

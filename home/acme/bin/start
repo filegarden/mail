@@ -3,34 +3,22 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# By default, don't let `acme.sh` create files accessible to anyone but itself.
-umask 0007
+# Delete `dehydrated`'s lock file if it was left over from a previous time this
+# container ran. Otherwise `dehydrated` will refuse to run.
+rm -f ~/dehydrated/lock
 
 # Attempt to issue our TLS certificate.
 ~/bin/issue
 
-# Load the ACME account email from our Docker secrets so `acme.sh` can tell
-# Let's Encrypt where they can send us important notifications.
-acme_account_email="$(cat /run/secrets/ACME_ACCOUNT_EMAIL)"
-
-# Update our ACME account email to the above value.
-acme.sh --update-account --email "$acme_account_email"
-
 # Create a `cron` job to automatically check every 24 hours if TLS certificates
-# should be renewed. `acme.sh` renews certificates after 60 days. (Let's Encrypt
-# certificates expire after 90 days, so this renews them a month prior.)
+# should be renewed. `dehydrated` renews certificates 30 days before they
+# expire. (Let's Encrypt certificates expire after 90 days, so this renews them
+# every 60.)
 #
 # This job should be created when starting the container, not when building the
 # image, since otherwise, the job would still run during a `docker compose run`.
 # It would try to renew certificates, consuming Let's Encrypt's rate limit, even
 # though Postfix, the only program using the certificates, wouldn't be running.
-#
-# Normally, installing `acme.sh` would install a `cron` job automatically, but
-# `acme.sh`'s Alpine Linux package doesn't do that. `acme.sh`'s built-in `cron`
-# job can be installed using `acme.sh --install-cronjob`, but we actually don't
-# want that because the built-in job doesn't update `acme.sh`'s configuration
-# with new arguments (domain, Cloudflare API token, etc.) automatically. Our
-# custom issuing script used in this `cron` job can.
 #
 # Before creating the job, generate a random minute (0-59) and hour (0-23)
 # number. This will be the time of day at which renewal is checked every 24
