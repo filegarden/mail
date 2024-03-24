@@ -6,6 +6,9 @@ set -euo pipefail
 # Get our mail server's hostname (e.g. `mail.example.com`).
 hostname="$(hostname)"
 
+# Delete all outdated certificate files no longer in use.
+rm -rf ~/dehydrated/archive
+
 # Use `dehydrated` to issue a new TLS certificate for our hostname, and accept
 # the certificate authority's terms.
 ~/bin/dehydrated --cron --accept-terms --domain "$hostname"
