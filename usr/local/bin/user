@@ -22,11 +22,12 @@ fi
 # Our Dovecot password database path (from `etc/dovecot/conf.d/10-auth.conf`).
 passdb=/etc/auth/passwd
 
-# Escape the address so it can be safely used in a regex pattern.
-escaped_address="$(printf '%s' "$address" | sed -e 's/[$*./[\^]/\\&/g')"
+# Use a temporary file for writing to the password database to prevent
+# corrupting the original in case of a system failure.
+temp_passdb="$(mktemp)"
 
-# Remove the specified address from the database.
-sed -i "/^$escaped_address:/d" "$passdb"
+# If the specified address is already in the database, remove it.
+grep -Fvx "$address" "$passdb" > "$temp_passdb"
 
 # Randomly generate a cryptographically secure password in Base64. We generate
 # 192 bytes because that encodes into 256 Base64 characters, which is as close
@@ -37,8 +38,11 @@ password="$(openssl rand 192 | openssl base64 -A | cut -c -255)"
 # Hash the password using Argon2.
 password_hash="$(doveadm pw -s ARGON2ID -p "$password")"
 
-# Append the new user entry to the database file.
-echo "$address:$password_hash" >> "$passdb"
+# Append the new user entry to the database.
+echo "$address:$password_hash" >> "$temp_passdb"
+
+# Save the database.
+mv -f "$temp_passdb" "$passdb"
 
 # Get our mail server's hostname (e.g. `mail.example.com`).
 hostname="$(hostname)"

@@ -33,15 +33,17 @@ _clean_dns_record() {
 	# Get all the DNS record info passed into this function's arguments.
 	local dns_record_info="$*"
 
-	# Escape it so it can be safely used in a regex pattern.
-	local escaped_dns_record_info
-	escaped_dns_record_info="$(
-		sed -e 's/[$*./[\^]/\\&/g' <<< "$dns_record_info"
-	)"
+	# Use a temporary file for writing to our DNS cleanup file to prevent
+	# corrupting the original in case of a system failure.
+	temp_dns_cleanup_path="$(mktemp)"
 
-	# Now that the DNS record is deleted, remove its information from our
-	# DNS cleanup file.
-	sed -i "/^$escaped_dns_record_info$/d" "$dns_cleanup_path"
+	# Now that the DNS record is deleted, remove it from our DNS cleanup
+	# file.
+	grep -Fvx "$dns_record_info" "$dns_cleanup_path" \
+		> "$temp_dns_cleanup_path"
+
+	# Save the DNS cleanup file.
+	mv -f "$temp_dns_cleanup_path" "$dns_cleanup_path"
 }
 
 # Deletes any DNS records previously created by this script that never got
@@ -76,10 +78,18 @@ deploy_challenge() {
 
 	local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$token_value"'","comment":"'"$dns_record_comment"'"}'
 
+	# Use a temporary file for writing to our DNS cleanup file to prevent
+	# corrupting the original in case of a system failure.
+	temp_dns_cleanup_path="$(mktemp)"
+	cat "$dns_cleanup_path" > "$temp_dns_cleanup_path"
+
 	# Save some information about the DNS record we'll create. That way, for
 	# example if the container stops in the middle of the ACME challenge, we
 	# don't lose this information, and we can still remove the record.
-	echo "$zone_id $dns_record_name $token_value" >> "$dns_cleanup_path"
+	echo "$zone_id $dns_record_name $token_value" >> "$temp_dns_cleanup_path"
+
+	# Save the DNS cleanup file.
+	mv -f "$temp_dns_cleanup_path" "$dns_cleanup_path"
 
 	cf api "/zones/$zone_id/dns_records" \
 		-X POST \
