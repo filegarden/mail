@@ -29,7 +29,7 @@ api() {
 	# Output any errors from the API response.
 	jq -cr '.errors[]' <<< "$response_json" |
 	while read -r error; do
-		echo "ERROR: $error" >&2
+		echo "ERROR (Cloudflare API): $error" >&2
 	done
 
 	# If the request wasn't successful, exit the script.
