@@ -38,8 +38,9 @@ _clean_dns_record() {
 	temp_dns_cleanup_path="$(mktemp)"
 
 	# Now that the DNS record is deleted, remove it from our DNS cleanup
-	# file.
-	grep -Fvx "$dns_record_info" "$dns_cleanup_path" \
+	# file. If `grep` returns an error due to finding no matches, instead do
+	# nothing.
+	grep -Fvx "$dns_record_info" "$dns_cleanup_path" || : \
 		> "$temp_dns_cleanup_path"
 
 	# Save the DNS cleanup file.
