@@ -20,10 +20,10 @@ api() {
 	response_json="$(
 		# Make the HTTP request to Cloudflare's API using `curl`, with
 		# all of this function's arguments passed in.
-		curl -s "$cf_api_base_url$path" \
+		curl -LSs "$cf_api_base_url$path" \
 			-H "Authorization: Bearer $cf_api_token" \
 			"$@"
-	)"
+	)" || exit 1
 
 	# Output any errors from the API response.
 	jq -cr '.errors[]' <<< "$response_json" |
