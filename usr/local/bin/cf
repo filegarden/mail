@@ -10,8 +10,7 @@ api() {
 	# the arguments except `$path`.
 	shift
 
-	local cf_api_base_url
-	cf_api_base_url=https://api.cloudflare.com/client/v4
+	local cf_api_base_url=https://api.cloudflare.com/client/v4
 
 	# Load the Cloudflare API token from our Docker secrets.
 	local cf_api_token
@@ -55,11 +54,11 @@ zone_id() {
 	# For example, Cloudflare won't find a zone for `mail.example.com`, but
 	# it can find a zone for `example.com`.
 	if [[ "$zone_id" == "null" ]]; then
-		domain_without_subdomain="${domain#*.}"
+		local domain_without_subdomain="${domain#*.}"
 
 		# This is the initial domain from before any subdomain
 		# components were removed.
-		initial_domain="${INITIAL_DOMAIN:-$domain}"
+		local initial_domain="${INITIAL_DOMAIN:-$domain}"
 
 		# If removing a component from the domain results in a string
 		# with no periods, it's not even a valid domain anymore, so the

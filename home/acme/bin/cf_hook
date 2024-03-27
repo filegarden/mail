@@ -31,13 +31,12 @@ _clean_dns_record() {
 	fi
 
 	# Get all the DNS record info passed into this function's arguments.
-	local dns_record_info
-	dns_record_info="$*"
+	local dns_record_info="$*"
 
 	# Escape it so it can be safely used in a regex pattern.
 	local escaped_dns_record_info
 	escaped_dns_record_info="$(
-		printf '%s' "$dns_record_info" | sed -e 's/[$*./[\^]/\\&/g'
+		sed -e 's/[$*./[\^]/\\&/g' <<< "$dns_record_info"
 	)"
 
 	# Now that the DNS record is deleted, remove its information from our
@@ -71,14 +70,11 @@ deploy_challenge() {
 	local zone_id
 	zone_id="$(cf zone_id "$domain")" || exit 1
 
-	local dns_record_name
-	dns_record_name="_acme-challenge.$domain"
+	local dns_record_name="_acme-challenge.$domain"
 
-	local dns_record_comment
-	dns_record_comment="This record should be deleted automatically. If it isn't, feel free to delete it."
+	local dns_record_comment="This record should be deleted automatically. If it isn't, feel free to delete it."
 
-	local dns_record_data
-	dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$token_value"'","comment":"'"$dns_record_comment"'"}'
+	local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$token_value"'","comment":"'"$dns_record_comment"'"}'
 
 	# Save some information about the DNS record we'll create. That way, for
 	# example if the container stops in the middle of the ACME challenge, we
@@ -102,8 +98,7 @@ clean_challenge() {
 	local zone_id
 	zone_id="$(cf zone_id "$domain")" || exit 1
 
-	local dns_record_name
-	dns_record_name="_acme-challenge.$domain"
+	local dns_record_name="_acme-challenge.$domain"
 
 	_clean_dns_record "$zone_id" "$dns_record_name" "$token_value"
 }
