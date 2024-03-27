@@ -19,6 +19,8 @@ api() {
 
 	local response_json
 	response_json="$(
+		# Make the HTTP request to Cloudflare's API using `curl`, with
+		# all of this function's arguments passed in.
 		curl -s "$cf_api_base_url$path" \
 			-H "Authorization: Bearer $cf_api_token" \
 			"$@"
@@ -35,6 +37,7 @@ api() {
 		exit 1
 	fi
 
+	# The request was successful, so output the response JSON.
 	echo "$response_json"
 }
 
