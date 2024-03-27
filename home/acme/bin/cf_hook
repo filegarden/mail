@@ -7,8 +7,8 @@ set -euo pipefail
 # script runs as.
 umask 0077
 
-# Each line in this file has information about a DNS record this script created
-# but still needs to delete.
+# Each line in the below file has information about a DNS record this script
+# created but still needs to delete.
 dns_cleanup_path="$BASEDIR/cf_dns_cleanup"
 
 # Deletes a DNS record and removes its information from our DNS cleanup file.
