@@ -5,14 +5,15 @@ set -euo pipefail
 
 # `dehydrated` runs this after issuing or renewing certificates.
 deploy_cert() {
-	# Connect to the TCP server we created in our `usr/local/bin/start`
-	# script so it knows to update our certificates.
-	nc 127.0.0.1 38368 <<< "" ||
-	# Don't exit with an error if it fails to connect. That just means the
-	# TCP server isn't running yet. Our `start` script updates our
-	# certificate files before starting the TCP server anyway, so it's fine
-	# if it fails to update here first.
-	:
+	# Check if our `usr/local/bin/deploy_certs` script is running by
+	# checking if the named pipe it creates exists. The first time TLS
+	# certificates are issued and this script runs, nothing else is running
+	# yet.
+	if [[ -e /var/run/deploy_certs ]]; then
+		# Open the pipe for writing, informing our `deploy_certs` script
+		# that our certificates have updated.
+		printf '' > /var/run/deploy_certs
+	fi
 }
 
 case "$1" in

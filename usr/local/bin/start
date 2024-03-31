@@ -33,11 +33,8 @@ update_cert_files
 #     `-O /dev/stdout` tells it to output all logs to the container's output.
 #   * The `crond` command runs `cron`, which is for scheduling automatic jobs.
 #     We use it to schedule TLS certificate renewal.
-#   * This `nc` command starts a local TCP server that runs our `update_certs`
-#     script whenever it receives a connection. This runs as a privileged user,
-#     so our `dehydrated` hook script can connect to it in order to update
-#     Postfix's certificate files and reload Postfix despite `dehydrated`
-#     running as an unprivileged user.
+#   * Run our `usr/local/bin/deploy_certs` script. Whenever our certificate
+#     files update, this gives Postfix the updated files and reloads Postfix.
 #   * The other programs listed here are described in our `Dockerfile`.
 exec parallel \
     --halt now,done=1 \
@@ -46,7 +43,7 @@ exec parallel \
     ::: \
     "syslogd -n -O /dev/stdout" \
     "crond -f" \
-    "nc -lk -s 127.0.0.1 -p 38368 -e update_certs" \
+    "deploy_certs" \
     "postfix start-fg" \
     "dovecot -F" \
     "opendkim -f"
