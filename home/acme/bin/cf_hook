@@ -173,7 +173,7 @@ deploy_challenge() {
 
 	# Repeatedly check our DNS until we ensure our new record is there.
 	while true; do
-		sleep -- "$dns_sleep_seconds"
+		sleep "$dns_sleep_seconds"
 
 		# Get a list of all the DNS record data under this record name.
 		# Remove quotes because quotes are allowed around a TXT record's
