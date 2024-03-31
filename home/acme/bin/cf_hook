@@ -197,7 +197,7 @@ deploy_challenge() {
 			exit 1
 		fi
 
-		printf '%s\n' "DNS update for record '$r_dns_record_name' not found yet. Waiting $dns_sleep_seconds more seconds..."
+		printf '%s\n' "DNS update for record '$w_dns_record_name' not found yet. Waiting $dns_sleep_seconds more seconds..."
 	done
 }
 
