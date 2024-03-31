@@ -28,6 +28,8 @@ update_cert_files
 #   * `syslogd` is what handles system logs. `-n` runs it in the foreground, and
 #     `-O /dev/stdout` tells it to output all logs to the container's output.
 #     Most programs don't rely on syslog, but system processes and OpenDKIM do.
+#   * The `crond` command runs `cron`, which is for scheduling automatic jobs.
+#     We use it to schedule TLS certificate renewal.
 #   * This `nc` command starts a local TCP server that runs our `update_certs`
 #     script whenever it receives a connection. This runs as a privileged user,
 #     so our `dehydrated` hook script can connect to it in order to update
@@ -40,6 +42,7 @@ exec parallel \
     --jobs 0 \
     ::: \
     "syslogd -n -O /dev/stdout" \
+    "crond -f" \
     "nc -lk -s 127.0.0.1 -p 38368 -e update_certs" \
     "postfix start-fg" \
     "dovecot -F" \
