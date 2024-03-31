@@ -40,46 +40,76 @@ api() {
 	echo "$response_json"
 }
 
-# Gets the Cloudflare zone ID for a domain.
-zone_id() {
-	local domain="$1"
-
-	local zone_id
-	zone_id="$(
-		api /zones --url-query "name=$domain" |
-		jq -r '.result[0].id'
+# Gets the JSON value of the zone the Cloudflare API token has access to. If the
+# API token doesn't have access to exactly one zone, this returns an error.
+#
+# Note that which zone this returns can change without restarting the container
+# if the token's permissions are edited in Cloudflare.
+zone() {
+	# Get JSON values for all the zones the token has access to.
+	local zone_jsons
+	zone_jsons="$(
+		api /zones | jq -cr '.result[]'
 	)" || exit 1
 
-	# If no zone is found, try again with one subdomain component removed.
-	# For example, Cloudflare won't find a zone for `mail.example.com`, but
-	# it can find a zone for `example.com`.
-	if [[ "$zone_id" == "null" ]]; then
-		local domain_without_subdomain="${domain#*.}"
-
-		# This is the initial domain from before any subdomain
-		# components were removed.
-		local initial_domain="${INITIAL_DOMAIN:-$domain}"
-
-		# If removing a component from the domain results in a string
-		# with no periods, it's not even a valid domain anymore, so the
-		# failure to find a zone isn't merely a result of a subdomain's
-		# presence.
-		if [[ "$domain_without_subdomain" != *.* ]]; then
-			echo "ERROR: No Cloudflare zone found for domain '$initial_domain'." >&2
-			exit 1
-		fi
-
-		# Call this function again with one subdomain component removed.
-		INITIAL_DOMAIN="$initial_domain" \
-		zone_id "$domain_without_subdomain"
-		return 0
+	# Check if the token doesn't have access to any zones.
+	if [[ -z "$zone_jsons" ]]; then
+		echo "ERROR: Your Cloudflare API token cannot access any zones. Please enable its permission to edit DNS for a zone." >&2
+		exit 1
 	fi
 
-	echo "$zone_id"
+	# Check if the token has access to multiple zones.
+	if [[ "$zone_jsons" == *$'\n'* ]]; then
+		echo "ERROR: Your Cloudflare API token can access multiple zones, which is insecure. Please restrict its permissions so it can only edit DNS for a single zone." >&2
+		exit 1
+	fi
+
+	# Now that we're sure there's only one zone, output it.
+	echo "$zone_jsons"
+}
+
+# Calls one of the below DNS functions.
+dns() {
+	local subcommand="$1"
+	shift
+
+	case "$subcommand" in
+	query | purge)
+		"dns_$subcommand" "$@"
+		;;
+	*)
+		exit 1
+		;;
+	esac
+}
+
+# Makes a query to Cloudflare's DNS.
+dns_query() {
+	local type="$1" name="$2"
+
+	# Refresh Cloudflare's DNS cache for the record we're querying so we get
+	# the most updated answer.
+	cf dns purge "$type" "$name"
+
+	curl -LSs -X GET https://cloudflare-dns.com/dns-query \
+		--url-query "type=$type" \
+		--url-query "name=$name" \
+		-H "Accept: application/dns-json" \
+		--fail-with-body
+}
+
+# Refreshes Cloudflare's DNS cache.
+dns_purge() {
+	local type="$1" domain="$2"
+
+	curl -LSs -X POST https://cloudflare-dns.com/api/v1/purge \
+		--url-query "type=$type" \
+		--url-query "domain=$domain" \
+		--fail-with-body > /dev/null
 }
 
 case "$1" in
-api | zone_id)
+api | zone | dns)
 	"$@"
 	;;
 *)
