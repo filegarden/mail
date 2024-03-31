@@ -7,6 +7,10 @@ set -euo pipefail
 # script.
 umask 0077
 
+# Remove all default `cron` jobs. They run scripts from certain directories, but
+# we leave those directories empty, so the jobs are useless.
+crontab -r
+
 # Give users with access to our Cloudflare API token permission to use our
 # Cloudflare API script.
 chmod g+rx /usr/local/bin/cf
