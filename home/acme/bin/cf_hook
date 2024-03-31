@@ -159,8 +159,45 @@ deploy_challenge() {
 		-H "Content-Type: application/json" \
 		--data-raw "$dns_record_data" > /dev/null
 
-	echo "Waiting 20 seconds for DNS records to propagate..."
-	sleep 20
+	# Reset Bash's timer to 0. It will count up from here.
+	SECONDS=0
+
+	# Check our DNS this often.
+	local dns_sleep_seconds=5
+
+	# Give up checking after this duration.
+	local dns_timeout_seconds=1200
+
+	echo "Waiting $dns_sleep_seconds seconds for your DNS to update..."
+
+	# Repeatedly check our DNS until we ensure our new record is there.
+	while true; do
+		sleep "$dns_sleep_seconds"
+
+		# Get a list of all the DNS record data under this record name.
+		# Remove quotes because quotes are allowed around a TXT record's
+		# data.
+		local dns_record_answers
+		dns_record_answers="$(
+			cf dns query TXT "$w_dns_record_name" |
+			jq -r '.Answer[]?.data' |
+			sed 's/^"\(.*\)"$/\1/'
+		)" || exit 1
+
+		# If any of the results match the DNS record we created, we can
+		# stop checking for our DNS record.
+		if grep -Fqx "$token_value" <<< "$dns_record_answers"; then
+			echo "Updated DNS record found."
+			break
+		fi
+
+		if [[ "$SECONDS" -gt "$dns_timeout_seconds" ]]; then
+			echo "Timed out. DNS updates shouldn't take this long, so something is probably wrong." >&2
+			exit 1
+		fi
+
+		echo "DNS update for record '$r_dns_record_name' not found yet. Waiting $dns_sleep_seconds more seconds..."
+	done
 }
 
 # `dehydrated` runs this after a domain is validated.
