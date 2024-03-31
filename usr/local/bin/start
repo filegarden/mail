@@ -27,7 +27,6 @@ update_cert_files
 #   in the foreground also makes their output appear in the container's output.
 #   * `syslogd` is what handles system logs. `-n` runs it in the foreground, and
 #     `-O /dev/stdout` tells it to output all logs to the container's output.
-#     Most programs don't rely on syslog, but system processes and OpenDKIM do.
 #   * The `crond` command runs `cron`, which is for scheduling automatic jobs.
 #     We use it to schedule TLS certificate renewal.
 #   * This `nc` command starts a local TCP server that runs our `update_certs`
