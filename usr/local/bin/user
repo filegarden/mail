@@ -28,7 +28,7 @@ temp_passdb="$(mktemp)"
 
 # If the specified address is already in the database, remove it. If `grep`
 # returns an error due to finding no matches, instead do nothing.
-grep -Fvx "$address" "$passdb" || : > "$temp_passdb"
+grep -Fvx -- "$address" "$passdb" || : > "$temp_passdb"
 
 # Randomly generate a cryptographically secure password in Base64. We generate
 # 192 bytes because that encodes into 256 Base64 characters, which is as close
@@ -40,10 +40,10 @@ password="$(openssl rand 192 | openssl base64 -A | cut -c -255)"
 password_hash="$(doveadm pw -s ARGON2ID -p "$password")"
 
 # Append the new user entry to the database.
-echo "$address:$password_hash" >> "$temp_passdb"
+printf '%s\n' "$address:$password_hash" >> "$temp_passdb"
 
 # Save the database.
-mv -f "$temp_passdb" "$passdb"
+mv -f -- "$temp_passdb" "$passdb"
 
 # Get our mail server's hostname (e.g. `mail.example.com`).
 hostname="$(hostname)"

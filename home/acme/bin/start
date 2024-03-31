@@ -26,4 +26,4 @@ rm -f ~/dehydrated/lock
 # massive number of servers renewing at midnight or a precise hour.
 random_minute="$(shuf -i 0-59 -n 1)"
 random_hour="$(shuf -i 0-23 -n 1)"
-echo "$random_minute $random_hour * * * ~/bin/issue" | crontab -
+printf '%s\n' "$random_minute $random_hour * * * ~/bin/issue" | crontab -

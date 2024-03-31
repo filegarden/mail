@@ -26,7 +26,7 @@ chown -R dovecot:dovecot /etc/auth
 # Create the Postfix TLS chain file directory with restricted permissions,
 # thanks to the `umask` this script sets above.
 postfix_tls_path=/etc/postfix/smtpd_tls_chain_files
-mkdir -p "$postfix_tls_path"
+mkdir -p -- "$postfix_tls_path"
 
 # Run our build script for `dehydrated` as an unprivileged user.
 su acme -s /bin/sh -c /home/acme/bin/build
@@ -36,4 +36,4 @@ chmod 0700 /var/db/dkim
 chown opendkim:opendkim /var/db/dkim
 
 # Delete this script. It only needs to exist during the Docker image build.
-rm "$0"
+rm -f -- "$0"

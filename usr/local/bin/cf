@@ -20,15 +20,16 @@ api() {
 	response_json="$(
 		# Make the HTTP request to Cloudflare's API using `curl`, with
 		# all of this function's arguments passed in.
-		curl -LSs "$cf_api_base_url$path" \
+		curl -LSs \
 			-H "Authorization: Bearer $cf_api_token" \
-			"$@"
+			"$@" \
+			-- "$cf_api_base_url$path"
 	)" || exit 1
 
 	# Output any errors from the API response.
 	jq -cr '.errors[]' <<< "$response_json" |
 	while read -r error; do
-		echo "ERROR (Cloudflare API): $error" >&2
+		printf '%s\n' "ERROR (Cloudflare API): $error" >&2
 	done
 
 	# If the request wasn't successful, exit the script.
@@ -37,7 +38,7 @@ api() {
 	fi
 
 	# The request was successful, so output the response JSON.
-	echo "$response_json"
+	printf '%s\n' "$response_json"
 }
 
 # Gets the JSON value of the zone the Cloudflare API token has access to. If the
@@ -54,18 +55,18 @@ zone() {
 
 	# Check if the token doesn't have access to any zones.
 	if [[ -z "$zone_jsons" ]]; then
-		echo "ERROR: Your Cloudflare API token cannot access any zones. Please enable its permission to edit DNS for a zone." >&2
+		printf '%s\n' "ERROR: Your Cloudflare API token cannot access any zones. Please enable its permission to edit DNS for a zone." >&2
 		exit 1
 	fi
 
 	# Check if the token has access to multiple zones.
 	if [[ "$zone_jsons" == *$'\n'* ]]; then
-		echo "ERROR: Your Cloudflare API token can access multiple zones, which is insecure. Please restrict its permissions so it can only edit DNS for a single zone." >&2
+		printf '%s\n' "ERROR: Your Cloudflare API token can access multiple zones, which is insecure. Please restrict its permissions so it can only edit DNS for a single zone." >&2
 		exit 1
 	fi
 
 	# Now that we're sure there's only one zone, output it.
-	echo "$zone_jsons"
+	printf '%s\n' "$zone_jsons"
 }
 
 # Calls one of the below DNS functions.

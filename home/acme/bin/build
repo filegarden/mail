@@ -9,7 +9,7 @@ umask 0077
 
 # Download the `dehydrated` script.
 dehydrated_url=https://raw.githubusercontent.com/dehydrated-io/dehydrated/master/dehydrated
-wget -O ~/bin/dehydrated "$dehydrated_url"
+wget -O ~/bin/dehydrated -- "$dehydrated_url"
 
 # Let the `acme` user execute the script.
 chmod 0700 ~/bin/dehydrated
@@ -20,4 +20,4 @@ chmod 0700 ~/bin/dehydrated
 mkdir -p ~/dehydrated
 
 # Delete this script. It only needs to exist during the Docker image build.
-rm "$0"
+rm -f -- "$0"

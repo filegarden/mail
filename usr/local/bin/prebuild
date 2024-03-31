@@ -19,4 +19,4 @@ addgroup --gid 20001 cf-api-token
 adduser acme cf-api-token
 
 # Delete this script. It only needs to exist during the Docker image build.
-rm "$0"
+rm -f -- "$0"

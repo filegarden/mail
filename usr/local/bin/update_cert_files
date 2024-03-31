@@ -18,5 +18,5 @@ acme_certs_path="/home/acme/dehydrated/certs/$hostname"
 postfix_tls_path=/etc/postfix/smtpd_tls_chain_files
 
 # Copy the contents of the new certificate files to Postfix's directory.
-cat "$acme_certs_path/privkey.pem" > "$postfix_tls_path/privkey.pem"
-cat "$acme_certs_path/fullchain.pem" > "$postfix_tls_path/fullchain.pem"
+cat -- "$acme_certs_path/privkey.pem" > "$postfix_tls_path/privkey.pem"
+cat -- "$acme_certs_path/fullchain.pem" > "$postfix_tls_path/fullchain.pem"

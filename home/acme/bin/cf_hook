@@ -41,11 +41,11 @@ _clean_dns_record() {
 	# Now that the DNS record is deleted, remove it from our DNS cleanup
 	# file. If `grep` returns an error due to finding no matches, instead do
 	# nothing.
-	grep -Fvx "$dns_record_name $token_value" "$dns_cleanup_path" || : \
+	grep -Fvx -- "$dns_record_name $token_value" "$dns_cleanup_path" || : \
 		> "$temp_dns_cleanup_path"
 
 	# Save the DNS cleanup file.
-	mv -f "$temp_dns_cleanup_path" "$dns_cleanup_path"
+	mv -f -- "$temp_dns_cleanup_path" "$dns_cleanup_path"
 }
 
 # Deletes any DNS records previously created by this script that never got
@@ -56,7 +56,7 @@ _clean_old_challenges() {
 	local zone_id="$1"
 
 	# Create our DNS cleanup file if it doesn't already exist.
-	touch "$dns_cleanup_path"
+	touch -- "$dns_cleanup_path"
 
 	# Read each line from our DNS cleanup file, and split each line's words
 	# into a Bash array.
@@ -75,7 +75,7 @@ deploy_challenge() {
 
 	# Create the `_acme-challenge` DNS record requested by `dehydrated`.
 
-	echo "Fetching your Cloudflare zone information..."
+	printf '%s\n' "Fetching your Cloudflare zone information..."
 
 	local zone_json
 	zone_json="$(cf zone)" || exit 1
@@ -86,7 +86,7 @@ deploy_challenge() {
 	local zone_name
 	zone_name="$(jq -r '.name' <<< "$zone_json")"
 
-	echo "Zone '$zone_name' found."
+	printf '%s\n' "Zone '$zone_name' found."
 
 	# The DNS record Let's Encrypt will read (hence "r") to check for our
 	# ACME token.
@@ -103,7 +103,7 @@ deploy_challenge() {
 
 		w_dns_record_name="$r_dns_record_name.$zone_name"
 
-		echo "The domain '$domain' being validated is outside the zone '$zone_name' your Cloudflare token has access to. Verifying CNAME..."
+		printf '%s\n' "The domain '$domain' being validated is outside the zone '$zone_name' your Cloudflare token has access to. Verifying CNAME..."
 
 		# Get the value of the CNAME record (if there is one).
 		local cname
@@ -132,7 +132,7 @@ deploy_challenge() {
 			exit 1
 		fi
 
-		echo "CNAME verified."
+		printf '%s\n' "CNAME verified."
 	fi
 
 	local dns_record_comment="This record should be deleted automatically. If it isn't, feel free to delete it."
@@ -142,17 +142,18 @@ deploy_challenge() {
 	# Use a temporary file for writing to our DNS cleanup file to prevent
 	# corrupting the original in case of a system failure.
 	temp_dns_cleanup_path="$(mktemp)"
-	cat "$dns_cleanup_path" > "$temp_dns_cleanup_path"
+	cat -- "$dns_cleanup_path" > "$temp_dns_cleanup_path"
 
 	# Save some information about the DNS record we'll create. That way, for
 	# example if the container stops in the middle of the ACME challenge, we
 	# don't lose this information, and we can still remove the record.
-	echo "$w_dns_record_name $token_value" >> "$temp_dns_cleanup_path"
+	printf '%s\n' "$w_dns_record_name $token_value" \
+		>> "$temp_dns_cleanup_path"
 
 	# Save the DNS cleanup file.
-	mv -f "$temp_dns_cleanup_path" "$dns_cleanup_path"
+	mv -f -- "$temp_dns_cleanup_path" "$dns_cleanup_path"
 
-	echo "Creating DNS record '$w_dns_record_name'..."
+	printf '%s\n' "Creating DNS record '$w_dns_record_name'..."
 
 	cf api "/zones/$zone_id/dns_records" \
 		-X POST \
@@ -168,11 +169,11 @@ deploy_challenge() {
 	# Give up checking after this duration.
 	local dns_timeout_seconds=1200
 
-	echo "Waiting $dns_sleep_seconds seconds for your DNS to update..."
+	printf '%s\n' "Waiting $dns_sleep_seconds seconds for your DNS to update..."
 
 	# Repeatedly check our DNS until we ensure our new record is there.
 	while true; do
-		sleep "$dns_sleep_seconds"
+		sleep -- "$dns_sleep_seconds"
 
 		# Get a list of all the DNS record data under this record name.
 		# Remove quotes because quotes are allowed around a TXT record's
@@ -186,17 +187,17 @@ deploy_challenge() {
 
 		# If any of the results match the DNS record we created, we can
 		# stop checking for our DNS record.
-		if grep -Fqx "$token_value" <<< "$dns_record_answers"; then
-			echo "Updated DNS record found."
+		if grep -Fqx -- "$token_value" <<< "$dns_record_answers"; then
+			printf '%s\n' "Updated DNS record found."
 			break
 		fi
 
 		if [[ "$SECONDS" -gt "$dns_timeout_seconds" ]]; then
-			echo "Timed out. DNS updates shouldn't take this long, so something is probably wrong." >&2
+			printf '%s\n' "Timed out. DNS updates shouldn't take this long, so something is probably wrong." >&2
 			exit 1
 		fi
 
-		echo "DNS update for record '$r_dns_record_name' not found yet. Waiting $dns_sleep_seconds more seconds..."
+		printf '%s\n' "DNS update for record '$r_dns_record_name' not found yet. Waiting $dns_sleep_seconds more seconds..."
 	done
 }
 
@@ -212,7 +213,7 @@ clean_challenge() {
 	# record in our DNS cleanup file.
 	local dns_record_info
 	read -ra dns_record_info < <(
-		grep -F " $token_value" "$dns_cleanup_path"
+		grep -F -- " $token_value" "$dns_cleanup_path"
 	)
 
 	_clean_dns_record "$zone_id" "${dns_record_info[@]}"
