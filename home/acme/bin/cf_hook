@@ -36,7 +36,7 @@ _clean_dns_record() {
 
 	# Use a temporary file for writing to our DNS cleanup file to prevent
 	# corrupting the original in case of a system failure.
-	temp_dns_cleanup_path="$(mktemp)"
+	temp_dns_cleanup_path="$(mktemp -u)"
 
 	# Now that the DNS record is deleted, remove it from our DNS cleanup
 	# file. If `grep` returns an error due to finding no matches, instead do
@@ -141,8 +141,8 @@ deploy_challenge() {
 
 	# Use a temporary file for writing to our DNS cleanup file to prevent
 	# corrupting the original in case of a system failure.
-	temp_dns_cleanup_path="$(mktemp)"
-	cat -- "$dns_cleanup_path" > "$temp_dns_cleanup_path"
+	temp_dns_cleanup_path="$(mktemp -u)"
+	cp -- "$dns_cleanup_path" "$temp_dns_cleanup_path"
 
 	# Save some information about the DNS record we'll create. That way, for
 	# example if the container stops in the middle of the ACME challenge, we

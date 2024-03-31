@@ -24,7 +24,7 @@ passdb=/etc/auth/passwd
 
 # Use a temporary file for writing to the password database to prevent
 # corrupting the original in case of a system failure.
-temp_passdb="$(mktemp)"
+temp_passdb="$(mktemp -u)"
 
 # If the specified address is already in the database, remove it. If `grep`
 # returns an error due to finding no matches, instead do nothing.
