@@ -19,5 +19,18 @@ chmod 0700 ~/bin/dehydrated
 # the `root` user is given access.
 mkdir -p ~/dehydrated
 
+# Create a `cron` job to automatically check every 24 hours if TLS certificates
+# should be renewed. `dehydrated` renews certificates 30 days before they
+# expire. (Let's Encrypt certificates expire after 90 days, so this renews them
+# every 60.)
+#
+# Before creating the job, generate a random minute (0-59) and hour (0-23)
+# number. This will be the time of day at which renewal is checked every 24
+# hours. It's best to randomize this to reduce load on Let's Encrypt due to the
+# massive number of servers renewing at midnight or a precise hour.
+random_minute="$(shuf -i 0-59 -n 1)"
+random_hour="$(shuf -i 0-23 -n 1)"
+printf '%s\n' "$random_minute $random_hour * * * ~/bin/issue" | crontab -
+
 # Delete this script. It only needs to exist during the Docker image build.
 rm -f -- "$0"
