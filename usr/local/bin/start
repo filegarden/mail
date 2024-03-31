@@ -3,8 +3,12 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
+# Delete `dehydrated`'s lock file if it was left over from a previous time this
+# container ran. Otherwise `dehydrated` will refuse to run.
+rm -f /home/acme/dehydrated/lock
+
 # Run our TLS certificate issuing script as the unprivileged `acme` user.
-su acme -s /bin/sh -c /home/acme/bin/start
+su acme -s /bin/sh -c /home/acme/bin/issue
 
 # Run our DKIM key generation script as the unprivileged `opendkim` user.
 su opendkim -s /bin/sh -c /home/opendkim/bin/genkey
