@@ -15,6 +15,8 @@ su opendkim -s /bin/sh -c /home/opendkim/bin/genkey
 # have missed that initial update.
 update_cert_files
 
+# Run everything needed for our mail server in parallel, replacing this script's
+# shell process (using `exec`) since the shell is no longer needed.
 # * If one of the below processes exits, also halt the others so the container
 #   can restart.
 # * Ensure different lines logged at the same time don't intermingle.
@@ -33,7 +35,7 @@ update_cert_files
 #     Postfix's certificate files and reload Postfix despite `dehydrated`
 #     running as an unprivileged user.
 #   * The other programs listed here are described in our `Dockerfile`.
-parallel \
+exec parallel \
     --halt now,done=1 \
     --line-buffer \
     --jobs 0 \
