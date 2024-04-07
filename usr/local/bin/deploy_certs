@@ -21,6 +21,6 @@ while true; do
 	# Give the updated certificate files to Postfix.
 	update_cert_files
 
-	# Reload Postfix so it can use the updated certificate files.
+	# Reload Postfix so it can use the updated files.
 	postfix reload
 done
