@@ -50,7 +50,7 @@ zone() {
 	# Get JSON values for all the zones the token has access to.
 	local zone_jsons
 	zone_jsons="$(
-		api /zones | jq -cr '.result[]'
+		cf api /zones | jq -cr '.result[]'
 	)" || exit 1
 
 	# Check if the token doesn't have access to any zones.
