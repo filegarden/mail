@@ -7,7 +7,7 @@ set -euo pipefail
 # communicate with this script, and give it the necessary permissions to access
 # the pipe.
 mkfifo -m 0620 /var/run/deploy_certs
-chown root:acme /var/run/deploy_certs
+chgrp acme /var/run/deploy_certs
 
 # Repeatedly do the following forever.
 while true; do
