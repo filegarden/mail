@@ -7,10 +7,6 @@ set -euo pipefail
 # script.
 umask 0077
 
-# Remove all default `cron` jobs. They run scripts from certain directories, but
-# we leave those directories empty, so the jobs are useless.
-crontab -r
-
 # Give users with access to our Cloudflare API token permission to use our
 # Cloudflare API script.
 chmod g+rx /usr/local/bin/cf
@@ -31,8 +27,27 @@ chgrp -R dovecot /etc/auth
 # Create the Postfix TLS chain file directory.
 mkdir -p /etc/postfix/smtpd_tls_chain_files
 
-# Run our build script for `dehydrated` as an unprivileged user.
-su acme -s /bin/sh -c /home/acme/bin/build
+# Download `dehydrated`.
+dehydrated_url=https://raw.githubusercontent.com/dehydrated-io/dehydrated/master/dehydrated
+wget -O /home/acme/bin/dehydrated -- "$dehydrated_url"
+
+# Let the `acme` user run `dehydrated`.
+chmod u+x /home/acme/bin/dehydrated
+chown acme:acme /home/acme/bin/dehydrated
+
+# Create `dehydrated`'s base directory, and give the `acme` user access.
+mkdir -p /home/acme/dehydrated
+chown acme:acme /home/acme/dehydrated
+
+# Create a `cron` job to automatically run our `daily` script every 24 hours.
+# Generate a random hour number (0-23) and minute number (0-59) as the time of
+# day to run the script. Since the script can renew our TLS certificates, it's
+# best to randomize the time of day to reduce load on Let's Encrypt due to the
+# massive number of servers renewing at midnight or a precise hour.
+random_hour="$(shuf -i 0-23 -n 1)"
+random_minute="$(shuf -i 0-59 -n 1)"
+printf '%s\n' "$random_minute $random_hour * * * /usr/local/bin/daily" |
+crontab -
 
 # Create a directory our DKIM key generation script can output private keys to.
 mkdir -p /home/dkim/keys
