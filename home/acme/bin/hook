@@ -9,10 +9,10 @@ deploy_cert() {
 	# checking if the named pipe it creates exists. The first time TLS
 	# certificates are issued and this script runs, nothing else is running
 	# yet.
-	if [[ -e /var/run/deploy_certs ]]; then
+	if [[ -e /run/deploy_certs ]]; then
 		# Open the pipe for writing, informing our `deploy_certs` script
 		# that our certificates have updated.
-		printf '' > /var/run/deploy_certs
+		printf '' > /run/deploy_certs
 	fi
 }
 

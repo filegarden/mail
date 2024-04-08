@@ -6,8 +6,8 @@ set -euo pipefail
 # Create the named pipe we'll use to let our `home/acme/bin/hook` script
 # communicate with this script, and give it the necessary permissions to access
 # the pipe.
-mkfifo -m 0620 /var/run/deploy_certs
-chgrp acme /var/run/deploy_certs
+mkfifo -m 0620 /run/deploy_certs
+chgrp acme /run/deploy_certs
 
 # Repeatedly do the following forever.
 while true; do
@@ -16,7 +16,7 @@ while true; do
 	# that `dehydrated` has updated our TLS certificates. We don't care
 	# about any data written to the pipe, only that it's opened for writing,
 	# so discard any data that comes through.
-	cat /var/run/deploy_certs > /dev/null
+	cat /run/deploy_certs > /dev/null
 
 	# Give the updated certificate files to Postfix.
 	update_cert_files
