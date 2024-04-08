@@ -1,4 +1,0 @@
-#!/bin/busybox sh
-
-# Exit if an error occurs or an unset variable is referenced.
-set -euo pipefail
