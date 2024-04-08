@@ -3,6 +3,10 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
+# By default, use maximally restrictive permissions for new files created by
+# this container.
+umask 0077
+
 # Delete `dehydrated`'s lock file if it was left over from a previous time this
 # container ran. Otherwise `dehydrated` will refuse to run.
 rm -f /home/acme/dehydrated/lock

@@ -3,8 +3,7 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# By default, don't let any non-privileged user access files created by this
-# script.
+# By default, don't let unprivileged users access files created by this script.
 umask 0077
 
 # Give users with access to our Cloudflare API token permission to use our

@@ -3,10 +3,6 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# By default, don't give created files access to anyone but the `acme` user this
-# script runs as.
-umask 0077
-
 reset=$'\e[0m'
 gray=$'\e[90m'
 lblue=$'\e[1;34m'

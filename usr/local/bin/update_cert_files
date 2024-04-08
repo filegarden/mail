@@ -3,10 +3,6 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# By default, don't let any non-privileged user access files created by this
-# script.
-umask 0077
-
 # Get our mail server's hostname (e.g. `mail.example.com`).
 hostname="$(hostname)"
 
