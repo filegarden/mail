@@ -27,10 +27,8 @@ touch /etc/auth/passwd
 chmod -R 0700 /etc/auth
 chown -R dovecot:dovecot /etc/auth
 
-# Create the Postfix TLS chain file directory with restricted permissions,
-# thanks to the `umask` this script sets above.
-postfix_tls_path=/etc/postfix/smtpd_tls_chain_files
-mkdir -p -- "$postfix_tls_path"
+# Create the Postfix TLS chain file directory.
+mkdir -p /etc/postfix/smtpd_tls_chain_files
 
 # Run our build script for `dehydrated` as an unprivileged user.
 su acme -s /bin/sh -c /home/acme/bin/build

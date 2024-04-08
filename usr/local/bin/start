@@ -18,16 +18,10 @@ su acme -s /bin/sh -c /home/acme/bin/issue
 # Run our DKIM key generation script as the unprivileged `dkim` user.
 su dkim -s /bin/sh -c /home/dkim/bin/genkey
 
-# Update our certificate files before starting the mail server since our above
-# `home/acme/bin/start` script could have changed them, and the below
-# `deploy_certs` script that waits for certificate updates to run this hasn't
-# started yet, so it could have missed that initial update.
+# Update our TLS certificate files.
 update_cert_files
 
-# Update our DKIM files before starting the mail server since our above
-# `home/dkim/bin/genkey` script could have changed them, and the below
-# `deploy_dkim` script that waits for DKIM private key updates to run this
-# hasn't started yet, so it could have missed that initial update.
+# Update our DKIM files.
 update_dkim_files
 
 # Run everything needed for our mail server in parallel, replacing this script's

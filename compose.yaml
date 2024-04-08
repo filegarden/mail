@@ -26,17 +26,14 @@ services:
       # Persist Postfix's queue directory so queued mail isn't lost on restart.
       - postfix-queue:/var/spool/postfix
 
-      # Persist Postfix's copy of our private key and certificate files for TLS.
-      - postfix-tls:/etc/postfix/smtpd_tls_chain_files
-
       # Persist our Dovecot database.
       - dovecot-db:/etc/auth
 
       # Persist our DKIM private keys.
       - dkim-keys:/home/dkim/keys
 
-      # Persist `dehydrated`'s base directory so it can remember what
-      # certificates to renew, how to renew them, and when they'll expire.
+      # Persist `dehydrated`'s base directory with our TLS certificates and
+      # related files.
       - dehydrated-basedir:/home/acme/dehydrated
 
     secrets:
@@ -59,7 +56,6 @@ services:
 
 volumes:
   postfix-queue:
-  postfix-tls:
   dovecot-db:
   dkim-keys:
   dehydrated-basedir:
