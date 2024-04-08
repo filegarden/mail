@@ -33,7 +33,7 @@ services:
       - dovecot-db:/etc/auth
 
       # Persist our DKIM private keys.
-      - dkim-db:/var/db/dkim
+      - dkim-keys:/home/dkim/keys
 
       # Persist `dehydrated`'s base directory so it can remember what
       # certificates to renew, how to renew them, and when they'll expire.
@@ -61,7 +61,7 @@ volumes:
   postfix-queue:
   postfix-tls:
   dovecot-db:
-  dkim-db:
+  dkim-keys:
   dehydrated-basedir:
 
 # All secrets should be loaded from environment variables. You can load the

@@ -35,9 +35,14 @@ mkdir -p -- "$postfix_tls_path"
 # Run our build script for `dehydrated` as an unprivileged user.
 su acme -s /bin/sh -c /home/acme/bin/build
 
-# Only let OpenDKIM access our private keys.
-chmod 0700 /var/db/dkim
-chown opendkim:opendkim /var/db/dkim
+# Create a directory our DKIM key generation script can output private keys to.
+mkdir -p /home/dkim/keys
+chown dkim:dkim /home/dkim/keys
+
+# Create the directory OpenDKIM accesses our keys from. To prevent it from
+# outputting security warnings, no user but `opendkim` can have access to this,
+# which is why our DKIM key generation script can't output keys here directly.
+mkdir -p /var/db/dkim
 
 # Delete this script. It only needs to exist during the Docker image build.
 rm -f -- "$0"

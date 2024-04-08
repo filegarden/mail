@@ -1,0 +1,12 @@
+#!/bin/busybox sh
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# Get OpenDKIM's process ID and then its main child process's ID.
+opendkim_pid="$(cat /run/opendkim.pid)"
+opendkim_child_pid="$(pgrep -P "$opendkim_pid")"
+
+# Kill the child process so OpenDKIM restarts it. (Don't worry; this allows it
+# to exit cleanly.)
+kill -- "$opendkim_child_pid"

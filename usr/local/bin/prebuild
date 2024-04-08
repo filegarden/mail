@@ -11,6 +11,14 @@ adduser \
     --uid 10001 \
     acme
 
+# Create an unprivileged user for our DKIM key generation script to run under.
+adduser \
+    --disabled-password \
+    --gecos "" \
+    --shell /sbin/nologin \
+    --uid 10002 \
+    dkim
+
 # Create a group with permission to read the `CF_API_TOKEN` Docker secret, as
 # specified in `compose.yaml`.
 addgroup --gid 20001 cf-api-token

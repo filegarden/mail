@@ -7,17 +7,28 @@ set -euo pipefail
 # container ran. Otherwise `dehydrated` will refuse to run.
 rm -f /home/acme/dehydrated/lock
 
+# Delete any named pipes left over from a previous run. Otherwise, our scripts
+# can't use the fact that these files haven't been created yet to detect that
+# the pipe isn't ready for use.
+rm -f /run/deploy_certs /run/deploy_dkim
+
 # Run our TLS certificate issuing script as the unprivileged `acme` user.
 su acme -s /bin/sh -c /home/acme/bin/issue
 
-# Run our DKIM key generation script as the unprivileged `opendkim` user.
-su opendkim -s /bin/sh -c /home/opendkim/bin/genkey
+# Run our DKIM key generation script as the unprivileged `dkim` user.
+su dkim -s /bin/sh -c /home/dkim/bin/genkey
 
 # Update our certificate files before starting the mail server since our above
 # `home/acme/bin/start` script could have changed them, and the below
 # `deploy_certs` script that waits for certificate updates to run this hasn't
 # started yet, so it could have missed that initial update.
 update_cert_files
+
+# Update our DKIM files before starting the mail server since our above
+# `home/dkim/bin/genkey` script could have changed them, and the below
+# `deploy_dkim` script that waits for DKIM private key updates to run this
+# hasn't started yet, so it could have missed that initial update.
+update_dkim_files
 
 # Run everything needed for our mail server in parallel, replacing this script's
 # shell process (using `exec`) since the shell is no longer needed.
@@ -35,6 +46,8 @@ update_cert_files
 #     We use it to schedule TLS certificate renewal.
 #   * Run our `usr/local/bin/deploy_certs` script. Whenever our certificate
 #     files update, this gives Postfix the updated files and reloads Postfix.
+#   * Run our `usr/local/bin/deploy_dkim` script. Whenever our DKIM files
+#     update, this gives OpenDKIM the updated files and reloads OpenDKIM.
 #   * The other programs listed here are described in our `Dockerfile`.
 exec parallel \
 	--halt now,done=1 \
@@ -44,6 +57,7 @@ exec parallel \
 	"syslogd -n -O /dev/stdout" \
 	"crond -f" \
 	"deploy_certs" \
+	"deploy_dkim" \
 	"postfix start-fg" \
 	"dovecot -F" \
 	"opendkim -f"

@@ -1,0 +1,26 @@
+#!/bin/busybox sh
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# Create the named pipe we'll use to let our `home/dkim/bin/genkey` script
+# communicate with this script, and give it the necessary permissions to access
+# the pipe.
+mkfifo -m 0620 /run/deploy_dkim
+chgrp dkim /run/deploy_dkim
+
+# Repeatedly do the following forever.
+while true; do
+	# Open the below named pipe for reading. This script cannot continue
+	# until our DKIM key generation script opens the pipe for writing,
+	# informing us it has updated our private key. We don't care about any
+	# data written to the pipe, only that it's opened for writing, so
+	# discard any data that comes through.
+	cat /run/deploy_dkim > /dev/null
+
+	# Give the updated DKIM files to OpenDKIM.
+	update_dkim_files
+
+	# Reload OpenDKIM so it can use the updated files.
+	opendkim_reload
+done
