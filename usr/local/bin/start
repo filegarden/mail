@@ -37,13 +37,13 @@ update_cert_files
 #     files update, this gives Postfix the updated files and reloads Postfix.
 #   * The other programs listed here are described in our `Dockerfile`.
 exec parallel \
-    --halt now,done=1 \
-    --line-buffer \
-    --jobs 0 \
-    ::: \
-    "syslogd -n -O /dev/stdout" \
-    "crond -f" \
-    "deploy_certs" \
-    "postfix start-fg" \
-    "dovecot -F" \
-    "opendkim -f"
+	--halt now,done=1 \
+	--line-buffer \
+	--jobs 0 \
+	::: \
+	"syslogd -n -O /dev/stdout" \
+	"crond -f" \
+	"deploy_certs" \
+	"postfix start-fg" \
+	"dovecot -F" \
+	"opendkim -f"
