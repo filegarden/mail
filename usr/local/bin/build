@@ -19,13 +19,14 @@ chgrp cf-api-token /usr/local/bin/cf
 # Build our `etc/postfix/aliases` file so Postfix can use it.
 newaliases
 
-# Create an initial password database for Dovecot.
+# Create our password database.
 mkdir -p /etc/auth
 touch /etc/auth/passwd
 
-# Only let Dovecot access the password database.
-chmod -R 0700 /etc/auth
-chown -R dovecot:dovecot /etc/auth
+# Give Dovecot permission to read the password database.
+chmod -R g+r /etc/auth
+chmod g+x /etc/auth
+chgrp -R dovecot /etc/auth
 
 # Create the Postfix TLS chain file directory.
 mkdir -p /etc/postfix/smtpd_tls_chain_files
