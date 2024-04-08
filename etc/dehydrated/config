@@ -5,7 +5,8 @@
 # Disable unused variable warnings. These variables are used by `dehydrated`.
 # shellcheck disable=SC2034
 
-# The unprivileged user to run `dehydrated` under.
+# Disallow `dehydrated` from running under any user but the unprivileged `acme`
+# user.
 DEHYDRATED_USER=acme
 DEHYDRATED_GROUP=acme
 
