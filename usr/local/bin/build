@@ -43,6 +43,9 @@ chown acme:acme /home/acme/dehydrated
 # day to run the script. Since the script can renew our TLS certificates, it's
 # best to randomize the time of day to reduce load on Let's Encrypt due to the
 # massive number of servers renewing at midnight or a precise hour.
+#
+# Note that `cron` jobs can't run unless `crond` is running. Our `start` script
+# runs `crond`.
 random_hour="$(shuf -i 0-23 -n 1)"
 random_minute="$(shuf -i 0-59 -n 1)"
 printf '%s\n' "$random_minute $random_hour * * * /usr/local/bin/daily" |
