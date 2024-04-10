@@ -6,7 +6,7 @@ set -euo pipefail
 # Exits with an error if this script is not running with root privileges.
 require_root() {
 	if [[ "$(id -u)" != "0" ]]; then
-		printf '%s' "Root user privileges required." >&2
+		printf '%s\n' "Root user privileges required." >&2
 		exit 1
 	fi
 }
