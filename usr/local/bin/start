@@ -19,7 +19,7 @@ rm -f /run/*.fifo
 # Otherwise `dehydrated` will refuse to run.
 rm -f /home/acme/dehydrated/lock
 
-# As the unprivileged `acme` user, run our script to initially run `dehydrated`.
+# Run the unprivileged `acme` user's `start` script.
 su acme -s /bin/sh -c /home/acme/bin/start
 
 # As the unprivileged `dkim` user, run our DKIM key generation script.
