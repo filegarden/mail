@@ -18,7 +18,7 @@ case "$1" in
 deploy_cert)
 	"$@"
 	;;
-*)
-	~/bin/cf_hook "$@"
-	;;
 esac
+
+# Also run our Cloudflare hook script.
+~/bin/cf_hook "$@"
