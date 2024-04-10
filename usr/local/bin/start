@@ -7,6 +7,9 @@ set -euo pipefail
 # this container.
 umask 0077
 
+# Delete any temporary files left over from a previous run.
+rm -rf /tmp/*
+
 # Delete `dehydrated`'s lock file if it was left over from a previous time this
 # container ran. Otherwise `dehydrated` will refuse to run.
 rm -f /home/acme/dehydrated/lock
