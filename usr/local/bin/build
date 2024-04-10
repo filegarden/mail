@@ -42,11 +42,6 @@ chown acme:acme /home/acme/dehydrated
 mkdir -p /home/dkim/keys
 chown dkim:dkim /home/dkim/keys
 
-# Create the directory OpenDKIM accesses our keys from. To prevent it from
-# outputting security warnings, no user but `opendkim` can have access to this,
-# which is why our DKIM key generation script can't output keys here directly.
-mkdir -p /var/db/dkim
-
 # Let the `acme` user run our script to deploy updated TLS files.
 chmod g+rx /usr/local/bin/deploy_tls
 chgrp acme /usr/local/bin/deploy_tls
