@@ -30,13 +30,30 @@ mkdir -p /etc/postfix/smtpd_tls_chain_files
 dehydrated_url=https://raw.githubusercontent.com/dehydrated-io/dehydrated/master/dehydrated
 wget -O /home/acme/bin/dehydrated -- "$dehydrated_url"
 
-# Let the `acme` user run `dehydrated`.
+# Give the `acme` user permission to run and manage `dehydrated`.
 chmod u+x /home/acme/bin/dehydrated
 chown acme:acme /home/acme/bin/dehydrated
 
 # Create `dehydrated`'s base directory, and give the `acme` user access.
 mkdir -p /home/acme/dehydrated
 chown acme:acme /home/acme/dehydrated
+
+# Create a directory our DKIM key generation script can output private keys to.
+mkdir -p /home/dkim/keys
+chown dkim:dkim /home/dkim/keys
+
+# Create the directory OpenDKIM accesses our keys from. To prevent it from
+# outputting security warnings, no user but `opendkim` can have access to this,
+# which is why our DKIM key generation script can't output keys here directly.
+mkdir -p /var/db/dkim
+
+# Let the `acme` user run our script to deploy updated TLS files.
+chmod g+rx /usr/local/bin/deploy_tls
+chgrp acme /usr/local/bin/deploy_tls
+
+# Let the `dkim` user run our script to deploy updated DKIM files.
+chmod g+rx /usr/local/bin/deploy_dkim
+chgrp dkim /usr/local/bin/deploy_dkim
 
 # Create a `cron` job to automatically run our `daily` script every 24 hours.
 # Generate a random hour number (0-23) and minute number (0-59) as the time of
@@ -50,15 +67,6 @@ random_hour="$(shuf -i 0-23 -n 1)"
 random_minute="$(shuf -i 0-59 -n 1)"
 printf '%s\n' "$random_minute $random_hour * * * /usr/local/bin/daily" |
 crontab -
-
-# Create a directory our DKIM key generation script can output private keys to.
-mkdir -p /home/dkim/keys
-chown dkim:dkim /home/dkim/keys
-
-# Create the directory OpenDKIM accesses our keys from. To prevent it from
-# outputting security warnings, no user but `opendkim` can have access to this,
-# which is why our DKIM key generation script can't output keys here directly.
-mkdir -p /var/db/dkim
 
 # Delete this script. It only needs to exist during the Docker image build.
 rm -f -- "$0"

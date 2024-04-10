@@ -29,5 +29,8 @@ addgroup --gid 20001 cf-api-token
 # Give `dehydrated` access to our `CF_API_TOKEN` secret.
 adduser acme cf-api-token
 
+# Give our DKIM key generation script access to our `CF_API_TOKEN` secret.
+adduser dkim cf-api-token
+
 # Delete this script. It only needs to exist during the Docker image build.
 rm -f -- "$0"

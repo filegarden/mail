@@ -1,7 +1,0 @@
-#!/bin/busybox sh
-
-# Exit if an error occurs or an unset variable is referenced.
-set -euo pipefail
-
-# Copy the contents of the new DKIM private key to the DKIM database directory.
-cat /home/dkim/keys/default.private > /var/db/dkim/default.private

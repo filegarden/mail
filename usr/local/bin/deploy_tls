@@ -1,0 +1,85 @@
+#!/bin/busybox sh
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# Exits with an error if this script is not running with root privileges.
+require_root() {
+	if [[ "$(id -u)" != "0" ]]; then
+		printf '%s' "Root user privileges required." >&2
+		exit 1
+	fi
+}
+
+# Deploys our TLS certificate files to the location Postfix reads them from.
+# This requires root privileges because Postfix outputs security warnings if any
+# non-root user can access these files (even though they're initially written by
+# `acme`, a non-root user, before being deployed).
+files() {
+	require_root
+
+	# Get our mail server's hostname (e.g. `mail.example.com`).
+	hostname="$(hostname)"
+
+	# Set the path where `dehydrated` outputs our TLS certificate files.
+	source_path="/home/acme/dehydrated/certs/$hostname"
+
+	# Set the path where Postfix looks for the TLS files, as set in the
+	# `smtpd_tls_chain_files` option from `etc/postfix/main.cf`.
+	target_path=/etc/postfix/smtpd_tls_chain_files
+
+	# Copy the contents of the new certificate files to Postfix's directory.
+	cat -- "$source_path/privkey.pem" > "$target_path/privkey.pem"
+	cat -- "$source_path/fullchain.pem" > "$target_path/fullchain.pem"
+}
+
+# Listens for calls to the `notify` function in order to deploy updated TLS
+# certificates. This requires root privileges.
+listen() {
+	require_root
+
+	# Create the named pipe we'll use to let the `notify` function
+	# communicate with this function.
+	mkfifo -m 0620 /run/deploy_tls.fifo
+
+	# Give the unprivileged `acme` user permission to call `notify` and
+	# deploy our certificates.
+	chgrp acme /run/deploy_tls.fifo
+
+	# Repeatedly do the following forever.
+	while true; do
+		# Open the below named pipe for reading. This script is blocked
+		# and cannot continue until `notify` opens and closes the pipe
+		# for writing. We don't care about any data written to the pipe,
+		# only that it's opened, so discard any data that comes through.
+		cat /run/deploy_tls.fifo > /dev/null
+
+		# Give the updated certificate files to Postfix.
+		deploy_tls files
+
+		# Reload Postfix so it can use the updated files.
+		postfix reload
+	done
+}
+
+# Notifies the `listen` function to deploy our TLS certificates, since they've
+# been updated. This can't deploy updated certificates directly because doing so
+# requires root privileges, and this should be ran by an unprivileged user.
+notify() {
+	# Check if the `listen` function is running yet by checking if the named
+	# pipe it creates exists.
+	if [[ -e /run/deploy_tls.fifo ]]; then
+		# Open and close the pipe for writing, unblocking the `listen`
+		# function.
+		printf '' > /run/deploy_tls.fifo
+	fi
+}
+
+case "$1" in
+files | listen | notify)
+	"$@"
+	;;
+*)
+	exit 1
+	;;
+esac

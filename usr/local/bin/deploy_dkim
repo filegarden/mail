@@ -3,24 +3,91 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# Create the named pipe we'll use to let our `home/dkim/bin/genkey` script
-# communicate with this script, and give it the necessary permissions to access
-# the pipe.
-mkfifo -m 0620 /run/deploy_dkim
-chgrp dkim /run/deploy_dkim
+# Exits with an error if this script is not running with root privileges.
+require_root() {
+	if [[ "$(id -u)" != "0" ]]; then
+		printf '%s' "Root user privileges required." >&2
+		exit 1
+	fi
+}
 
-# Repeatedly do the following forever.
-while true; do
-	# Open the below named pipe for reading. This script cannot continue
-	# until our DKIM key generation script opens the pipe for writing,
-	# informing us it has updated our private key. We don't care about any
-	# data written to the pipe, only that it's opened for writing, so
-	# discard any data that comes through.
-	cat /run/deploy_dkim > /dev/null
+# Reloads OpenDKIM.
+reload_opendkim() {
+	# Get OpenDKIM's process ID and then its main child process's ID.
+	opendkim_pid="$(cat /run/opendkim.pid)"
+	opendkim_child_pid="$(pgrep -P "$opendkim_pid")"
 
-	# Give the updated DKIM files to OpenDKIM.
-	update_dkim_files
+	# Kill the child process so OpenDKIM restarts it. (Don't worry; this
+	# allows it to exit cleanly.)
+	kill -- "$opendkim_child_pid"
+}
 
-	# Reload OpenDKIM so it can use the updated files.
-	opendkim_reload
-done
+# Deploys our DKIM key files to the location OpenDKIM reads them from. This
+# requires root privileges because OpenDKIM outputs security warnings if any
+# user but `opendkim` can access these files (even though they're initially
+# written by `dkim`, a different user, before being deployed).
+files() {
+	require_root
+
+	# Set the path where our `home/dkim/bin/genkey` script outputs our
+	# private keys.
+	source_path=/home/dkim/keys
+
+	# Set the path where OpenDKIM looks for private key files, as set in the
+	# `KeyFile` option from `etc/opendkim/opendkim.conf`.
+	target_path=/var/db/dkim
+
+	# Copy the contents of the new DKIM key files to OpenDKIM's directory.
+	cat -- "$source_path/default.private" > "$target_path/default.private"
+}
+
+# Listens for calls to the `notify` function in order to deploy updated DKIM
+# keys. This requires root privileges.
+listen() {
+	require_root
+
+	# Create the named pipe we'll use to let the `notify` function
+	# communicate with this function.
+	mkfifo -m 0620 /run/deploy_dkim.fifo
+
+	# Give the unprivileged `dkim` user permission to call `notify` and
+	# deploy our DKIM keys.
+	chgrp dkim /run/deploy_dkim.fifo
+
+	# Repeatedly do the following forever.
+	while true; do
+		# Open the below named pipe for reading. This script is blocked
+		# and cannot continue until `notify` opens and closes the pipe
+		# for writing. We don't care about any data written to the pipe,
+		# only that it's opened, so discard any data that comes through.
+		cat /run/deploy_dkim.fifo > /dev/null
+
+		# Give the updated DKIM files to OpenDKIM.
+		deploy_dkim files
+
+		# Reload OpenDKIM so it can use the updated files.
+		reload_opendkim
+	done
+}
+
+# Notifies the `listen` function to deploy our DKIM keys, since they've been
+# updated. This can't deploy updated keys directly because doing so requires
+# root privileges, and this should be ran by an unprivileged user.
+notify() {
+	# Check if the `listen` function is running yet by checking if the named
+	# pipe it creates exists.
+	if [[ -e /run/deploy_dkim.fifo ]]; then
+		# Open and close the pipe for writing, unblocking the `listen`
+		# function.
+		printf '' > /run/deploy_dkim.fifo
+	fi
+}
+
+case "$1" in
+files | listen | notify)
+	"$@"
+	;;
+*)
+	exit 1
+	;;
+esac

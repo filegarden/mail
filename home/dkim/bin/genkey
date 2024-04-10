@@ -22,13 +22,9 @@ if ! [ -e "$private_key_path" ]; then
 	openssl genrsa -out "$private_key_path" 2048
 fi
 
-# Check if our `usr/local/bin/deploy_dkim` script is running yet by checking if
-# the named pipe it creates exists.
-if [[ -e /run/deploy_dkim ]]; then
-	# Open the pipe for writing, informing our `deploy_dkim` script that our
-	# DKIM key has updated.
-	printf '' > /run/deploy_dkim
-fi
+# Notify our `deploy_dkim listen` script (ran by `usr/local/bin/start`) that our
+# DKIM keys have updated and need to be deployed to OpenDKIM now.
+deploy_dkim notify
 
 public_key="$(
 	# Generate a public key from the private key in binary format.
