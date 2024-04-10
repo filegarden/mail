@@ -10,14 +10,14 @@ umask 0077
 # Delete any temporary files left over from a previous run.
 rm -rf /tmp/*
 
-# Delete `dehydrated`'s lock file if it was left over from a previous run.
-# Otherwise `dehydrated` will refuse to run.
-rm -f /home/acme/dehydrated/lock
-
 # Delete any named pipes left over from a previous run. Otherwise, our scripts
 # can't use the fact that these files haven't been created yet to detect that
 # the pipe isn't ready for use.
 rm -f /run/*.fifo
+
+# Delete `dehydrated`'s lock file if it was left over from a previous run.
+# Otherwise `dehydrated` will refuse to run.
+rm -f /home/acme/dehydrated/lock
 
 # Run our TLS certificate issuing script as the unprivileged `acme` user.
 su acme -s /bin/sh -c /home/acme/bin/issue
