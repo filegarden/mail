@@ -11,4 +11,4 @@ rm -rf ~/dehydrated/archive
 
 # Use `dehydrated` to issue a new TLS certificate for our hostname, and accept
 # the certificate authority's terms.
-~/bin/dehydrated --cron --accept-terms --domain "$hostname"
+dehydrated --cron --accept-terms --domain "$hostname"

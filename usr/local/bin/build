@@ -28,11 +28,11 @@ mkdir -p /etc/postfix/smtpd_tls_chain_files
 
 # Download `dehydrated`.
 dehydrated_url=https://raw.githubusercontent.com/dehydrated-io/dehydrated/master/dehydrated
-wget -O /home/acme/bin/dehydrated -- "$dehydrated_url"
+wget -O /usr/local/bin/dehydrated -- "$dehydrated_url"
 
-# Give the `acme` user permission to run and manage `dehydrated`.
-chmod u+x /home/acme/bin/dehydrated
-chown acme:acme /home/acme/bin/dehydrated
+# Let the `acme` user run `dehydrated`.
+chmod g+rx /usr/local/bin/dehydrated
+chgrp acme /usr/local/bin/dehydrated
 
 # Create `dehydrated`'s base directory, and give the `acme` user access.
 mkdir -p /home/acme/dehydrated
