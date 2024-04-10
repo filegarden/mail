@@ -19,10 +19,10 @@ rm -f /run/*.fifo
 # Otherwise `dehydrated` will refuse to run.
 rm -f /home/acme/dehydrated/lock
 
-# Run our TLS certificate issuing script as the unprivileged `acme` user.
-su acme -s /bin/sh -c /home/acme/bin/issue
+# As the unprivileged `acme` user, run our script to initially run `dehydrated`.
+su acme -s /bin/sh -c /home/acme/bin/start
 
-# Run our DKIM key generation script as the unprivileged `dkim` user.
+# As the unprivileged `dkim` user, run our DKIM key generation script.
 su dkim -s /bin/sh -c /home/dkim/bin/genkey
 
 # Give our TLS certificate files to Postfix.
