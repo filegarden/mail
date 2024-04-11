@@ -7,12 +7,6 @@ set -euo pipefail
 # this container.
 umask 0077
 
-# Disallow unprivileged users from accessing our Docker secrets, as Docker
-# doesn't restrict permissions for secrets by default. Permissions on secret
-# files can't be modified directly since they're mounted as read-only, so this
-# modifies permissions on the secrets directory instead.
-chmod go= /run/secrets
-
 # Delete any temporary files left over from a previous run.
 rm -rf /tmp/*
 

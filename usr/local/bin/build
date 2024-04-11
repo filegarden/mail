@@ -6,6 +6,14 @@ set -euo pipefail
 # By default, don't let unprivileged users access files created by this script.
 umask 0077
 
+# Disallow unprivileged users from accessing our Docker secrets, as Docker
+# doesn't restrict permissions for secrets by default. Permissions on secret
+# files can't be modified directly since they're mounted as read-only, so this
+# modifies permissions on the secrets directory instead. But we have to create
+# it first since it normally doesn't exist while building the Docker image.
+mkdir -p /run/secrets
+chmod go= /run/secrets
+
 # Create the directory our `usr/local/bin/load_env` script will write our `.env`
 # variables to.
 mkdir -p /run/.env
