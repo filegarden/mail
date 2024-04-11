@@ -3,7 +3,7 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# Exits with an error if this script is not running with root privileges.
+# Exits with an error if this script isn't running with root privileges.
 _require_root() {
 	if [[ "$(id -u)" != "0" ]]; then
 		printf '%s\n' "Root user privileges required." >&2
