@@ -15,7 +15,7 @@ selector=default
 # Use a private key path based on the (above) selector.
 private_key_path=~/keys/"$selector".private
 
-if ! [ -e "$private_key_path" ]; then
+if ! [[ -e "$private_key_path" ]]; then
 	# Generate a private key using RSA. We use a 2048-bit key because that's
 	# the largest size that RFC 6376 (section 3.3.3) requires DKIM verifiers
 	# to support.
