@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # Exits with an error if this script is not running with root privileges.
-require_root() {
+_require_root() {
 	if [[ "$(id -u)" != "0" ]]; then
 		printf '%s\n' "Root user privileges required." >&2
 		exit 1
@@ -12,7 +12,7 @@ require_root() {
 }
 
 # Reloads OpenDKIM.
-reload_opendkim() {
+_reload_opendkim() {
 	# Get OpenDKIM's process ID and then its main child process's ID.
 	opendkim_pid="$(cat /run/opendkim.pid)"
 	opendkim_child_pid="$(pgrep -P "$opendkim_pid")"
@@ -27,7 +27,7 @@ reload_opendkim() {
 # user but `opendkim` can access these files (even though they're initially
 # written by `dkim`, a different user, before being deployed).
 files() {
-	require_root
+	_require_root
 
 	# Set the path where our `home/dkim/bin/genkey` script outputs our
 	# private keys.
@@ -44,7 +44,7 @@ files() {
 # Listens for calls to the `notify` function in order to deploy updated DKIM
 # keys. This requires root privileges.
 listen() {
-	require_root
+	_require_root
 
 	# Create the named pipe we'll use to let the `notify` function
 	# communicate with this function.
@@ -66,7 +66,7 @@ listen() {
 		deploy_dkim files
 
 		# Reload OpenDKIM so it can use the updated files.
-		reload_opendkim
+		_reload_opendkim
 	done
 }
 

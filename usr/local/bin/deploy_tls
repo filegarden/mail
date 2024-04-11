@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # Exits with an error if this script is not running with root privileges.
-require_root() {
+_require_root() {
 	if [[ "$(id -u)" != "0" ]]; then
 		printf '%s\n' "Root user privileges required." >&2
 		exit 1
@@ -16,7 +16,7 @@ require_root() {
 # non-root user can access these files (even though they're initially written by
 # `acme`, a non-root user, before being deployed).
 files() {
-	require_root
+	_require_root
 
 	# Get our mail server's hostname (e.g. `mail.example.com`).
 	hostname="$(hostname)"
@@ -36,7 +36,7 @@ files() {
 # Listens for calls to the `notify` function in order to deploy updated TLS
 # certificates. This requires root privileges.
 listen() {
-	require_root
+	_require_root
 
 	# Create the named pipe we'll use to let the `notify` function
 	# communicate with this function.
