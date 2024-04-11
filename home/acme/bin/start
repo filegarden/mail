@@ -3,9 +3,10 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# Check if we might have ACME account information to update. The first time this
-# container runs, our account won't exist yet, so it can't be updated.
-if [[ -e ~/dehydrated/accounts ]]; then
+# Check if we have ACME account information that can be updated. The first time
+# this container runs, our account doesn't exist yet, so it can't be updated.
+if [[ -e ~/dehydrated/accounts ]] && [[ -z "$(ls -A ~/dehydrated/accounts)" ]]
+then
 	# Delete any registration info backup files the below command generated
 	# the last time it ran.
 	rm -f ~/dehydrated/accounts/*/registration_info-*.json
