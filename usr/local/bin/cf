@@ -12,9 +12,9 @@ api() {
 
 	local cf_api_base_url=https://api.cloudflare.com/client/v4
 
-	# Load the Cloudflare API token from our Docker secrets.
+	# Load the Cloudflare API token from our `.env` file.
 	local cf_api_token
-	cf_api_token="$(< /run/secrets/CF_API_TOKEN)"
+	cf_api_token="$(< /run/.env/CF_API_TOKEN)"
 
 	local response_json
 	response_json="$(

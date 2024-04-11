@@ -6,6 +6,13 @@ set -euo pipefail
 # By default, don't let unprivileged users access files created by this script.
 umask 0077
 
+# Create the directory our `usr/local/bin/load_env` script will write our `.env`
+# variables to.
+mkdir -p /run/.env
+
+# Let anyone access the directory (but not necessarily the files inside).
+chmod a+rx /run/.env
+
 # Give users with access to our Cloudflare API token permission to use our
 # Cloudflare API script.
 chmod g=rx /usr/local/bin/cf

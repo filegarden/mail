@@ -36,23 +36,9 @@ services:
       # related files.
       - dehydrated-basedir:/home/acme/dehydrated
 
+    # Load our `.env` file into the server (at `/run/secrets/.env`).
     secrets:
-      # The account email to give to Let's Encrypt, so that it can send us
-      # important notifications like expiring TLS certificates that failed to
-      # renew.
-      - source: ACME_ACCOUNT_EMAIL
-        # Let the `acme` user created in our `usr/local/bin/prebuild` script
-        # access this secret's value.
-        uid: "10001"
-        mode: 0400
-
-      # The Cloudflare API token for our domain, so the server can set our DNS
-      # records automatically when needed.
-      - source: CF_API_TOKEN
-        # Let users in the `cf-api-token` group created in our
-        # `usr/local/bin/prebuild` script access this secret's value.
-        gid: "20001"
-        mode: 0440
+      - .env
 
 volumes:
   postfix-queue:
@@ -60,11 +46,6 @@ volumes:
   dkim-keys:
   dehydrated-basedir:
 
-# All secrets should be loaded from environment variables. You can load the
-# environment variables from your `.env` file by writing `source .env && `
-# before the `docker compose up` command when starting this container.
 secrets:
-  ACME_ACCOUNT_EMAIL:
-    environment: ACME_ACCOUNT_EMAIL
-  CF_API_TOKEN:
-    environment: CF_API_TOKEN
+  .env:
+    file: ./.env

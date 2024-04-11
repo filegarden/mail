@@ -1,0 +1,38 @@
+#!/bin/busybox sh
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# Run our `.env` file, mounted here by Docker secrets, to load its variables
+# into this script. Note that Docker secrets are mounted directly from the host,
+# not only copied in when the container starts, so this file updates live.
+#
+# Disable ShellCheck from trying to analyze the file; it only exists at runtime.
+# shellcheck disable=SC1091
+source /run/secrets/.env
+
+# We'll put each `.env` variable in a separate file in our `/run/.env` directory
+# so each variable can have maximally restrictive permissions.
+
+# Loads a `.env` variable with the specified name into a file with the same name
+# in the `/run/.env` directory, and gives only the specified group read-only
+# access to the file.
+_load() {
+	local group="$1" variable="$2"
+
+	# Get the value of the variable with the specified name, and write it to
+	# a file with the same name in `/run/.env`.
+	eval "printf '%s\n' \"\$$variable\"" > "/run/.env/$variable"
+
+	# Give the specified group read-only access to the file.
+	chmod g=r "/run/.env/$variable"
+	chgrp -- "$group" "/run/.env/$variable"
+}
+
+# Load the account email to give to Let's Encrypt, so it can send us important
+# notifications like expiring TLS certificates that failed to renew.
+_load acme ACME_ACCOUNT_EMAIL
+
+# Load the Cloudflare API token for our domain, so our server can manage its DNS
+# records automatically.
+_load cf-api-token CF_API_TOKEN

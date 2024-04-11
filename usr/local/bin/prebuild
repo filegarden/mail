@@ -22,14 +22,16 @@ adduser \
     --uid 10002 \
     dkim
 
-# Create a group with permission to read the `CF_API_TOKEN` Docker secret, as
-# specified in `compose.yaml`.
+# Create a group with permission to read the `CF_API_TOKEN` value from our
+# `.env` file, as granted by our `usr/local/bin/load_env` script.
 addgroup --gid 20001 cf-api-token
 
-# Give `dehydrated` access to our `CF_API_TOKEN` secret.
+# Give `dehydrated` access to our `CF_API_TOKEN` so it can prove ownership of
+# our domain to Let's Encrypt when renewing our domain's TLS certificates.
 adduser acme cf-api-token
 
-# Give our DKIM key generation script access to our `CF_API_TOKEN` secret.
+# Give our DKIM key generation script access to our `CF_API_TOKEN` so it can
+# update our DKIM public keys in our domain's DNS records.
 adduser dkim cf-api-token
 
 # Delete this script. It only needs to exist during the Docker image build.
