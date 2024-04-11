@@ -3,6 +3,9 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
+# By default, don't let unprivileged users access files created by this script.
+umask 0077
+
 reset="$(printf '\e[0m')"
 gray="$(printf '\e[90m')"
 lblue="$(printf '\e[1;34m')"
