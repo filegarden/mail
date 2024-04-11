@@ -8,7 +8,7 @@ umask 0077
 
 # Give users with access to our Cloudflare API token permission to use our
 # Cloudflare API script.
-chmod g+rx /usr/local/bin/cf
+chmod g=rx /usr/local/bin/cf
 chgrp cf-api-token /usr/local/bin/cf
 
 # Build our `etc/postfix/aliases` file so Postfix can use it.
@@ -19,7 +19,7 @@ mkdir -p /etc/auth
 touch /etc/auth/passwd
 
 # Give Dovecot permission to read the password database.
-chmod -R g+r /etc/auth
+chmod -R g=r /etc/auth
 chmod g+x /etc/auth
 chgrp -R dovecot /etc/auth
 
@@ -31,7 +31,7 @@ dehydrated_url=https://raw.githubusercontent.com/dehydrated-io/dehydrated/master
 wget -O /usr/local/bin/dehydrated -- "$dehydrated_url"
 
 # Let the `acme` user run `dehydrated`.
-chmod g+rx /usr/local/bin/dehydrated
+chmod g=rx /usr/local/bin/dehydrated
 chgrp acme /usr/local/bin/dehydrated
 
 # Create `dehydrated`'s base directory, and give the `acme` user access.
@@ -43,11 +43,11 @@ mkdir -p /home/dkim/keys
 chown dkim:dkim /home/dkim/keys
 
 # Let the `acme` user run our script to deploy updated TLS files.
-chmod g+rx /usr/local/bin/deploy_tls
+chmod g=rx /usr/local/bin/deploy_tls
 chgrp acme /usr/local/bin/deploy_tls
 
 # Let the `dkim` user run our script to deploy updated DKIM files.
-chmod g+rx /usr/local/bin/deploy_dkim
+chmod g=rx /usr/local/bin/deploy_dkim
 chgrp dkim /usr/local/bin/deploy_dkim
 
 # Create a `cron` job to automatically run our `daily` script every 24 hours.
