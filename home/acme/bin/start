@@ -5,7 +5,7 @@ set -euo pipefail
 
 # Check if we have ACME account information that can be updated. The first time
 # this container runs, our account doesn't exist yet, so it can't be updated.
-if [[ -e ~/dehydrated/accounts ]] && [[ -z "$(ls -A ~/dehydrated/accounts)" ]]
+if [[ -e ~/dehydrated/accounts ]] && [[ -n "$(ls -A ~/dehydrated/accounts)" ]]
 then
 	# Delete any registration info backup files the below command generated
 	# the last time it ran.
