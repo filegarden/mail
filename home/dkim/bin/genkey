@@ -26,11 +26,11 @@ fi
 # DKIM keys have updated and need to be deployed to OpenDKIM now.
 deploy_dkim notify
 
+# Generate a public key from the private key, and convert it to Base64, the
+# format required for a DKIM DNS record.
 public_key="$(
-	# Generate a public key from the private key in binary format.
-	openssl rsa -in "$private_key_path" -pubout -outform der 2> /dev/null |
-	# Convert it to Base64, the format required in a DKIM DNS record.
-	openssl base64 -A
+	openssl rsa -in "$private_key_path" -pubout -outform der 2> /dev/null \
+	| openssl base64 -A
 )"
 
 # Get our mail server's hostname (e.g. `mail.example.com`).

@@ -20,8 +20,8 @@ _clean_dns_record() {
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
 			--url-query "name=$dns_record_name" \
-			--url-query "content=$token_value" |
-		jq -r '.result[0].id'
+			--url-query "content=$token_value" \
+		| jq -r '.result[0].id'
 	)" || exit 1
 
 	# Only try to delete the DNS record if it was found.
@@ -104,8 +104,8 @@ deploy_challenge() {
 		# Get the value of the CNAME record (if there is one).
 		local cname
 		cname="$(
-			cf dns query CNAME "$r_dns_record_name" |
-			jq -r '.Answer[0].data'
+			cf dns query CNAME "$r_dns_record_name" \
+			| jq -r '.Answer[0].data'
 		)" || exit 1
 
 		# Check if the CNAME record (if it exists) doesn't point to the
@@ -176,9 +176,9 @@ deploy_challenge() {
 		# data.
 		local dns_record_answers
 		dns_record_answers="$(
-			cf dns query TXT "$w_dns_record_name" |
-			jq -r '.Answer[]?.data' |
-			sed 's/^"\(.*\)"$/\1/'
+			cf dns query TXT "$w_dns_record_name" \
+			| jq -r '.Answer[]?.data' \
+			| sed 's/^"\(.*\)"$/\1/'
 		)" || exit 1
 
 		# If any of the results match the DNS record we created, we can

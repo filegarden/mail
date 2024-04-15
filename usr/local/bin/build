@@ -75,8 +75,8 @@ chgrp dkim /usr/local/bin/deploy_dkim
 # runs `crond`.
 random_hour="$(shuf -i 0-23 -n 1)"
 random_minute="$(shuf -i 0-59 -n 1)"
-printf '%s\n' "$random_minute $random_hour * * * /usr/local/bin/daily" |
-crontab -
+printf '%s\n' "$random_minute $random_hour * * * /usr/local/bin/daily" \
+| crontab -
 
 # Delete this script. It only needs to exist during the Docker image build.
 rm -f -- "$0"
