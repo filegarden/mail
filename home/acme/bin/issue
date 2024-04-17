@@ -9,6 +9,8 @@ hostname="$(hostname)"
 # Delete all outdated certificate files no longer in use.
 rm -rf ~/dehydrated/archive
 
-# Use `dehydrated` to issue a new TLS certificate for our hostname, and accept
-# the certificate authority's terms.
+# Use `dehydrated` to issue a new TLS certificate for our hostname if needed,
+# and accept the certificate authority's terms. `dehydrated` renews certificates
+# 30 days before they expire. Let's Encrypt certificates expire after 90 days,
+# so this renews them every 60, given this runs daily.
 dehydrated --cron --accept-terms --domain "$hostname"
