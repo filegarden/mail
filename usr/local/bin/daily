@@ -7,3 +7,6 @@ set -euo pipefail
 # renewed yet. `dehydrated` renews certificates 30 days before they expire.
 # Let's Encrypt certificates expire after 90 days, so this renews them every 60.
 su acme -s /bin/sh -c /home/acme/bin/issue
+
+# As the unprivileged `dkim` user, check if our DKIM keys should be rotated yet.
+su dkim -s /bin/sh -c /home/dkim/bin/rotate

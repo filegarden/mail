@@ -1,0 +1,12 @@
+# Each line in this file represents a DKIM key consisting of the key's name and
+# then the following three entries separated by colons:
+# 1. The domain name to sign for when using the key (or `%` for any domain).
+# 2. The key's selector. A DKIM selector is what identifies which of our DNS
+#    records other mail servers should use to verify the signature of one of our
+#    emails. We use each key's name as its selector.
+# 3. The path where OpenDKIM can find our private key to sign our messages.
+
+# We only have these two DKIM keys which we alternate between every 30 days (as
+# implemented by our `home/dkim/bin/rotate` script).
+a %:a:/var/db/dkim/a.pem
+b %:b:/var/db/dkim/b.pem

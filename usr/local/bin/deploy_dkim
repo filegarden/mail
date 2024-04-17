@@ -29,7 +29,7 @@ _reload_opendkim() {
 files() {
 	_require_root
 
-	# Set the path where our `home/dkim/bin/genkey` script outputs our
+	# Set the path where our `home/dkim/bin/rotate` script outputs our
 	# private keys.
 	source_path=/home/dkim/keys
 
@@ -37,8 +37,21 @@ files() {
 	# `KeyFile` option from `etc/opendkim/opendkim.conf`.
 	target_path=/var/db/dkim
 
-	# Copy the contents of the new DKIM key files to OpenDKIM's directory.
-	cat -- "$source_path/default.private" > "$target_path/default.private"
+	# Get the name of the most recent key to use as our active DKIM key.
+	active_key="$(
+		find "$source_path" -mindepth 1 -maxdepth 1 \
+			-exec ls -1t -- {} + \
+		| head -n 1 \
+		| xargs -r basename -s .pem --
+	)" || exit 1
+
+	# Copy the contents of the active key file to OpenDKIM's directory.
+	cat -- "$source_path/$active_key.pem" > "$target_path/key.pem"
+
+	# Tell OpenDKIM the active key is the key it should use. The below `*`
+	# means to sign messages from all domains. We configured Postfix to only
+	# give OpenDKIM messages from trusted senders, so this is fine.
+	printf '%s\n' "* $active_key" > "$target_path/SigningTable"
 }
 
 # Listens for calls to the `notify` function in order to deploy updated DKIM

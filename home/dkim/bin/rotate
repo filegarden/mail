@@ -1,0 +1,177 @@
+#!/bin/busybox sh
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+printf '%s\n' "Checking DKIM keys..."
+
+# Delete all DKIM private key files at least 44 days old. To limit the risk of
+# our keys being compromised, we don't want any one key to be usable for too
+# long. 44 days is the time a key should be active, 30 days, plus the time it
+# should be inactive, 14 days.
+#
+# The reason a key shouldn't be deleted immediately when it becomes inactive is
+# to allow queued mail previously signed using it to send late with a valid
+# signature despite not matching the current key anymore.
+find ~/keys -mindepth 1 -maxdepth 1 -mtime +43 -delete \
+	-exec basename -s .pem -- {} \; \
+| while read -r key_name; do
+	printf '%s\n' "Key '$key_name' expired. Deleting private key file..."
+done
+
+# Get the name of the most recent key created in the last 30 days to use as the
+# active key. If no such key exists, this will be empty.
+active_key="$(
+	find ~/keys -mindepth 1 -maxdepth 1 -mtime -30 -exec ls -1t -- {} + \
+	| head -n 1 \
+	| xargs -r basename -s .pem --
+)" || exit 1
+
+# Get the name of the key other than the above active key (if it exists) to use
+# as the inactive key. If there is no other key, this will be empty.
+inactive_key="$(
+	find ~/keys -mindepth 1 -maxdepth 1 ! -name "$active_key.pem" \
+		-exec basename -s .pem -- {} \;
+)" || exit 1
+
+# Create a new active key if none exists.
+if [[ -z "$active_key" ]]; then
+	# Default to `a` as the new key's name. If `a` is already the inactive
+	# key's name, then name the active key `b` instead.
+	if [[ "$inactive_key" == "a" ]]; then
+		active_key=b
+	else
+		active_key=a
+	fi
+
+	printf '%s\n' "No active key found. Writing new private key file for key '$active_key'..."
+
+	# Generate a private key using RSA. We use a 2048-bit key because that's
+	# the largest size that RFC 6376 (section 3.3.3) requires DKIM verifiers
+	# to support.
+	openssl genrsa -out ~/keys/"$active_key".pem 2048
+fi
+
+printf '%s\n' "Active DKIM key: ${active_key:-(None)}"
+printf '%s\n' "Inactive DKIM key: ${inactive_key:-(None)}"
+
+# Fetch our Cloudflare zone information.
+zone_json="$(cf zone)" || exit 1
+zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
+zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
+
+# Ensures our DNS records reflect the current value of the specified key file
+# (or lack thereof, if the key file doesn't exist).
+sync_key_to_dns() {
+	# The name of the key to sync (either `a` or `b`).
+	local name="$1"
+
+	# Get our mail server's hostname (e.g. `mail.example.com`).
+	local hostname
+	hostname="$(hostname)"
+
+	# Use the key name as the key's DKIM selector. See
+	# `etc/opendkim/KeyTable` for an explanation of DKIM selectors.
+	local selector="$name"
+
+	# The DNS record other mail servers will read (hence "r") to check for
+	# this key's corresponding public key.
+	local dns_record_name="$selector._domainkey.$hostname"
+
+	# If our mail server's hostname (`$hostname`) is outside the domain of
+	# the zone our token has access to (`$zone_name`), correct the record
+	# name to be under our zone.
+	if [[ ".$hostname" != *".$zone_name" ]]; then
+		dns_record_name="$dns_record_name.$zone_name"
+	fi
+
+	# Fetch information for the key's corresponding DNS record. If no such
+	# record exists, this will be `null`.
+	local dns_record_json
+	dns_record_json="$(
+		cf api "/zones/$zone_id/dns_records" \
+			--url-query "type=TXT" \
+			--url-query "name=$dns_record_name" \
+		| jq -r '.result[0]'
+	)" || exit 1
+
+	# Get the ID of the DNS record in case we need to modify or delete it.
+	# If the DNS record doesn't exist, this will be `null`.
+	local dns_record_id
+	dns_record_id="$(
+		printf '%s\n' "$dns_record_json" | jq -r '.id'
+	)" || exit 1
+
+	# Check if the key's file doesn't exist.
+	if ! [[ -e ~/keys/"$name".pem ]]; then
+		# If key's file doesn't exist but the DNS record does, delete
+		# the DNS record.
+		if [[ "$dns_record_json" != "null" ]]; then
+			printf '%s\n' "Deleting DNS record for key '$name'..."
+
+			cf api "/zones/$zone_id/dns_records/$dns_record_id" \
+				-X DELETE > /dev/null
+		fi
+
+		# Since the key doesn't exist, no need to continue syncing.
+		return 0
+	fi
+
+	# Compute the public key from the private key, and convert it to Base64,
+	# the format required for a DKIM DNS record.
+	local public_key
+	public_key="$(
+		openssl rsa -in ~/keys/"$name".pem -pubout -outform der \
+			2> /dev/null \
+		| openssl base64 -A
+	)" || exit 1
+
+	# Generate the value that the DNS record should have.
+	local correct_dns_record_content="v=DKIM1; k=rsa; p=$public_key"
+
+	# If no DNS record for the key already exists, create a new one.
+	if [[ "$dns_record_json" == "null" ]]; then
+		printf '%s\n' "Creating DNS record for key '$name'..."
+
+		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dns_record_content"'"}'
+
+		cf api "/zones/$zone_id/dns_records" \
+			-X POST \
+			-H "Content-Type: application/json" \
+			--data-raw "$dns_record_data" > /dev/null
+
+		return 0
+	fi
+
+	# Since the record already exists, make a request to modify it if
+	# necessary.
+
+	# Get the current value of the DNS record.
+	local dns_record_content
+	dns_record_content="$(
+		printf '%s\n' "$dns_record_json" | jq -r '.content'
+	)" || exit 1
+
+	# If the DNS record already has the correct value, no need to continue
+	# syncing.
+	if [[ "$dns_record_content" == "$correct_dns_record_content" ]]; then
+		return 0
+	fi
+
+	printf '%s\n' "Updating DNS record for key '$name'..."
+
+	local dns_record_patch='{"content":"'"$correct_dns_record_content"'"}'
+
+	cf api "/zones/$zone_id/dns_records/$dns_record_id" \
+		-X PATCH \
+		-H "Content-Type: application/json" \
+		--data-raw "$dns_record_patch" > /dev/null
+}
+
+# Sync both of our DKIM keys to DNS.
+sync_key_to_dns a
+sync_key_to_dns b
+
+# Notify our `deploy_dkim listen` script (ran by `usr/local/bin/start`) that our
+# DKIM keys have updated and need to be deployed to OpenDKIM now.
+deploy_dkim notify

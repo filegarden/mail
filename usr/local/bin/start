@@ -26,8 +26,8 @@ load_env
 # Run the unprivileged `acme` user's `start` script.
 su acme -s /bin/sh -c /home/acme/bin/start
 
-# As the unprivileged `dkim` user, run our DKIM key generation script.
-su dkim -s /bin/sh -c /home/dkim/bin/genkey
+# As the unprivileged `dkim` user, run our DKIM key rotation script.
+su dkim -s /bin/sh -c /home/dkim/bin/rotate
 
 # Give our TLS certificate files to Postfix.
 deploy_tls files
