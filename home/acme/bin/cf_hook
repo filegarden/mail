@@ -133,10 +133,6 @@ deploy_challenge() {
 		printf '%s\n' "CNAME verified."
 	fi
 
-	local dns_record_comment="This record should be deleted automatically. If it isn't, feel free to delete it."
-
-	local dns_record_data='{"type":"TXT","name":"'"$w_dns_record_name"'","content":"'"$token_value"'","comment":"'"$dns_record_comment"'"}'
-
 	# Use a temporary file for writing to our DNS cleanup file to prevent
 	# corrupting the original in case of a system failure.
 	temp_dns_cleanup_path="$(mktemp -u)"
@@ -151,7 +147,30 @@ deploy_challenge() {
 	# Save the DNS cleanup file.
 	mv -f -- "$temp_dns_cleanup_path" "$dns_cleanup_path"
 
+	# Try requesting the DNS record we would otherwise create to ensure it
+	# doesn't already exist. If it doesn't exist, this will be `null`.
+	local dns_record_json
+	dns_record_json="$(
+		cf api "/zones/$zone_id/dns_records" \
+			--url-query "type=TXT" \
+			--url-query "name=$w_dns_record_name" \
+			--url-query "content=$token_value" \
+		| jq -r '.result[0]'
+	)"
+
+	# Check if the record already exists.
+	if [[ "$dns_record_json" != "null" ]]; then
+		printf '%s\n' "DNS record '$w_dns_record_name' with correct content already exists."
+
+		return 0
+	fi
+
+	# The record doesn't already exist, so create it.
+
 	printf '%s\n' "Creating DNS record '$w_dns_record_name'..."
+
+	local dns_record_comment="This record should be deleted automatically. If it isn't, feel free to delete it."
+	local dns_record_data='{"type":"TXT","name":"'"$w_dns_record_name"'","content":"'"$token_value"'","comment":"'"$dns_record_comment"'"}'
 
 	cf api "/zones/$zone_id/dns_records" \
 		-X POST \
