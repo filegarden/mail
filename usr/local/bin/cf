@@ -14,7 +14,7 @@ api() {
 
 	# Load the Cloudflare API token from our `.env` file.
 	local cf_api_token
-	cf_api_token="$(< /run/.env/CF_API_TOKEN)"
+	cf_api_token="$(cat /run/.env/CF_API_TOKEN)"
 
 	local response_json
 	response_json="$(
