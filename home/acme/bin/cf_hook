@@ -169,7 +169,7 @@ deploy_challenge() {
 
 	printf '%s\n' "Waiting $dns_sleep_seconds seconds for your DNS to update..."
 
-	# Repeatedly check our DNS until we ensure our new record is there.
+	# Repeatedly check our DNS until we verify the new record exists.
 	while true; do
 		sleep "$dns_sleep_seconds"
 
