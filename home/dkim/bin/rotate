@@ -74,8 +74,7 @@ sync_key_to_dns() {
 	# `etc/opendkim/KeyTable` for an explanation of DKIM selectors.
 	local selector="$name"
 
-	# The DNS record other mail servers will read (hence "r") to check for
-	# this key's corresponding public key.
+	# The DNS record that should contain the public key.
 	local dns_record_name="$selector._domainkey.$hostname"
 
 	# If our mail server's hostname (`$hostname`) is outside the domain of
