@@ -26,6 +26,9 @@ api() {
 			-- "$cf_api_base_url$path"
 	)"
 
+	# Output the response JSON.
+	printf '%s\n' "$response_json"
+
 	# Output any errors from the API response.
 	printf '%s\n' "$response_json" | jq -cr '.errors[]' \
 	| while read -r error; do
@@ -40,9 +43,6 @@ api() {
 	if [[ "$success" != "true" ]]; then
 		exit 1
 	fi
-
-	# The request was successful, so output the response JSON.
-	printf '%s\n' "$response_json"
 }
 
 # Gets the JSON value of the zone the Cloudflare API token has access to. If the
