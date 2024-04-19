@@ -25,14 +25,14 @@ active_key="$(
 	find ~/keys -mindepth 1 -maxdepth 1 -mtime -30 -exec ls -1t -- {} + \
 	| head -n 1 \
 	| xargs -r basename -s .pem --
-)" || exit 1
+)"
 
 # Get the name of the key other than the above active key (if it exists) to use
 # as the inactive key. If there is no other key, this will be empty.
 inactive_key="$(
 	find ~/keys -mindepth 1 -maxdepth 1 ! -name "$active_key.pem" \
 		-exec basename -s .pem -- {} \;
-)" || exit 1
+)"
 
 # Create a new active key if none exists.
 if [[ -z "$active_key" ]]; then
@@ -56,7 +56,7 @@ printf '%s\n' "Active DKIM key: ${active_key:-(None)}"
 printf '%s\n' "Inactive DKIM key: ${inactive_key:-(None)}"
 
 # Fetch our Cloudflare zone information.
-zone_json="$(cf zone)" || exit 1
+zone_json="$(cf zone)"
 zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
 zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
 
@@ -93,14 +93,12 @@ sync_key_to_dns() {
 			--url-query "type=TXT" \
 			--url-query "name=$dns_record_name" \
 		| jq -r '.result[0]'
-	)" || exit 1
+	)"
 
 	# Get the ID of the DNS record in case we need to modify or delete it.
 	# If the DNS record doesn't exist, this will be `null`.
 	local dns_record_id
-	dns_record_id="$(
-		printf '%s\n' "$dns_record_json" | jq -r '.id'
-	)" || exit 1
+	dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
 
 	# Check if the key's file doesn't exist.
 	if ! [[ -e ~/keys/"$name".pem ]]; then
@@ -124,7 +122,7 @@ sync_key_to_dns() {
 		openssl rsa -in ~/keys/"$name".pem -pubout -outform der \
 			2> /dev/null \
 		| openssl base64 -A
-	)" || exit 1
+	)"
 
 	# Generate the value that the DNS record should have.
 	local correct_dns_record_content="v=DKIM1; k=rsa; p=$public_key"
@@ -150,7 +148,7 @@ sync_key_to_dns() {
 	local dns_record_content
 	dns_record_content="$(
 		printf '%s\n' "$dns_record_json" | jq -r '.content'
-	)" || exit 1
+	)"
 
 	# If the DNS record already has the correct value, no need to continue
 	# syncing.

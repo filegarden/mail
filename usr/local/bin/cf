@@ -16,15 +16,15 @@ api() {
 	local cf_api_token
 	cf_api_token="$(cat /run/.env/CF_API_TOKEN)"
 
+	# Make the HTTP request to Cloudflare's API using `curl`, with all of
+	# this function's arguments passed in.
 	local response_json
 	response_json="$(
-		# Make the HTTP request to Cloudflare's API using `curl`, with
-		# all of this function's arguments passed in.
 		curl -LSs \
 			-H "Authorization: Bearer $cf_api_token" \
 			"$@" \
 			-- "$cf_api_base_url$path"
-	)" || exit 1
+	)"
 
 	# Output any errors from the API response.
 	printf '%s\n' "$response_json" | jq -cr '.errors[]' \
@@ -32,9 +32,12 @@ api() {
 		printf '%s\n' "ERROR (Cloudflare API): $error" >&2
 	done
 
+	# Get the response's `success` value.
+	local success
+	success="$(printf '%s\n' "$response_json" | jq '.success')"
+
 	# If the request wasn't successful, exit the script.
-	if [[ "$(printf '%s\n' "$response_json" | jq '.success')" != "true" ]]
-	then
+	if [[ "$success" != "true" ]]; then
 		exit 1
 	fi
 
@@ -50,7 +53,7 @@ api() {
 zone() {
 	# Get JSON values for all the zones the token has access to.
 	local zone_jsons
-	zone_jsons="$(cf api /zones | jq -cr '.result[]')" || exit 1
+	zone_jsons="$(cf api /zones | jq -cr '.result[]')"
 
 	# Check if the token doesn't have access to any zones.
 	if [[ -z "$zone_jsons" ]]; then

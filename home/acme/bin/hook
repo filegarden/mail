@@ -3,6 +3,7 @@
 
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
+shopt -s inherit_errexit
 
 # `dehydrated` runs this after issuing or renewing certificates.
 deploy_cert() {

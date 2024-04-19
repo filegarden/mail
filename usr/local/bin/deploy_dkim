@@ -43,7 +43,7 @@ files() {
 			-exec ls -1t -- {} + \
 		| head -n 1 \
 		| xargs -r basename -s .pem --
-	)" || exit 1
+	)"
 
 	# Copy the contents of the active key file to OpenDKIM's directory.
 	cat -- "$source_path/$active_key.pem" > "$target_path/key.pem"
