@@ -35,7 +35,7 @@ inactive_key="$(
 )"
 
 # Create a new active key if none exists.
-if [[ -z "$active_key" ]]; then
+if [[ ! "$active_key" ]]; then
 	# Default to `a` as the new key's name. If `a` is already the inactive
 	# key's name, then name the active key `b` instead.
 	if [[ "$inactive_key" == "a" ]]; then
