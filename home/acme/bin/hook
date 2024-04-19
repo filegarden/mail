@@ -1,4 +1,5 @@
 #!/bin/bash
+# This script uses Bash because it's made for `dehydrated` which uses Bash.
 
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail

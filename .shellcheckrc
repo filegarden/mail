@@ -1,2 +1,2 @@
 # Disable incorrect warnings about unsupported features in `/bin/busybox sh`.
-disable=SC3034
+disable=SC3003,SC3034

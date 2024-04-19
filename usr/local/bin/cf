@@ -1,4 +1,4 @@
-#!/bin/bash
+#!/bin/busybox sh
 
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
@@ -27,13 +27,14 @@ api() {
 	)" || exit 1
 
 	# Output any errors from the API response.
-	jq -cr '.errors[]' <<< "$response_json" \
+	printf '%s\n' "$response_json" | jq -cr '.errors[]' \
 	| while read -r error; do
 		printf '%s\n' "ERROR (Cloudflare API): $error" >&2
 	done
 
 	# If the request wasn't successful, exit the script.
-	if [[ "$(jq '.success' <<< "$response_json")" != "true" ]]; then
+	if [[ "$(printf '%s\n' "$response_json" | jq '.success')" != "true" ]]
+	then
 		exit 1
 	fi
 

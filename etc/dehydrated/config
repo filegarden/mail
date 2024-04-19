@@ -1,6 +1,6 @@
 #!/bin/bash
-# This file is inlined into `dehydrated` to load the config, so the above
-# shebang must be compatible with `dehydrated`'s.
+# This file must be compatible with Bash because it's inlined into `dehydrated`
+# which uses Bash. The above shebang lets ShellCheck enforce that.
 
 # Disable unused variable warnings. These variables are used by `dehydrated`.
 # shellcheck disable=SC2034
