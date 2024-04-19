@@ -1,2 +1,13 @@
+# This ensures `set -e` catches errors in some edge cases.
+enable=check-extra-masked-returns
+
+# Even if a variable is currently safe to unquote, it's good habit and more
+# future-proof to quote all variables consistently. It's also safer in case the
+# code can be called from a context where `$IFS` is set to something unusual.
+enable=quote-safe-variables
+
+# `[[` is generally better than `[`. We should use it when possible.
+enable=require-double-brackets
+
 # Disable incorrect warnings about unsupported features in `/bin/busybox sh`.
 disable=SC3003

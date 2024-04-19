@@ -210,9 +210,11 @@ clean_challenge() {
 	# Use the token value of the DNS record we're cleaning up to find the
 	# record in our DNS cleanup file.
 	local dns_record_info
-	read -ra dns_record_info < <(
-		grep -F -- " $token_value" "$dns_cleanup_path"
-	)
+	dns_record_info=$(grep -F -- " $token_value" "$dns_cleanup_path")
+
+	# Split the record info on whitespace into an array so its values can be
+	# passed as separate arguments to the below function call.
+	read -ra dns_record_info <<< "$dns_record_info"
 
 	_clean_dns_record "$zone_id" "${dns_record_info[@]}"
 }

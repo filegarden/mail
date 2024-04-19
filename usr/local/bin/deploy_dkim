@@ -5,7 +5,12 @@ set -euo pipefail
 
 # Exits with an error if this script isn't running with root privileges.
 _require_root() {
-	if [[ "$(id -u)" != "0" ]]; then
+	# Get the effective user ID.
+	local euid
+	euid="$(id -u)"
+
+	# Check if the effective user ID is not 0 (the root user ID).
+	if [[ "$euid" != "0" ]]; then
 		printf '%s\n' "Root user privileges required." >&2
 		exit 1
 	fi
