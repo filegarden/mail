@@ -7,9 +7,9 @@ set -euo pipefail
 # runs, our account doesn't exist yet and can't be updated, so first check if
 # `dehydrated`'s account directory exists and is nonempty.
 if [[ -e ~/dehydrated/accounts ]]; then
-	accounts="$(find ~/dehydrated/accounts -mindepth 1 -maxdepth 1)"
+	nonempty_accounts="$(find ~/dehydrated/accounts -maxdepth 0 ! -empty)"
 
-	if [[ -n "$accounts" ]]; then
+	if [[ -n "$nonempty_accounts" ]]; then
 		# Delete any registration info backup files the below command
 		# generated the last time it ran.
 		rm -f ~/dehydrated/accounts/*/registration_info-*.json
