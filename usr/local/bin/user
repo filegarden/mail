@@ -14,7 +14,7 @@ lblue="$(printf '\e[1;34m')"
 address="$1"
 
 # Check if the specified address doesn't already contain "@".
-if ! printf '%s' "$address" | grep -q "@"; then
+if [[ "$address" != *"@"* ]]; then
 	# Get our mail server's default domain (e.g. `example.com`).
 	domain="$(postconf -hx mydomain)"
 
