@@ -45,6 +45,12 @@ password_hash="$(doveadm pw -s ARGON2ID -p "$password")"
 # Append the new user entry to the database.
 printf '%s\n' "$address:$password_hash" >> "$temp_passdb"
 
+# Copy the current database file's permissions to the new database file.
+passdb_mod="$(stat -c '%a' -- "$passdb")"
+passdb_own="$(stat -c '%u:%g' -- "$passdb")"
+chmod -- "$passdb_mod" "$temp_passdb"
+chown -- "$passdb_own" "$temp_passdb"
+
 # Save the database.
 mv -f -- "$temp_passdb" "$passdb"
 
