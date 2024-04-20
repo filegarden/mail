@@ -53,6 +53,10 @@ files() {
 	# Copy the contents of the active key file to OpenDKIM's directory.
 	cat -- "$source_path/$active_key.pem" > "$target_path/$active_key.pem"
 
+	# Give OpenDKIM permission to read the key file.
+	chmod -- g=r "$target_path/$active_key.pem"
+	chgrp -- opendkim "$target_path/$active_key.pem"
+
 	# Tell OpenDKIM this active key is the key it should use. The below `*`
 	# means to use the key to sign messages from all domains. We configured
 	# Postfix to only give OpenDKIM messages from trusted senders, so this
