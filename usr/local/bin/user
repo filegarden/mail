@@ -29,9 +29,11 @@ passdb=/etc/auth/passwd
 # corrupting the original in case of a system failure.
 temp_passdb="$(mktemp -u)"
 
-# If the specified address is already in the database, remove it. If `grep`
-# returns an error due to finding no matches, instead do nothing.
-grep -Fvx -- "$address" "$passdb" || : > "$temp_passdb"
+# Escape the address so it can be safely used in a regex pattern.
+escaped_address="$(printf '%s\n' "$address" | sed -e 's/[$*./[\^]/\\&/g')"
+
+# Remove the specified address from the database.
+sed -e "/^$escaped_address:/d" -- "$passdb" > "$temp_passdb"
 
 # Randomly generate a cryptographically secure password in Base64. We generate
 # 192 bytes because that encodes into 256 Base64 characters, which is as close
