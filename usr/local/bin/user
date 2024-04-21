@@ -13,13 +13,10 @@ lblue="$(printf '\e[1;34m')"
 # The address specified in this command's arguments.
 address="$1"
 
-# Check if the specified address doesn't already contain "@".
+# Check if the specified address is invalid.
 if [[ "$address" != *"@"* ]]; then
-	# Get our mail server's default domain (e.g. `example.com`).
-	domain="$(postconf -hx mydomain)"
-
-	# Automatically append the "@" followed by our domain.
-	address="$address@$domain"
+	printf '%s\n' "Invalid address: $address" >&2
+	exit 1
 fi
 
 # Our Dovecot password database path (from `etc/dovecot/conf.d/10-auth.conf`).
