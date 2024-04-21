@@ -19,19 +19,33 @@ find ~/keys -mindepth 1 -maxdepth 1 -mtime +43 -delete \
 	printf '%s\n' "Key '$key_name' expired. Deleting private key file..."
 done
 
-# Get the name of the most recent key created in the last 30 days to use as the
-# active key. If no such key exists, this will be empty.
+# Get the name of an arbitrary key created fewer than 30 days ago. If no such
+# key exists, this will be empty. If it does exist, it's most likely the active
+# key.
 active_key="$(
-	find ~/keys -mindepth 1 -maxdepth 1 -mtime -30 -exec ls -1t -- {} + \
-	| head -n 1 \
-	| xargs -r basename -s .pem --
+	find ~/keys -mindepth 1 -maxdepth 1 -mtime -30 \
+		-exec basename -s .pem -- {} \; -quit
 )"
+
+# Check if there's a newer key we can use as the active key instead, just in
+# case. The active key must be the newest.
+if [[ "$active_key" ]]; then
+	newer_key="$(
+		find ~/keys -mindepth 1 -maxdepth 1 \
+			-newer ~/keys/"$active_key".pem \
+			-exec basename -s .pem -- {} \; -quit
+	)"
+
+	if [[ "$newer_key" ]]; then
+		active_key="$newer_key"
+	fi
+fi
 
 # Get the name of the key other than the above active key (if it exists) to use
 # as the inactive key. If there is no other key, this will be empty.
 inactive_key="$(
 	find ~/keys -mindepth 1 -maxdepth 1 ! -name "$active_key.pem" \
-		-exec basename -s .pem -- {} \;
+		-exec basename -s .pem -- {} \; -quit
 )"
 
 # Create a new active key if none exists.
