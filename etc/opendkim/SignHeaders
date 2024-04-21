@@ -24,8 +24,8 @@ list-archive
 
 # RFC 6376 (section 5.4, "INFORMATIVE OPERATIONS NOTE") also recommends these.
 sender
-# That includes "all MIME header fields", which are specified by RFC 4021
-# (section 2.2) as follows.
+# It includes "all MIME header fields", which are specified by RFC 4021 (section
+# 2.2) as follows.
 mime-version
 content-id
 content-description
