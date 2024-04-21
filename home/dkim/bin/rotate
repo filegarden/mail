@@ -48,6 +48,9 @@ inactive_key="$(
 		-exec basename -s .pem -- {} \; -quit
 )"
 
+# A variable for whether the active key was updated and needs to be deployed.
+active_key_updated=""
+
 # Create a new active key if none exists.
 if [[ ! "$active_key" ]]; then
 	# Default to `a` as the new key's name. If `a` is already the inactive
@@ -64,6 +67,8 @@ if [[ ! "$active_key" ]]; then
 	# a 2048-bit RSA key because that's the largest size RFC 6376 (section
 	# 3.3.3) requires DKIM verifiers to support.
 	openssl genrsa -out ~/keys/"$active_key".pem 2048
+
+	active_key_updated=true
 fi
 
 printf '%s\n' "Active DKIM key: ${active_key:-(None)}"
@@ -183,6 +188,9 @@ sync_key_to_dns() {
 sync_key_to_dns a
 sync_key_to_dns b
 
-# Notify our `deploy_dkim listen` script (ran by `usr/local/bin/start`) that our
-# DKIM keys have updated and need to be deployed to OpenDKIM now.
-deploy_dkim notify
+# If the active key updated, notify our `deploy_dkim listen` script (ran by
+# `usr/local/bin/start`) to deploy the updated key to OpenDKIM now.
+if [[ "$active_key_updated" ]]; then
+	printf '%s\n' "Deploying new active key to OpenDKIM..."
+	deploy_dkim notify
+fi
