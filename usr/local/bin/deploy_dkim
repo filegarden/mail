@@ -71,11 +71,12 @@ files() {
 	# means to use the key to sign messages from all domains. We configured
 	# Postfix to only give OpenDKIM messages from trusted senders, so this
 	# is fine.
-	printf '%s\n' "* $active_key" > "$target_path/SigningTable"
+	printf '%s\n' "* $active_key" > /etc/opendkim/SigningTable
 
-	# Give OpenDKIM permission to read the files we wrote above.
-	chmod -- g=r "$target_path"/*
-	chgrp -- opendkim "$target_path"/*
+	# Let OpenDKIM read the files we wrote above.
+	chmod -- g=r "$target_path/$active_key.pem" /etc/opendkim/SigningTable
+	chgrp -- opendkim "$target_path/$active_key.pem" \
+		/etc/opendkim/SigningTable
 }
 
 # Listens for calls to the `notify` function in order to deploy updated DKIM
