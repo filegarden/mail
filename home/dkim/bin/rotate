@@ -60,19 +60,10 @@ if [[ ! "$active_key" ]]; then
 
 	printf '%s\n' "No active key found. Writing new private key file for key '$active_key'..."
 
-	# Use a subshell so the read-only `umask` only applies to the command
-	# that creates the private key.
-	(
-		# Create the private key file as read-only since a key should
-		# never be modified after it's created. (Note this doesn't
-		# prevent deletion; keys are deleted when they expire.)
-		umask 0277
-
-		# Generate a private key, and write it to the active key's file.
-		# We use a 2048-bit RSA key because that's the largest size RFC
-		# 6376 (section 3.3.3) requires DKIM verifiers to support.
-		openssl genrsa -out ~/keys/"$active_key".pem 2048
-	)
+	# Generate a private key, and write it to the active key's file. We use
+	# a 2048-bit RSA key because that's the largest size RFC 6376 (section
+	# 3.3.3) requires DKIM verifiers to support.
+	openssl genrsa -out ~/keys/"$active_key".pem 2048
 fi
 
 printf '%s\n' "Active DKIM key: ${active_key:-(None)}"
