@@ -23,7 +23,7 @@ fi
 passdb=/etc/auth/passwd
 
 # Use a temporary file for writing to the password database to prevent
-# corrupting the original in case of a system failure.
+# corrupting the original in case of a failure.
 temp_passdb="$(mktemp -u)"
 
 # Escape the address so it can be safely used in a regex pattern.
