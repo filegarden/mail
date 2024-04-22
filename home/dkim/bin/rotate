@@ -49,7 +49,7 @@ inactive_key="$(
 )"
 
 # A variable for whether the active key was updated and needs to be deployed.
-active_key_updated=""
+active_key_updated=
 
 # Create a new active key if none exists.
 if [[ ! "$active_key" ]]; then
