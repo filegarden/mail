@@ -21,7 +21,7 @@ Then change `mail.example.com` to your mail server's hostname. Generally, your h
 <details>
   <summary>Why should my hostname have an extra subdomain?</summary>
 
-  > It's not strictly necessary to include an extra subdomain in your hostname, but not including one may cause difficulty [configuring your PTR record](#configure-your-ptr-record) if your domain points to something other than your mail server, such as a separate web server or a proxy like Cloudflare. If your domain doesn't point to your mail server directly in its A/AAAA record, you won't be able to create a valid PTR record, because that requires your domain's A/AAAA record to point to the same IP address from the PTR record.
+  > It's not strictly necessary to include an extra subdomain in your hostname, but not including one may cause difficulty [configuring your PTR record](#configure-your-ptr-record) if your domain points to something other than your mail server, such as a separate web server or a proxy like Cloudflare. If your domain doesn't point to your mail server directly in its A/AAAA record, you can't create a valid PTR record because doing so requires your domain's A/AAAA record to point to the same IP address the PTR record is under.
 </details>
 
 ## Configure your PTR record
@@ -29,5 +29,5 @@ Then change `mail.example.com` to your mail server's hostname. Generally, your h
 <details>
   <summary>Why should I configure my PTR record?</summary>
 
-  > PTR records aren't strictly necessary, but they can help increase the deliverability of your mail. Mail from servers without a PTR record is sometimes marked as spam or rejected entirely. Popular email providers (including Google and Yahoo) also require a PTR record for mail servers that exceed a certain mail frequency threshold.
+  > PTR records help increase the deliverability of your mail. Mail from servers without a PTR record is often marked as spam or rejected entirely.
 </details>
