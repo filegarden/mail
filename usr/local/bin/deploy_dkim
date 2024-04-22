@@ -67,16 +67,22 @@ files() {
 	# Copy the contents of the active key file to OpenDKIM's directory.
 	cat -- "$source_path/$active_key.pem" > "$target_path/$active_key.pem"
 
+	# Use a temporary file for writing to the OpenDKIM `SigningTable` file
+	# to prevent corrupting the original in case of a failure.
+	temp_signing_table="$(mktemp -u)"
+
 	# Tell OpenDKIM this active key is the key it should use. The below `*`
 	# means to use the key to sign messages from all domains. We configured
 	# Postfix to only give OpenDKIM messages from trusted senders, so this
 	# is fine.
-	printf '%s\n' "* $active_key" > /etc/opendkim/SigningTable
+	printf '%s\n' "* $active_key" > "$temp_signing_table"
 
 	# Let OpenDKIM read the files we wrote above.
-	chmod -- g=r "$target_path/$active_key.pem" /etc/opendkim/SigningTable
-	chgrp -- opendkim "$target_path/$active_key.pem" \
-		/etc/opendkim/SigningTable
+	chmod -- g=r "$target_path/$active_key.pem" "$temp_signing_table"
+	chgrp -- opendkim "$target_path/$active_key.pem" "$temp_signing_table"
+
+	# Save the `SigningTable` file.
+	mv -f -- "$temp_signing_table" /etc/opendkim/SigningTable
 }
 
 # Listens for calls to the `notify` function in order to deploy updated DKIM
