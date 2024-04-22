@@ -79,15 +79,14 @@ zone_json="$(cf zone)"
 zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
 zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
 
+# Get our mail server's hostname (e.g. `mail.example.com`).
+hostname="$(hostname)"
+
 # Ensures our DNS records reflect the current value of the specified key file
 # (or lack thereof, if the key file doesn't exist).
 sync_key_to_dns() {
 	# The name of the key to sync (either `a` or `b`).
 	local name="$1"
-
-	# Get our mail server's hostname (e.g. `mail.example.com`).
-	local hostname
-	hostname="$(hostname)"
 
 	# Use the key name as the key's DKIM selector. See
 	# `etc/opendkim/KeyTable` for an explanation of DKIM selectors.
