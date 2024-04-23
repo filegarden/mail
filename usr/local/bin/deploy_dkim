@@ -71,10 +71,10 @@ files() {
 	# to prevent corrupting the original in case of a failure.
 	temp_signing_table="$(mktemp -u)"
 
-	# Tell OpenDKIM this active key is the key it should use. The below `*`
-	# means to use the key to sign messages from all domains. We configured
-	# Postfix to only give OpenDKIM messages from trusted senders, so this
-	# is fine.
+	# Tell OpenDKIM this active key is the key it should use (from the list
+	# of keys defined in `etc/opendkim/KeyTable`). The below `*` means to
+	# use the key to sign messages from all domains. We configured Postfix
+	# to only give OpenDKIM messages from trusted senders, so this is fine.
 	printf '%s\n' "* $active_key" > "$temp_signing_table"
 
 	# Let OpenDKIM read the files we wrote above.
