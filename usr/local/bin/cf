@@ -94,7 +94,7 @@ dns_query() {
 	# the most updated answer.
 	cf dns purge "$type" "$name"
 
-	curl -LSs -X GET https://cloudflare-dns.com/dns-query \
+	curl -LSs https://cloudflare-dns.com/dns-query \
 		--url-query "type=$type" \
 		--url-query "name=$name" \
 		-H "Accept: application/dns-json" \
