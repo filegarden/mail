@@ -193,8 +193,8 @@ deploy_challenge() {
 		sleep "$dns_sleep_seconds"
 
 		# Get a list of all the DNS record data under this record name.
-		# Remove quotes because quotes are allowed around a TXT record's
-		# data.
+		# Remove quotes because quotes are allowed around parts of a TXT
+		# record's data.
 		local dns_record_answers
 		dns_record_answers="$(
 			cf dns query TXT "$w_dns_record_name" \
