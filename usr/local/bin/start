@@ -23,11 +23,13 @@ rm -f /home/acme/dehydrated/lock
 # the variables can be used.
 load_env
 
-# Run the unprivileged `acme` user's `start` script.
-su acme -s /bin/sh -c /home/acme/bin/start
+# As the unprivileged `acme` user, apply any changes to our `.env` file's ACME
+# account information.
+su acme -s /bin/sh -c /home/acme/bin/update_account
 
-# As the unprivileged `dkim` user, run our DKIM key rotation script.
-su dkim -s /bin/sh -c /home/dkim/bin/rotate
+# Run our `daily` script initially since it has operations that must run before
+# the mail server can fully function.
+daily
 
 # Give our TLS certificate files to Postfix.
 deploy_tls files

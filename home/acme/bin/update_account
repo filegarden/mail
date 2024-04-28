@@ -18,6 +18,3 @@ if [[ "$nonempty_accounts" ]]; then
 	# value from our `.env` file was changed.
 	dehydrated --account
 fi
-
-# Run our TLS certificate issuing script.
-~/bin/issue
