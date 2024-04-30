@@ -24,13 +24,16 @@ files() {
 	_require_root
 
 	# Get our mail server's hostname (e.g. `mail.example.com`).
+	local hostname
 	hostname="$(hostname)"
 
 	# Set the path where `dehydrated` outputs our TLS certificate files.
+	local source_path
 	source_path="/home/acme/dehydrated/certs/$hostname"
 
 	# Set the path where Postfix looks for the TLS files, as set in the
 	# `smtpd_tls_chain_files` option from `etc/postfix/main.cf`.
+	local target_path
 	target_path=/etc/postfix/smtpd_tls_chain_files
 
 	# Copy the contents of the new certificate files to Postfix's directory.

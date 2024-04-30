@@ -19,6 +19,7 @@ _require_root() {
 # Reloads OpenDKIM.
 _reload_opendkim() {
 	# Get OpenDKIM's process ID and then its main child process's ID.
+	local opendkim_pid opendkim_child_pid
 	opendkim_pid="$(cat /run/opendkim.pid)"
 	opendkim_child_pid="$(pgrep -P "$opendkim_pid")"
 
@@ -36,15 +37,16 @@ files() {
 
 	# Set the path where our `home/dkim/bin/rotate` script outputs our
 	# private keys.
-	source_path=/home/dkim/keys
+	local source_path=/home/dkim/keys
 
 	# Set the path where OpenDKIM looks for private key files, as set in the
 	# `KeyFile` option from `etc/opendkim/opendkim.conf`.
-	target_path=/var/db/dkim
+	local target_path=/var/db/dkim
 
 	# Get the name of an arbitrary key created fewer than 30 days ago. If no
 	# such key exists, this will be empty. If it does exist, it's most
 	# likely the active key.
+	local active_key
 	active_key="$(
 		find "$source_path" -mindepth 1 -maxdepth 1 -mtime -30 \
 			-exec basename -s .pem -- {} \; -quit
@@ -53,6 +55,7 @@ files() {
 	# Check if there's a newer key we can use as the active key instead,
 	# just in case. The active key must be the newest.
 	if [[ "$active_key" ]]; then
+		local newer_key
 		newer_key="$(
 			find "$source_path" -mindepth 1 -maxdepth 1 \
 				-newer "$source_path/$active_key.pem" \
@@ -69,6 +72,7 @@ files() {
 
 	# Use a temporary file for writing to the OpenDKIM `SigningTable` file
 	# to prevent corrupting the original in case of a failure.
+	local temp_signing_table
 	temp_signing_table="$(mktemp -u)"
 
 	# Tell OpenDKIM this active key is the key it should use (from the list

@@ -34,6 +34,7 @@ _clean_dns_record() {
 
 	# Use a temporary file for writing to our DNS cleanup file to prevent
 	# corrupting the original in case of a failure.
+	local temp_dns_cleanup_path
 	temp_dns_cleanup_path="$(mktemp -u)"
 
 	# Now that the DNS record is deleted, remove it from our DNS cleanup
@@ -135,6 +136,7 @@ deploy_challenge() {
 
 	# Use a temporary file for writing to our DNS cleanup file to prevent
 	# corrupting the original in case of a failure.
+	local temp_dns_cleanup_path
 	temp_dns_cleanup_path="$(mktemp -u)"
 	cp -- "$dns_cleanup_path" "$temp_dns_cleanup_path"
 
