@@ -27,10 +27,10 @@ passdb=/etc/auth/passwd
 temp_passdb="$(mktemp -u)"
 
 # Escape the address so it can be safely used in a regex pattern.
-escaped_address="$(printf '%s\n' "$address" | sed -e 's/[$*./[\^]/\\&/g')"
+escaped_address="$(printf '%s\n' "$address" | sed 's/[$*./[\^]/\\&/g')"
 
 # Remove the specified address from the database.
-sed -e "/^$escaped_address:/d" -- "$passdb" > "$temp_passdb"
+sed "/^$escaped_address:/d" -- "$passdb" > "$temp_passdb"
 
 # Randomly generate a cryptographically secure password in Base64. We generate
 # 192 bytes because that encodes into 256 Base64 characters, which is as close
