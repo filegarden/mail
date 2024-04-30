@@ -41,8 +41,8 @@ add() {
 		exit 1
 	fi
 
-	# Randomly generate a cryptographically secure password in Base64. We
-	# generate 192 bytes because that encodes into 256 Base64 characters,
+	# Generate a cryptographically secure pseudorandom password in Base64.
+	# We generate 192 bytes because that encodes into 256 Base64 characters,
 	# which is as close as Base64 can get to 255, the maximum SASL password
 	# length as per RFC 4616 (section 2). Then cut the password off at that
 	# maximum length.
