@@ -22,8 +22,8 @@ _reload_opendkim() {
 	opendkim_pid="$(cat /run/opendkim.pid)"
 	opendkim_child_pid="$(pgrep -P "$opendkim_pid")"
 
-	# Kill the child process so OpenDKIM restarts it. (Don't worry; this
-	# allows it to exit cleanly.)
+	# Kill the main child process so OpenDKIM restarts it. (Don't worry;
+	# this allows it to exit cleanly.)
 	kill -- "$opendkim_child_pid"
 }
 
