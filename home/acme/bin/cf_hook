@@ -39,7 +39,7 @@ _clean_dns_record() {
 	# Now that the DNS record is deleted, remove it from our DNS cleanup
 	# file. If `grep` returns an error due to finding no matches, instead do
 	# nothing.
-	grep -Fvx -- "$dns_record_name $token_value" "$dns_cleanup_path" || : \
+	grep -Fvxe "$dns_record_name $token_value" -- "$dns_cleanup_path" || : \
 		> "$temp_dns_cleanup_path"
 
 	# Save the DNS cleanup file.
@@ -204,7 +204,7 @@ deploy_challenge() {
 
 		# If any of the results match the DNS record we created, we can
 		# stop checking for our DNS record.
-		if grep -Fqx -- "$token_value" <<< "$dns_record_answers"; then
+		if grep -Fqxe "$token_value" <<< "$dns_record_answers"; then
 			printf '%s\n' "Updated DNS record found."
 			break
 		fi
@@ -229,7 +229,7 @@ clean_challenge() {
 	# Use the token value of the DNS record we're cleaning up to find the
 	# record in our DNS cleanup file.
 	local dns_record_info
-	dns_record_info=$(grep -F -- " $token_value" "$dns_cleanup_path")
+	dns_record_info=$(grep -Fe " $token_value" -- "$dns_cleanup_path")
 
 	# Split the record info on whitespace into an array so its values can be
 	# passed as separate arguments to the below function call.
