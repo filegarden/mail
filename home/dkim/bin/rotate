@@ -122,7 +122,7 @@ sync_key_to_dns() {
 		# If key's file doesn't exist but the DNS record does, delete
 		# the DNS record.
 		if [[ "$dns_record_json" != "null" ]]; then
-			printf '%s\n' "Deleting DNS record for key '$name'..."
+			printf '%s\n' "Deleting DNS record for key '$name' at '$dns_record_name'..."
 
 			cf api "/zones/$zone_id/dns_records/$dns_record_id" \
 				-X DELETE > /dev/null
@@ -146,7 +146,7 @@ sync_key_to_dns() {
 
 	# If no DNS record for the key already exists, create a new one.
 	if [[ "$dns_record_json" == "null" ]]; then
-		printf '%s\n' "Creating DNS record for key '$name'..."
+		printf '%s\n' "Creating DNS record for key '$name' at '$dns_record_name'..."
 
 		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dns_record_content"'"}'
 
@@ -173,7 +173,7 @@ sync_key_to_dns() {
 		return 0
 	fi
 
-	printf '%s\n' "Updating DNS record for key '$name'..."
+	printf '%s\n' "Updating DNS record for key '$name' at '$dns_record_name'..."
 
 	local dns_record_patch='{"content":"'"$correct_dns_record_content"'"}'
 
