@@ -134,8 +134,8 @@ remove() {
 reset() {
 	local address="$1"
 
-	# First remove the existing user from the password database. Hide the
-	# removal success message.
+	# Remove the existing user from the password database. Hide the removal
+	# success message since it doesn't make sense for resetting a password.
 	user remove "$address" > /dev/null
 
 	# Now that it's removed, add a new user under the same address. It will
