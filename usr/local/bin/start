@@ -37,6 +37,9 @@ deploy_tls files
 # Give our DKIM key information to OpenDKIM.
 deploy_dkim files
 
+# Ensure our SPF DNS record has the correct value.
+update_spf
+
 # Run everything needed for our mail server in parallel, replacing this script's
 # shell process (using `exec`) since the shell is no longer needed.
 # * If one of the below processes exits, also halt the others so the container

@@ -1,0 +1,108 @@
+#!/bin/busybox sh
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+printf '%s\n' "Checking SPF..."
+
+# Obtain this server's public IP address(es) to use in our SPF DNS record. If
+# either request fails, do nothing instead of exiting from the error, because
+# it's expected that some networks don't support both IPv4 and IPv6.
+ipv4="$(curl -s --ipv4 https://icanhazip.com/ || :)"
+ipv6="$(curl -s --ipv6 https://icanhazip.com/ || :)"
+
+# If no IPs are found, something is wrong, and we won't be able to add this
+# server as an allowed sender in our SPF record.
+if [[ ! "$ipv4$ipv6" ]]; then
+	printf '%s\n' "Could not obtain your public IP address (to include in your SPF record)." >&2
+	exit 1
+fi
+
+# Fetch our Cloudflare zone information.
+zone_json="$(cf zone)"
+zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
+zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
+
+# Get our mail server's hostname (e.g. `mail.example.com`).
+hostname="$(hostname)"
+
+# The DNS record that should contain our SPF policy. This doesn't need to start
+# with `_spf.`, but using a less general name makes a conflict with an existing
+# SPF record less likely.
+dns_record_name="_spf.$hostname"
+
+# If our mail server's hostname (`$hostname`) is outside the domain of the zone
+# our token has access to (`$zone_name`), correct the record name to be under
+# our zone.
+if [[ ".$hostname" != *".$zone_name" ]]; then
+	dns_record_name="$dns_record_name.$zone_name"
+fi
+
+# Start generating the value that the SPF record should have.
+correct_dns_record_content="v=spf1"
+
+# If we have an IPv4 address, add it to our SPF record as an allowed sender.
+if [[ "$ipv4" ]]; then
+	correct_dns_record_content="$correct_dns_record_content ip4:$ipv4"
+fi
+
+# If we have an IPv6 address, add it to our SPF record as an allowed sender.
+if [[ "$ipv6" ]]; then
+	correct_dns_record_content="$correct_dns_record_content ip6:$ipv6"
+fi
+
+# Disallow all other senders. Only our mail server should be able to send as our
+# mail server.
+#
+# Note that, as per RFC 7208 (section 5.2), this has no effect on other SPF
+# records that `include:` this one, which is good for domains that want to allow
+# multiple mail servers (including ours) to send as them.
+correct_dns_record_content="$correct_dns_record_content -all"
+
+# Fetch information for our existing SPF record. If no such record exists, this
+# will be `null`.
+dns_record_json="$(
+	cf api "/zones/$zone_id/dns_records" \
+		--url-query "type=TXT" \
+		--url-query "name=$dns_record_name" \
+	| jq -r '.result[0]'
+)"
+
+# If our SPF record doesn't already exist, create it.
+if [[ "$dns_record_json" == "null" ]]; then
+	printf '%s\n' "Creating SPF DNS record at '$dns_record_name'..."
+
+	dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dns_record_content"'"}'
+
+	cf api "/zones/$zone_id/dns_records" \
+		-X POST \
+		-H "Content-Type: application/json" \
+		--data-raw "$dns_record_data" > /dev/null
+
+	exit 0
+fi
+
+# Since the record already exists, make a request to modify it if necessary.
+
+# Get the SPF record's current value.
+dns_record_content="$(printf '%s\n' "$dns_record_json" | jq -r '.content')"
+
+# If the SPF record already has the correct value, no need to continue with
+# updating it.
+if [[ "$dns_record_content" == "$correct_dns_record_content" ]]; then
+	exit 0
+fi
+
+# Update the existing SPF record to have the correct value.
+
+# Get the ID of the existing SPF record.
+dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
+
+printf '%s\n' "Updating SPF DNS record at '$dns_record_name'..."
+
+dns_record_patch='{"content":"'"$correct_dns_record_content"'"}'
+
+cf api "/zones/$zone_id/dns_records/$dns_record_id" \
+	-X PATCH \
+	-H "Content-Type: application/json" \
+	--data-raw "$dns_record_patch" > /dev/null
