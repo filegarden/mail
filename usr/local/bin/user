@@ -30,7 +30,8 @@ add() {
 
 	# Ensure the address doesn't already exist before adding it.
 	if user exists "$address"; then
-		printf '%s\n' "Address '$address' already exists in database."
+		printf '%s\n' "Address '$address' already exists in database." \
+			>&2
 		exit 1
 	fi
 
@@ -97,7 +98,7 @@ remove() {
 
 	# Ensure the address exists before removing it.
 	if ! user exists "$address"; then
-		printf '%s\n' "Address '$address' not found in database."
+		printf '%s\n' "Address '$address' not found in database." >&2
 		exit 1
 	fi
 
@@ -134,7 +135,7 @@ reset() {
 
 	# Ensure the address exists before resetting its password.
 	if ! user exists "$address"; then
-		printf '%s\n' "Address '$address' not found in database."
+		printf '%s\n' "Address '$address' not found in database." >&2
 		exit 1
 	fi
 
