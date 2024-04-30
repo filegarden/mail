@@ -161,7 +161,7 @@ sync_key_to_dns() {
 	# Since the record already exists, make a request to modify it if
 	# necessary.
 
-	# Get the current value of the DNS record.
+	# Get the DNS record's current value.
 	local dns_record_content
 	dns_record_content="$(
 		printf '%s\n' "$dns_record_json" | jq -r '.content'
