@@ -136,7 +136,7 @@ reset() {
 
 	# First remove the existing user from the password database. Hide the
 	# removal success message.
-	user remove "$address" 1> /dev/null
+	user remove "$address" > /dev/null
 
 	# Now that it's removed, add a new user under the same address. It will
 	# get a fresh password.
