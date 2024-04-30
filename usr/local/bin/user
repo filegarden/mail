@@ -10,69 +10,211 @@ reset="$(printf '\e[0m')"
 gray="$(printf '\e[90m')"
 lblue="$(printf '\e[1;34m')"
 
-# The address specified in this command's arguments.
-address="$1"
-
-# Check if the specified address is invalid.
-if [[ "$address" != *"@"* ]]; then
-	printf '%s\n' "Invalid address: $address" >&2
-	exit 1
-fi
-
 # Our Dovecot password database path (from `etc/dovecot/conf.d/10-auth.conf`).
 passdb=/etc/auth/passwd
 
-# Use a temporary file for writing to the password database to prevent
-# corrupting the original in case of a failure.
-temp_passdb="$(mktemp -u)"
+# If the previous pipeline exits with status 141 due to a command being piped
+# into something that exits early, this catches and ignores the error.
+_ignore_sigpipe() {
+	local status="$?"
+	if [[ "$status" != "141" ]]; then
+		return "$status"
+	fi
+}
 
-# Escape the address so it can be safely used in a regex pattern.
-escaped_address="$(printf '%s\n' "$address" | sed 's/[$*./[\^]/\\&/g')"
+# Adds an address to the password database and generates a crytographically
+# secure pseudorandom password for it, printing the new password. Exits with an
+# error if the specified address is already in the database.
+add() {
+	local address="$1"
 
-# Remove the specified address from the database.
-sed "/^$escaped_address:/d" -- "$passdb" > "$temp_passdb"
+	# Ensure the address doesn't already exist before adding it.
+	if user exists "$address"; then
+		printf '%s\n' "Address '$address' already exists in database."
+		exit 1
+	fi
 
-# Randomly generate a cryptographically secure password in Base64. We generate
-# 192 bytes because that encodes into 256 Base64 characters, which is as close
-# as Base64 can get to 255, the maximum SASL password length as per RFC 4616
-# (section 2). Then cut the password off at that maximum length.
-password="$(openssl rand 192 | openssl base64 -A | cut -c -255)"
+	# Check if the specified address is invalid.
+	if [[ "$address" != *"@"* ]]; then
+		printf '%s\n' "Invalid address: $address" >&2
+		exit 1
+	fi
 
-# Hash the password using Argon2.
-password_hash="$(doveadm pw -s ARGON2ID -p "$password")"
+	# Randomly generate a cryptographically secure password in Base64. We
+	# generate 192 bytes because that encodes into 256 Base64 characters,
+	# which is as close as Base64 can get to 255, the maximum SASL password
+	# length as per RFC 4616 (section 2). Then cut the password off at that
+	# maximum length.
+	local password
+	password="$(openssl rand 192 | openssl base64 -A | cut -c -255)"
 
-# Append the new user entry to the database.
-printf '%s\n' "$address:$password_hash" >> "$temp_passdb"
+	# Hash the password using Argon2.
+	local password_hash
+	password_hash="$(doveadm pw -s ARGON2ID -p "$password")"
 
-# Copy the current database file's permissions to the new database file.
-passdb_mod="$(stat -c '%a' -- "$passdb")"
-passdb_own="$(stat -c '%u:%g' -- "$passdb")"
-chmod -- "$passdb_mod" "$temp_passdb"
-chown -- "$passdb_own" "$temp_passdb"
+	# Use a temporary file for writing to the password database to prevent
+	# corrupting the original in case of a failure.
+	local temp_passdb
+	temp_passdb="$(mktemp -u)"
+	cp -- "$passdb" "$temp_passdb"
 
-# Save the database.
-mv -f -- "$temp_passdb" "$passdb"
+	# Append the new user entry to the database.
+	printf '%s\n' "$address:$password_hash" >> "$temp_passdb"
 
-# Get our mail server's hostname (e.g. `mail.example.com`).
-hostname="$(hostname)"
+	# Copy the current database file's permissions to the new database file.
+	local passdb_mod passdb_own
+	passdb_mod="$(stat -c '%a' -- "$passdb")"
+	passdb_own="$(stat -c '%u:%g' -- "$passdb")"
+	chmod -- "$passdb_mod" "$temp_passdb"
+	chown -- "$passdb_own" "$temp_passdb"
 
-printf '%s' "\
-Log into your mail server using these SASL credentials.
+	# Save the database.
+	mv -f -- "$temp_passdb" "$passdb"
 
-${gray}For how to sign into your mail server using these credentials, see:
-https://github.com/filegarden/mail/blob/main/README.md${reset}
+	# Get our mail server's hostname (e.g. `mail.example.com`).
+	local hostname
+	hostname="$(hostname)"
 
-Hostname: ${lblue}${hostname}${reset}
+	cat <<-END >&2
+	Log into your mail server using these SASL credentials.
 
-Login Name: ${lblue}${address}${reset}
+	${gray}To learn how to sign into your mail server using these credentials, see:
+	https://github.com/filegarden/mail/blob/main/README.md${reset}
 
-Password:
-${lblue}" 1>&2
+	Hostname: ${lblue}$hostname${reset}
 
-# The password is the only part of the output without `1>&2`, so that it prints
-# to `stdout` instead of `stderr`. That way, automated tools can easily
-# distinguish and extract it from the otherwise human-friendly output.
-printf '%s' "$password"
+	Login Name: ${lblue}$address${reset}
 
-printf '%s' "${reset}
-" 1>&2
+	Password:
+	${lblue}$password${reset}
+	END
+}
+
+# Removes an address and its password from the password database. Exits with an
+# error if the specified address isn't in the database.
+remove() {
+	local address="$1"
+
+	# Ensure the address exists before removing it.
+	if ! user exists "$address"; then
+		printf '%s\n' "Address '$address' not found in database."
+		exit 1
+	fi
+
+	# Use a temporary file for writing to the password database to prevent
+	# corrupting the original in case of a failure.
+	local temp_passdb
+	temp_passdb="$(mktemp -u)"
+
+	# Escape the address so it can be safely used in a regex pattern.
+	local escaped_address
+	escaped_address="$(printf '%s\n' "$address" | sed 's/[$*./[\^]/\\&/g')"
+
+	# Remove the specified address from the database.
+	sed "/^$escaped_address:/d" -- "$passdb" > "$temp_passdb"
+
+	# Copy the current database file's permissions to the new database file.
+	local passdb_mod passdb_own
+	passdb_mod="$(stat -c '%a' -- "$passdb")"
+	passdb_own="$(stat -c '%u:%g' -- "$passdb")"
+	chmod -- "$passdb_mod" "$temp_passdb"
+	chown -- "$passdb_own" "$temp_passdb"
+
+	# Save the database.
+	mv -f -- "$temp_passdb" "$passdb"
+
+	printf '%s\n' "Removed '$address' from database." >&2
+}
+
+# Generates a new crytographically secure pseudorandom password for an address
+# in the password database and prints the new password. Exits with an error if
+# the specified address isn't in the database.
+reset() {
+	local address="$1"
+
+	# Ensure the address exists before resetting its password.
+	if ! user exists "$address"; then
+		printf '%s\n' "Address '$address' not found in database."
+		exit 1
+	fi
+
+	# Randomly generate a cryptographically secure password in Base64. We
+	# generate 192 bytes because that encodes into 256 Base64 characters,
+	# which is as close as Base64 can get to 255, the maximum SASL password
+	# length as per RFC 4616 (section 2). Then cut the password off at that
+	# maximum length.
+	local password
+	password="$(openssl rand 192 | openssl base64 -A | cut -c -255)"
+
+	# Hash the password using Argon2.
+	local password_hash
+	password_hash="$(doveadm pw -s ARGON2ID -p "$password")"
+
+	# Use a temporary file for writing to the password database to prevent
+	# corrupting the original in case of a failure.
+	local temp_passdb
+	temp_passdb="$(mktemp -u)"
+
+	# Escape the address so it can be safely used in a regex pattern.
+	local escaped_address
+	escaped_address="$(printf '%s\n' "$address" | sed 's/[$*./[\^]/\\&/g')"
+
+	# Remove the specified address from the database.
+	sed "/^$escaped_address:/d" -- "$passdb" > "$temp_passdb"
+
+	# Append the new user entry to the database.
+	printf '%s\n' "$address:$password_hash" >> "$temp_passdb"
+
+	# Copy the current database file's permissions to the new database file.
+	local passdb_mod passdb_own
+	passdb_mod="$(stat -c '%a' -- "$passdb")"
+	passdb_own="$(stat -c '%u:%g' -- "$passdb")"
+	chmod -- "$passdb_mod" "$temp_passdb"
+	chown -- "$passdb_own" "$temp_passdb"
+
+	# Save the database.
+	mv -f -- "$temp_passdb" "$passdb"
+
+	# Get our mail server's hostname (e.g. `mail.example.com`).
+	local hostname
+	hostname="$(hostname)"
+
+	cat <<-END >&2
+	Log into your mail server using these SASL credentials.
+
+	${gray}To learn how to sign into your mail server using these credentials, see:
+	https://github.com/filegarden/mail/blob/main/README.md${reset}
+
+	Hostname: ${lblue}$hostname${reset}
+
+	Login Name: ${lblue}$address${reset}
+
+	Password:
+	${lblue}$password${reset}
+	END
+}
+
+# Lists all addresses in the password database, one per line.
+list() {
+	# Output the `user` part of each `user:password` line from the database
+	# file.
+	cut -d : -f 1 -- "$passdb"
+}
+
+# If an address exists in the password database, exits with status 0. Otherwise,
+# exits with status 1.
+exists() {
+	local address="$1"
+
+	user list | grep -Fqxe "$address" || _ignore_sigpipe
+}
+
+case "$1" in
+add | remove | reset | list | exists)
+	"$@"
+	;;
+*)
+	printf '%s\n' "Invalid subcommand '$1'."
+	exit 1
+	;;
+esac
