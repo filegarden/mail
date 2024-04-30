@@ -84,7 +84,7 @@ add() {
 	local hostname
 	hostname="$(hostname)"
 
-	cat <<-END >&2
+	cat <<-END
 	Log into your mail server using these SASL credentials.
 
 	${gray}To learn how to sign into your mail server using these credentials, see:
