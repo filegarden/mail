@@ -43,6 +43,9 @@ _save_passdb() {
 add() {
 	local address="$1"
 
+	# Normalize the address to lowercase.
+	address="$(printf '%s\n' "$address" | tr '[:upper:]' '[:lower:]')"
+
 	# Ensure the address doesn't already exist before adding it.
 	if user exists "$address"; then
 		printf '%s\n' "Address '$address' already exists in database." \
@@ -103,6 +106,9 @@ add() {
 # error if the specified address isn't in the database.
 remove() {
 	local address="$1"
+
+	# Normalize the address to lowercase.
+	address="$(printf '%s\n' "$address" | tr '[:upper:]' '[:lower:]')"
 
 	# Ensure the address exists before removing it.
 	if ! user exists "$address"; then
