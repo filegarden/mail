@@ -22,6 +22,21 @@ _ignore_sigpipe() {
 	fi
 }
 
+# Saves the file at the specified path as the new password database.
+_save_passdb() {
+	local temp_passdb="$1"
+
+	# Copy the current database file's permissions to the new database file.
+	local passdb_mod passdb_own
+	passdb_mod="$(stat -c '%a' -- "$passdb")"
+	passdb_own="$(stat -c '%u:%g' -- "$passdb")"
+	chmod -- "$passdb_mod" "$temp_passdb"
+	chown -- "$passdb_own" "$temp_passdb"
+
+	# Save the database.
+	mv -f -- "$temp_passdb" "$passdb"
+}
+
 # Adds an address to the password database and generates a crytographically
 # secure pseudorandom password for it, printing the new password. Exits with an
 # error if the specified address is already in the database.
@@ -62,15 +77,8 @@ add() {
 	# Append the new user entry to the database.
 	printf '%s\n' "$address:$password_hash" >> "$temp_passdb"
 
-	# Copy the current database file's permissions to the new database file.
-	local passdb_mod passdb_own
-	passdb_mod="$(stat -c '%a' -- "$passdb")"
-	passdb_own="$(stat -c '%u:%g' -- "$passdb")"
-	chmod -- "$passdb_mod" "$temp_passdb"
-	chown -- "$passdb_own" "$temp_passdb"
-
 	# Save the database.
-	mv -f -- "$temp_passdb" "$passdb"
+	_save_passdb "$temp_passdb"
 
 	# Get our mail server's hostname (e.g. `mail.example.com`).
 	local hostname
@@ -114,17 +122,10 @@ remove() {
 	# Remove the specified address from the database.
 	sed "/^$escaped_address:/d" -- "$passdb" > "$temp_passdb"
 
-	# Copy the current database file's permissions to the new database file.
-	local passdb_mod passdb_own
-	passdb_mod="$(stat -c '%a' -- "$passdb")"
-	passdb_own="$(stat -c '%u:%g' -- "$passdb")"
-	chmod -- "$passdb_mod" "$temp_passdb"
-	chown -- "$passdb_own" "$temp_passdb"
+	# Save the password database.
+	_save_passdb "$temp_passdb"
 
-	# Save the database.
-	mv -f -- "$temp_passdb" "$passdb"
-
-	printf '%s\n' "Removed '$address' from database." >&2
+	printf '%s\n' "Removed '$address' from database."
 }
 
 # Generates a new crytographically secure pseudorandom password for an address
@@ -133,66 +134,13 @@ remove() {
 reset() {
 	local address="$1"
 
-	# Ensure the address exists before resetting its password.
-	if ! user exists "$address"; then
-		printf '%s\n' "Address '$address' not found in database." >&2
-		exit 1
-	fi
+	# First remove the existing user from the password database. Hide the
+	# removal success message.
+	user remove "$address" 1> /dev/null
 
-	# Randomly generate a cryptographically secure password in Base64. We
-	# generate 192 bytes because that encodes into 256 Base64 characters,
-	# which is as close as Base64 can get to 255, the maximum SASL password
-	# length as per RFC 4616 (section 2). Then cut the password off at that
-	# maximum length.
-	local password
-	password="$(openssl rand 192 | openssl base64 -A | cut -c -255)"
-
-	# Hash the password using Argon2.
-	local password_hash
-	password_hash="$(doveadm pw -s ARGON2ID -p "$password")"
-
-	# Use a temporary file for writing to the password database to prevent
-	# corrupting the original in case of a failure.
-	local temp_passdb
-	temp_passdb="$(mktemp -u)"
-
-	# Escape the address so it can be safely used in a regex pattern.
-	local escaped_address
-	escaped_address="$(printf '%s\n' "$address" | sed 's/[$*./[\^]/\\&/g')"
-
-	# Remove the specified address from the database.
-	sed "/^$escaped_address:/d" -- "$passdb" > "$temp_passdb"
-
-	# Append the new user entry to the database.
-	printf '%s\n' "$address:$password_hash" >> "$temp_passdb"
-
-	# Copy the current database file's permissions to the new database file.
-	local passdb_mod passdb_own
-	passdb_mod="$(stat -c '%a' -- "$passdb")"
-	passdb_own="$(stat -c '%u:%g' -- "$passdb")"
-	chmod -- "$passdb_mod" "$temp_passdb"
-	chown -- "$passdb_own" "$temp_passdb"
-
-	# Save the database.
-	mv -f -- "$temp_passdb" "$passdb"
-
-	# Get our mail server's hostname (e.g. `mail.example.com`).
-	local hostname
-	hostname="$(hostname)"
-
-	cat <<-END >&2
-	Log into your mail server using these SASL credentials.
-
-	${gray}To learn how to sign into your mail server using these credentials, see:
-	https://github.com/filegarden/mail/blob/main/README.md${reset}
-
-	Hostname: ${lblue}$hostname${reset}
-
-	Login Name: ${lblue}$address${reset}
-
-	Password:
-	${lblue}$password${reset}
-	END
+	# Now that it's removed, add a new user under the same address. It will
+	# get a fresh password.
+	user add "$address"
 }
 
 # Lists all addresses in the password database, one per line.
