@@ -6,6 +6,10 @@ set -euo pipefail
 # By default, don't let unprivileged users access files created by this script.
 umask 0077
 
+# Load variables defined in our `.env` file into the `/run/.env` directory so
+# the variables can be used.
+load_env
+
 # Our Dovecot password database path (from `etc/dovecot/conf.d/10-auth.conf`).
 passdb=/etc/auth/passwd
 
@@ -54,6 +58,14 @@ add() {
 		printf '%s\n' "Invalid address: $address" >&2
 		exit 1
 	fi
+
+	# Get the domain part of the address (the part after the `@`).
+	local domain
+	domain="$(printf '%s\n' "$address" | cut -d @ -f 2)"
+
+	# Ensure the domain's DNS records allow our mail server to send as this
+	# address.
+	check_sender_dns "$domain"
 
 	# Generate a cryptographically secure pseudorandom password in Base64.
 	# We generate 192 bytes because that encodes into 256 Base64 characters,
