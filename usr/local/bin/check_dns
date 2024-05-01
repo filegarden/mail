@@ -32,8 +32,9 @@ _check_hostname_spf() {
 	hostname="$(hostname)"
 
 	# The DNS record that should contain our SPF policy. This doesn't need
-	# to start with `_spf.`, but using a less general name makes a conflict
-	# with an existing SPF record less likely.
+	# to start with `_spf.`, but using a less general name makes finding the
+	# SPF record automatically far simpler (no need to search any number of
+	# pages of TXT records to find one that starts with `v=spf1 `).
 	local dns_record_name="_spf.$hostname"
 
 	# If our mail server's hostname (`$hostname`) is outside the domain of
