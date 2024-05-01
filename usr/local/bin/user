@@ -48,14 +48,13 @@ add() {
 
 	# Ensure the address doesn't already exist before adding it.
 	if user exists "$address"; then
-		printf '%s\n' "Address '$address' already exists in database." \
-			>&2
+		printf '%s\n' "ERROR: Address '$address' already exists in database." >&2
 		exit 1
 	fi
 
 	# Check if the specified address is invalid.
 	if [[ "$address" != *"@"* ]]; then
-		printf '%s\n' "Invalid address: $address" >&2
+		printf '%s\n' "ERROR: Invalid address: $address" >&2
 		exit 1
 	fi
 
@@ -125,7 +124,7 @@ remove() {
 
 	# Ensure the address exists before removing it.
 	if ! user exists "$address"; then
-		printf '%s\n' "Address '$address' not found in database." >&2
+		printf '%s\n' "ERROR: Address '$address' not found in database." >&2
 		exit 1
 	fi
 

@@ -17,7 +17,7 @@ _check_hostname_spf() {
 	# If no IPs are found, something is wrong, and we won't be able to add
 	# this server as an allowed sender in our SPF record.
 	if [[ ! "$ipv4$ipv6" ]]; then
-		printf '%s\n' "Could not obtain your public IP address (to include in your SPF record)." >&2
+		printf '%s\n' "ERROR: Could not obtain your public IP address (to include in your SPF record)." >&2
 		return 1
 	fi
 

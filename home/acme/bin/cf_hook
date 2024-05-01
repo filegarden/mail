@@ -208,7 +208,7 @@ deploy_challenge() {
 		fi
 
 		if [[ "$SECONDS" -gt "$dns_timeout_seconds" ]]; then
-			printf '%s\n' "Timed out. DNS updates shouldn't take this long, so something is probably wrong." >&2
+			printf '%s\n' "ERROR: Timed out. DNS updates shouldn't take this long, so something is probably wrong." >&2
 			exit 1
 		fi
 
