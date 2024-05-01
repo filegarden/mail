@@ -76,13 +76,9 @@ deploy_challenge() {
 
 	printf '%s\n' "Fetching your Cloudflare zone information..."
 
-	local zone_json
+	local zone_json zone_id zone_name
 	zone_json="$(cf zone)"
-
-	local zone_id
 	zone_id="$(jq -r '.id' <<< "$zone_json")"
-
-	local zone_name
 	zone_name="$(jq -r '.name' <<< "$zone_json")"
 
 	printf '%s\n' "Zone '$zone_name' found."
