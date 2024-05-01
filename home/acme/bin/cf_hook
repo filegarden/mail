@@ -123,7 +123,6 @@ deploy_challenge() {
 
 			${gray}If you don't want to use a DNS alias, ensure your hostname (in \`compose.override.yaml\`) is under the same domain as the zone your Cloudflare API token (in \`.env\`) has DNS editing permissions for.${reset}
 			END
-
 			exit 1
 		fi
 
