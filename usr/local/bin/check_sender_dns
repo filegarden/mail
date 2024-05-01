@@ -49,8 +49,7 @@ _check_dkim() {
 	# DKIM key.
 	local cname
 	cname="$(
-		cf dns query CNAME "$dns_record_name" \
-		| jq -r '.Answer[0].data'
+		cf dns query CNAME "$dns_record_name" | jq -r '.Answer[0].data'
 	)"
 
 	# This is what the above CNAME record should point to.
