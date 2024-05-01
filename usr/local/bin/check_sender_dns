@@ -40,6 +40,13 @@ fi
 # Ensures the sender's DKIM record with the specified DKIM selector is an alias
 # of our server's.
 _check_dkim() {
+	# If the sender domain is the domain that already has our original DKIM
+	# DNS records directly, then there's no need to ensure the sender domain
+	# also has aliases to those original records.
+	if [[ "$sender_domain" != "$source_domain" ]]; then
+		return 0
+	fi
+
 	local selector="$1"
 
 	# The name of the DNS record we're checking.
