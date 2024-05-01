@@ -68,7 +68,7 @@ if [[ ! "$active_key" ]]; then
 	# 3.3.3) requires DKIM verifiers to support.
 	openssl genrsa -out ~/keys/"$active_key".pem 2048
 
-	active_key_updated=true
+	active_key_updated=y
 fi
 
 printf '%s\n' "Active DKIM key: ${active_key:-(None)}"
