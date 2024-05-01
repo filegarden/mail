@@ -129,7 +129,7 @@ _check_sender_domains() {
 	# For each address in the password database, get the domain part of the
 	# address, dedupe them so each domain is only checked once, and then
 	# check the domain's DNS records.
-	user list | cut -d @ -f 2 | sort -u | xargs -rn 1 check_sender_domain
+	user list | cut -d @ -f 2 | sort -u | xargs -rn 1 check_sender_dns
 }
 
 _check_hostname_spf
