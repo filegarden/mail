@@ -6,10 +6,6 @@ set -euo pipefail
 # By default, don't let unprivileged users access files created by this script.
 umask 0077
 
-reset="$(printf '\e[0m')"
-gray="$(printf '\e[90m')"
-lblue="$(printf '\e[1;34m')"
-
 # Our Dovecot password database path (from `etc/dovecot/conf.d/10-auth.conf`).
 passdb=/etc/auth/passwd
 
@@ -86,6 +82,11 @@ add() {
 	# Get our mail server's hostname (e.g. `mail.example.com`).
 	local hostname
 	hostname="$(hostname)"
+
+	local reset gray lblue
+	reset="$(printf '\e[0m')"
+	gray="$(printf '\e[90m')"
+	lblue="$(printf '\e[1;34m')"
 
 	cat <<-END
 	Log into your mail server using these SASL credentials.
