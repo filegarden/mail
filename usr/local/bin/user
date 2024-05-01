@@ -43,6 +43,13 @@ _save_passdb() {
 add() {
 	local address="$1"
 
+	# Ensure the address is only one line long. (The later `grep` check
+	# can't cover this.)
+	if [[ "$address" == *$'\n'* ]]; then
+		printf '%s\n' "ERROR: An address must contain only one line." >&2
+		exit 1
+	fi
+
 	# Normalize the address to lowercase.
 	address="$(printf '%s\n' "$address" | tr '[:upper:]' '[:lower:]')"
 
@@ -52,8 +59,11 @@ add() {
 		exit 1
 	fi
 
-	# Check if the specified address is invalid.
-	if [[ "$address" != *"@"* ]]; then
+	# Check if the specified address is invalid. The below regex is from
+	# https://html.spec.whatwg.org/multipage/input.html#valid-e-mail-address.
+	if printf '%s\n' "$address" \
+	| grep -Eqv '^[a-zA-Z0-9.!#$%&'"'"'*+/=?^_`{|}~-]+@[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?(\.[a-zA-Z0-9]([a-zA-Z0-9-]{0,61}[a-zA-Z0-9])?)*$'
+	then
 		printf '%s\n' "ERROR: Invalid address: $address" >&2
 		exit 1
 	fi
