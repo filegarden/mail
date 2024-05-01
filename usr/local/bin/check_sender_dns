@@ -2,3 +2,122 @@
 
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
+
+# The specified sender domain to check DNS records for.
+sender_domain="$1"
+
+reset="$(printf '\e[0m')"
+lblue="$(printf '\e[1;34m')"
+
+# Fetch our Cloudflare zone information.
+zone_json="$(cf zone)"
+zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
+zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
+
+# A variable for whether our token has access to the sender domain.
+can_modify_dns=
+
+# Check if the sender domain (`$sender_domain`) is under the domain of the zone
+# our token has access to (`$zone_name`).
+if [[ ".$sender_domain" == *".$zone_name" ]]; then
+	can_modify_dns=y
+fi
+
+# Get our mail server's hostname (e.g. `mail.example.com`).
+hostname="$(hostname)"
+
+# The domain name all our DNS records are under which the sender domain should
+# reference.
+source_domain="$hostname"
+
+# If our source domain name (`$source_domain`) is outside the domain of the zone
+# our token has access to (`$zone_name`), correct the source domain name to be
+# under our zone.
+if [[ ".$source_domain" != *".$zone_name" ]]; then
+	source_domain="$source_domain.$zone_name"
+fi
+
+# Ensures the sender's DKIM record with the specified DKIM selector is an alias
+# of our server's.
+_check_dkim() {
+	local selector="$1"
+
+	# The name of the DNS record we're checking.
+	local dns_record_name="$selector._domainkey.$sender_domain"
+
+	# Get the value of the CNAME record (if it exists) for the specified
+	# DKIM key.
+	local cname
+	cname="$(
+		cf dns query CNAME "$dns_record_name" \
+		| jq -r '.Answer[0].data'
+	)"
+
+	# This is what the above CNAME record should point to.
+	local source_dns_record_name="$selector._domainkey.$source_domain"
+
+	# If the CNAME value is already correct, no need to continue.
+	if [[ "$cname" == "$source_dns_record_name." ]]; then
+		return 0
+	fi
+
+	# If we can't modify the DNS automatically, output an error with
+	# instructions to modify it manually.
+	if [[ ! "$can_modify_dns" ]]; then
+		cat <<-END >&2
+		ERROR: The following DNS record must be set for ${lblue}$sender_domain${reset}:
+
+		Type: ${lblue}CNAME${reset}
+
+		Name: ${lblue}$dns_record_name${reset}
+
+		Target: ${lblue}$source_dns_record_name${reset}
+
+		Proxy status: ${lblue}DNS only${reset}
+		END
+		exit 1
+	fi
+
+	# We can modify the DNS automatically.
+
+	# Fetch information for the DNS record we're modifying. If no such
+	# record exists, this will be `null`.
+	local dns_record_json
+	dns_record_json="$(
+		cf api "/zones/$zone_id/dns_records" \
+			--url-query "type=CNAME" \
+			--url-query "name=$dns_record_name" \
+		| jq -r '.result[0]'
+	)"
+
+	# If the DNS record doesn't exist, create it.
+	if [[ "$dns_record_json" == "null" ]]; then
+		printf '%s\n' "Creating DNS record at '$dns_record_name'..."
+
+		local dns_record_data='{"type":"CNAME","name":"'"$dns_record_name"'","content":"'"$source_dns_record_name"'"}'
+
+		cf api "/zones/$zone_id/dns_records" \
+			-X POST \
+			-H "Content-Type: application/json" \
+			--data-raw "$dns_record_data" > /dev/null
+
+		return 0
+	fi
+
+	# Since the record already exists, make a request to modify it.
+
+	local dns_record_id
+	dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
+
+	printf '%s\n' "Updating DNS record at '$dns_record_name'..."
+
+	local dns_record_patch='{"content":"'"$source_dns_record_name"'"}'
+
+	cf api "/zones/$zone_id/dns_records/$dns_record_id" \
+		-X PATCH \
+		-H "Content-Type: application/json" \
+		--data-raw "$dns_record_patch" > /dev/null
+}
+
+_check_dkim a
+_check_dkim b
