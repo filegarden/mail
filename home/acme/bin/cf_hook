@@ -100,7 +100,7 @@ deploy_challenge() {
 
 		printf '%s\n' "The domain '$domain' being validated is outside the zone '$zone_name' your Cloudflare token has access to. Verifying CNAME..."
 
-		# Get the value of the CNAME record (if there is one).
+		# Get the value of the CNAME record (if it exists).
 		local cname
 		cname="$(
 			cf dns query CNAME "$r_dns_record_name" \
