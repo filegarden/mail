@@ -196,7 +196,7 @@ deploy_challenge() {
 		dns_record_answers="$(
 			cf dns query TXT "$w_dns_record_name" \
 			| jq -r '.Answer[]?.data' \
-			| sed 's/^"\(.*\)"$/\1/'
+			| tr -d '"'
 		)"
 
 		# If any of the results match the DNS record we created, we can
