@@ -125,12 +125,15 @@ _check_hostname_spf() {
 # Checks the DNS records for all the domains of the addresses in our password
 # database to ensure we're allowed to send as them.
 _check_sender_domains() {
-	printf '%s\n' "Checking DNS for sender domains..."
-
 	# For each address in the password database, get the domain part of the
 	# address, dedupe them so each domain is only checked once, and then
 	# check the domain's DNS records.
-	user list | cut -d @ -f 2 | sort -u | xargs -rn 1 check_sender_dns
+	user list | cut -d @ -f 2 | sort -u \
+	| while read -r sender_domain; do
+		printf '%s\n' "Checking DNS for sender domain '$sender_domain'..."
+
+		check_sender_dns "$sender_domain"
+	done
 }
 
 _check_hostname_spf
