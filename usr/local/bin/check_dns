@@ -74,7 +74,7 @@ _check_hostname_spf() {
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
 			--url-query "name=$dns_record_name" \
-		| jq -r '.result[0]'
+		| jq '.result[0]'
 	)"
 
 	# If our SPF record doesn't already exist, create it.

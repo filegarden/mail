@@ -109,7 +109,7 @@ sync_key_to_dns() {
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
 			--url-query "name=$dns_record_name" \
-		| jq -r '.result[0]'
+		| jq '.result[0]'
 	)"
 
 	# Get the ID of the DNS record in case we need to modify or delete it.

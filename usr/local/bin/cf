@@ -53,7 +53,7 @@ api() {
 zone() {
 	# Get JSON values for all the zones the token has access to.
 	local zone_jsons
-	zone_jsons="$(cf api /zones | jq -cr '.result[]')"
+	zone_jsons="$(cf api /zones | jq -c '.result[]')"
 
 	# Check if the token doesn't have access to any zones.
 	if [[ ! "$zone_jsons" ]]; then

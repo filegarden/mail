@@ -152,7 +152,7 @@ deploy_challenge() {
 			--url-query "type=TXT" \
 			--url-query "name=$w_dns_record_name" \
 			--url-query "content=$token_value" \
-		| jq -r '.result[0]'
+		| jq '.result[0]'
 	)"
 
 	# Check if the record already exists.

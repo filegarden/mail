@@ -94,7 +94,7 @@ _check_dkim() {
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=CNAME" \
 			--url-query "name=$dns_record_name" \
-		| jq -r '.result[0]'
+		| jq '.result[0]'
 	)"
 
 	# If the DNS record doesn't exist, create it.
@@ -224,7 +224,7 @@ _check_spf() {
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
 			--url-query "name=$dns_record_name" \
-		| jq -cr '
+		| jq '
 			.result
 			| map(select(.content | test("^v=spf1( |$)")))
 			| first
