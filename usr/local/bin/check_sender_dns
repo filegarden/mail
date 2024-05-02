@@ -40,17 +40,19 @@ fi
 # Ensures the sender's DKIM record with the specified DKIM selector is an alias
 # of our server's.
 _check_dkim() {
-	# If the sender domain is the domain that already has our original DKIM
-	# DNS records directly, then there's no need to ensure the sender domain
-	# also has aliases to those original records.
-	if [[ "$sender_domain" != "$source_domain" ]]; then
-		return 0
-	fi
-
 	local selector="$1"
+
+	# This is what the above CNAME record should point to.
+	local source_dns_record_name="$selector._domainkey.$source_domain"
 
 	# The name of the DNS record we're checking.
 	local dns_record_name="$selector._domainkey.$sender_domain"
+
+	# If the DKIM DNS record we're checking is already the source record,
+	# there's no need to ensure the former is an alias of the latter.
+	if [[ "$dns_record_name" == "$source_dns_record_name" ]]; then
+		return 0
+	fi
 
 	# Get the value of the CNAME record (if it exists) for the specified
 	# DKIM key.
@@ -59,10 +61,8 @@ _check_dkim() {
 		cf dns query CNAME "$dns_record_name" | jq -r '.Answer[0].data'
 	)"
 
-	# This is what the above CNAME record should point to.
-	local source_dns_record_name="$selector._domainkey.$source_domain"
-
-	# If the CNAME value is already correct, no need to continue.
+	# If the CNAME value already points to our server's DKIM record, no need
+	# to continue.
 	if [[ "$cname" == "$source_dns_record_name." ]]; then
 		return 0
 	fi
