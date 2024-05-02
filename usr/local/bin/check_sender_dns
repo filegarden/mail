@@ -42,7 +42,8 @@ fi
 _check_dkim() {
 	local selector="$1"
 
-	# This is what the above CNAME record should point to.
+	# This is our original DKIM record that sender's DKIM record should
+	# point to.
 	local source_dns_record_name="$selector._domainkey.$source_domain"
 
 	# The name of the DNS record we're checking.
