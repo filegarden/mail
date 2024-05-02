@@ -183,6 +183,8 @@ list() {
 exists() {
 	local address="$1"
 
+	# `grep` exits early when it finds a match, so `_ignore_sigpipe` is
+	# needed.
 	user list | grep -Fqxe "$address" || _ignore_sigpipe
 }
 
