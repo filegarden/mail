@@ -79,7 +79,7 @@ _check_hostname_spf() {
 
 	# If our SPF record doesn't already exist, create it.
 	if [[ "$dns_record_json" == "null" ]]; then
-		printf '%s\n' "Creating SPF DNS record at '$dns_record_name'..."
+		printf '%s\n' "Creating DNS record for SPF at '$dns_record_name'..."
 
 		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dns_record_content"'"}'
 
@@ -112,7 +112,7 @@ _check_hostname_spf() {
 	local dns_record_id
 	dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
 
-	printf '%s\n' "Updating SPF DNS record at '$dns_record_name'..."
+	printf '%s\n' "Updating DNS record for SPF at '$dns_record_name'..."
 
 	local dns_record_patch='{"content":"'"$correct_dns_record_content"'"}'
 
