@@ -81,11 +81,16 @@ _check_dkim() {
 			cf dns query CNAME "$dns_record_name" \
 			| jq -r '.Answer[0].data'
 		)"
+
+		# DNS query answers for CNAME records explicitly include a `.`
+		# at the end. The Cloudflare API always omits the trailing `.`,
+		# so trim it off here to be consistent with that.
+		cname="${cname%.}"
 	fi
 
 	# If the CNAME value already points to our server's DKIM record, no need
 	# to continue.
-	if [[ "$cname" == "$source_dns_record_name." ]]; then
+	if [[ "$cname" == "$source_dns_record_name" ]]; then
 		return 0
 	fi
 
