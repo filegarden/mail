@@ -80,7 +80,7 @@ _check_dkim() {
 		cname="$(
 			cf dns query CNAME "$dns_record_name" \
 			| jq -r '.Answer[0].data'
-	)"
+		)"
 	fi
 
 	# If the CNAME value already points to our server's DKIM record, no need
@@ -177,17 +177,17 @@ _check_spf() {
 		# around parts of a TXT record answer's data, and filter the
 		# list to only contain SPF records. If no SPF records are found,
 		# do nothing instead of letting `grep` exit with an error.
-	spf_data="$(
-		cf dns query TXT "$dns_record_name" \
-		| jq -r '.Answer[]?.data' \
-		| tr -d '"' \
-		| { grep -E '^v=spf1( |$)' || :; }
-	)"
+		spf_data="$(
+			cf dns query TXT "$dns_record_name" \
+			| jq -r '.Answer[]?.data' \
+			| tr -d '"' \
+			| { grep -E '^v=spf1( |$)' || :; }
+		)"
 
-	# Check if there are multiple SPF records.
-	if [[ "$spf_data" == *$'\n'* ]]; then
-		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name'. There must not be multiple SPF records with the same name." >&2
-		exit 1
+		# Check if there are multiple SPF records.
+		if [[ "$spf_data" == *$'\n'* ]]; then
+			printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name'. There must not be multiple SPF records with the same name." >&2
+			exit 1
 		fi
 	fi
 
