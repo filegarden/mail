@@ -1,0 +1,38 @@
+#!/bin/busybox sh
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# The specified DNS record name to search for SPF records at.
+dns_record_name="$1"
+
+# Fetch our Cloudflare zone information.
+zone_id="$(cf zone | jq -r '.id')"
+
+# Fetch all SPF records at the specified name, one per line. (Ideally, there
+# should be exactly one.)
+#
+# To find SPF records, this queries for all TXT records at the specified name.
+# Then it filters the results for just the records whose first term is `v=spf1`,
+# indicating it's an SPF record.
+dns_record_jsons="$(
+	cf api "/zones/$zone_id/dns_records" \
+		--url-query "type=TXT" \
+		--url-query "name=$dns_record_name" \
+	| jq -c '.result[] | select(.content | test("^v=spf1( |$)"))'
+)"
+
+# If there are multiple SPF records, exit with an error because it's invalid to
+# have multiple SPF records with the same name.
+if [[ "$dns_record_jsons" == *$'\n'* ]]; then
+	printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name'. There must not be multiple SPF records with the same name." >&2
+	exit 1
+fi
+
+# If there are no SPF records, exit with no output.
+if [[ ! "$dns_record_jsons" ]]; then
+	exit 0
+fi
+
+# There is exactly one SPF record, so output it.
+printf '%s\n' "$dns_record_jsons"

@@ -31,11 +31,8 @@ _check_hostname_spf() {
 	local hostname
 	hostname="$(hostname)"
 
-	# The DNS record that should contain our SPF policy. This doesn't need
-	# to start with `_spf.`, but using a less general name makes finding the
-	# SPF record automatically far simpler (no need to search any number of
-	# pages of TXT records to find one that starts with `v=spf1 `).
-	local dns_record_name="_spf.$hostname"
+	# The DNS record that should contain our SPF policy.
+	local dns_record_name="$hostname"
 
 	# If our mail server's hostname (`$hostname`) is outside the domain of
 	# the zone our token has access to (`$zone_name`), correct the record
@@ -67,18 +64,13 @@ _check_hostname_spf() {
 	# want to allow multiple mail servers (including ours) to send as them.
 	correct_dns_record_content="$correct_dns_record_content -all"
 
-	# Fetch information for our existing SPF record. If no such record
-	# exists, this will be `null`.
+	# Fetch information for our server's SPF record. If none exists, this
+	# will be empty.
 	local dns_record_json
-	dns_record_json="$(
-		cf api "/zones/$zone_id/dns_records" \
-			--url-query "type=TXT" \
-			--url-query "name=$dns_record_name" \
-		| jq '.result[0]'
-	)"
+	dns_record_json="$(get_spf_record "$dns_record_name")"
 
 	# If our SPF record doesn't already exist, create it.
-	if [[ "$dns_record_json" == "null" ]]; then
+	if [[ ! "$dns_record_json" ]]; then
 		printf '%s\n' "Creating DNS record for SPF at '$dns_record_name'..."
 
 		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dns_record_content"'"}'

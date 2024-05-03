@@ -131,7 +131,7 @@ _check_spf() {
 	# This is our original SPF record that sender's SPF record should
 	# include. The name of this record is chosen in our `check_dns` script,
 	# where the record is originally created.
-	local source_dns_record_name="_spf.$source_domain"
+	local source_dns_record_name="$source_domain"
 
 	# The name of the DNS record we're checking.
 	local dns_record_name="$sender_domain"
@@ -156,7 +156,7 @@ _check_spf() {
 
 	# Check if there are multiple SPF records.
 	if [[ "$spf_data" == *$'\n'* ]]; then
-		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name'. There must be only one SPF record." >&2
+		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name'. There must not be multiple SPF records with the same name." >&2
 		exit 1
 	fi
 
@@ -213,26 +213,13 @@ _check_spf() {
 
 	# We can modify the DNS automatically.
 
-	# Fetch information for the DNS record we're checking. If no such record
-	# exists, this will be `null`.
-	#
-	# To find the SPF record, this queries for all TXT records with the same
-	# name as the SPF record. Then it filters the results for just the first
-	# one whose first term is `v=spf1`, indicating it's an SPF record.
+	# Fetch information for the SPF record we're checking. If none exists,
+	# this will be empty.
 	local dns_record_json
-	dns_record_json="$(
-		cf api "/zones/$zone_id/dns_records" \
-			--url-query "type=TXT" \
-			--url-query "name=$dns_record_name" \
-		| jq '
-			.result
-			| map(select(.content | test("^v=spf1( |$)")))
-			| first
-		'
-	)"
+	dns_record_json="$(get_spf_record "$dns_record_name")"
 
-	# If the DNS record doesn't exist, create it.
-	if [[ "$dns_record_json" == "null" ]]; then
+	# If our SPF record doesn't already exist, create it.
+	if [[ ! "$dns_record_json" ]]; then
 		printf '%s\n' "Creating DNS record for SPF at '$dns_record_name'..."
 
 		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_spf_data"'"}'
