@@ -14,13 +14,13 @@ zone_json="$(cf zone)"
 zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
 zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
 
-# A variable for whether our token has access to the sender domain.
-can_modify_dns=
+# A variable for whether our token has direct access to the sender domain.
+can_access_dns=
 
 # Check if the sender domain (`$sender_domain`) is under the domain of the zone
 # our token has access to (`$zone_name`).
 if [[ ".$sender_domain" == *".$zone_name" ]]; then
-	can_modify_dns=y
+	can_access_dns=y
 fi
 
 # Get our mail server's hostname (e.g. `mail.example.com`).
@@ -55,12 +55,33 @@ _check_dkim() {
 		return 0
 	fi
 
-	# Get the value of the CNAME record (if it exists) for the specified
-	# DKIM key.
+	# This variable will hold information for the DNS record we're checking.
+	# If no such record exists, this will be `null`.
+	local dns_record_json
+
+	# This variable will hold the value of the DNS record we're checking. If
+	# no such record exists, this will be `null`.
 	local cname
-	cname="$(
-		cf dns query CNAME "$dns_record_name" | jq -r '.Answer[0].data'
+
+	# If we have direct DNS access via the Cloudflare API, get the record
+	# information from there since it's the most up-to-date source and
+	# provides more information about the records that we might need later.
+	# If we don't have API access, get it using a DNS query.
+	if [[ "$can_access_dns" ]]; then
+		dns_record_json="$(
+			cf api "/zones/$zone_id/dns_records" \
+				--url-query "type=CNAME" \
+				--url-query "name=$dns_record_name" \
+			| jq '.result[0]'
+		)"
+
+		cname="$(printf '%s\n' "$dns_record_json" | jq -r '.content')"
+	else
+		cname="$(
+			cf dns query CNAME "$dns_record_name" \
+			| jq -r '.Answer[0].data'
 	)"
+	fi
 
 	# If the CNAME value already points to our server's DKIM record, no need
 	# to continue.
@@ -70,7 +91,7 @@ _check_dkim() {
 
 	# If we can't modify the DNS automatically, output an error with
 	# instructions to modify it manually.
-	if [[ ! "$can_modify_dns" ]]; then
+	if [[ ! "$can_access_dns" ]]; then
 		cat <<-END >&2
 		ERROR: The following DNS record must be set for ${lblue}$sender_domain${reset}:
 
@@ -86,16 +107,6 @@ _check_dkim() {
 	fi
 
 	# We can modify the DNS automatically.
-
-	# Fetch information for the DNS record we're modifying. If no such
-	# record exists, this will be `null`.
-	local dns_record_json
-	dns_record_json="$(
-		cf api "/zones/$zone_id/dns_records" \
-			--url-query "type=CNAME" \
-			--url-query "name=$dns_record_name" \
-		| jq '.result[0]'
-	)"
 
 	# If the DNS record doesn't exist, create it.
 	if [[ "$dns_record_json" == "null" ]]; then
@@ -142,11 +153,30 @@ _check_spf() {
 		return 0
 	fi
 
-	# Get all the TXT record values under the sender's domain. Remove quotes
-	# because quotes are allowed around parts of a TXT record's data. Then
-	# filter the list to only contain SPF records. If no SPF records are
-	# found, do nothing instead of letting `grep` exit with an error.
+	# This variable will hold information for the SPF record we're checking.
+	# If no such record exists, this will be empty.
+	local dns_record_json
+
+	# This variable will hold the value of the SPF record we're checking. If
+	# no such record exists, this will be empty.
 	local spf_data
+
+	# If we have direct DNS access via the Cloudflare API, get the record
+	# information from there since it's the most up-to-date source and
+	# provides more information about the records that we might need later.
+	# If we don't have API access, get it using a DNS query.
+	if [[ "$can_access_dns" ]]; then
+		dns_record_json="$(get_spf_record "$dns_record_name")"
+
+		spf_data="$(
+			printf '%s\n' "$dns_record_json" | jq -r '.content'
+		)"
+	else
+		# To get the SPF value, get all the TXT record values under the
+		# sender's domain, remove quotes because quotes are allowed
+		# around parts of a TXT record answer's data, and filter the
+		# list to only contain SPF records. If no SPF records are found,
+		# do nothing instead of letting `grep` exit with an error.
 	spf_data="$(
 		cf dns query TXT "$dns_record_name" \
 		| jq -r '.Answer[]?.data' \
@@ -158,6 +188,7 @@ _check_spf() {
 	if [[ "$spf_data" == *$'\n'* ]]; then
 		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name'. There must not be multiple SPF records with the same name." >&2
 		exit 1
+		fi
 	fi
 
 	# This will be the value the sender domain's SPF record should have.
@@ -196,7 +227,7 @@ _check_spf() {
 
 	# If we can't modify the DNS automatically, output an error with
 	# instructions to modify it manually.
-	if [[ ! "$can_modify_dns" ]]; then
+	if [[ ! "$can_access_dns" ]]; then
 		cat <<-END >&2
 		ERROR: The following DNS record must be set for ${lblue}$sender_domain${reset}:
 
@@ -212,11 +243,6 @@ _check_spf() {
 	fi
 
 	# We can modify the DNS automatically.
-
-	# Fetch information for the SPF record we're checking. If none exists,
-	# this will be empty.
-	local dns_record_json
-	dns_record_json="$(get_spf_record "$dns_record_name")"
 
 	# If our SPF record doesn't already exist, create it.
 	if [[ ! "$dns_record_json" ]]; then
