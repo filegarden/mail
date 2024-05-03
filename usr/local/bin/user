@@ -188,8 +188,15 @@ exists() {
 	user list | grep -Fqxe "$address" || _ignore_sigpipe
 }
 
+# Lists all the domains of addresses in the password database, one per line.
+domains() {
+	# For each address in the password database, get the domain part of the
+	# address, and dedupe them so each domain is only outputted once.
+	user list | cut -d @ -f 2 | sort -u
+}
+
 case "$1" in
-add | remove | reset | list | exists)
+add | remove | reset | list | exists | domains)
 	"$@"
 	;;
 *)
