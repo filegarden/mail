@@ -9,12 +9,12 @@ dns_record_name="$1"
 # Fetch our Cloudflare zone information.
 zone_id="$(cf zone | jq -r '.id')"
 
-# Fetch all SPF records at the specified name, one per line. (Ideally, there
-# should be exactly one.)
+# Fetch all SPF records with the correct version at the specified name, one per
+# line. (Ideally, there should be exactly one.)
 #
-# To find SPF records, this queries for all TXT records at the specified name.
-# Then it filters the results for just the records whose first term is `v=spf1`,
-# indicating it follows the SPF format defined by RFC 7208 (section 12).
+# To find the SPF records, query for all TXT records at the specified name. Then
+# filter the results for just the records with the correct SPF version according
+# to RFC 7208 (section 12).
 dns_record_jsons="$(
 	cf api "/zones/$zone_id/dns_records" \
 		--url-query "type=TXT" \
@@ -25,7 +25,7 @@ dns_record_jsons="$(
 # If there are multiple SPF records, exit with an error because it's invalid to
 # have multiple SPF records with the same name.
 if [[ "$dns_record_jsons" == *$'\n'* ]]; then
-	printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name'. There must not be multiple SPF records with the same name." >&2
+	printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name', which is not allowed." >&2
 	exit 1
 fi
 

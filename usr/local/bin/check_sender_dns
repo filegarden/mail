@@ -180,9 +180,9 @@ _check_spf() {
 		# To get the SPF value, get all the TXT record values under the
 		# sender's domain, remove quotes because quotes are allowed
 		# around parts of a TXT record answer's data, and filter the
-		# list to only contain records that follow the SPF format
-		# defined by RFC 7208 (section 12). If no SPF records are found,
-		# do nothing instead of letting `grep` exit with an error.
+		# list for just the records with the correct SPF version
+		# according to RFC 7208 (section 12). If none are found, do
+		# nothing instead of letting `grep` exit with an error.
 		spf_data="$(
 			cf dns query TXT "$dns_record_name" \
 			| jq -r '.Answer[]?.data' \
@@ -192,7 +192,7 @@ _check_spf() {
 
 		# Check if there are multiple SPF records.
 		if [[ "$spf_data" == *$'\n'* ]]; then
-			printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name'. There must not be multiple SPF records with the same name." >&2
+			printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name', which is not allowed." >&2
 			exit 1
 		fi
 	fi
@@ -285,43 +285,64 @@ _check_dmarc() {
 	local dns_record_name="_dmarc.$sender_domain"
 
 	# This variable will hold information for the DMARC record we're
-	# checking. If no such record exists, this will be `null`.
+	# checking. If no such record exists, this will be empty.
 	local dns_record_json
 
 	# This variable will hold the value of the DMARC record we're checking.
-	# If no such record exists, this will be `null`.
+	# If no such record exists, this will be empty.
 	local dmarc_data
-
-	# If we have direct DNS access via the Cloudflare API, get the record
-	# information from there since it's the most up-to-date source and
-	# provides more information about the record that we might need later.
-	# If we don't have API access, get it using a DNS query.
-	if [[ "$can_access_dns" ]]; then
-		dns_record_json="$(
-			cf api "/zones/$zone_id/dns_records" \
-				--url-query "type=TXT" \
-				--url-query "name=$dns_record_name" \
-			| jq '.result[0]'
-		)"
-
-		dmarc_data="$(
-			printf '%s\n' "$dns_record_json" | jq -r '.content'
-		)"
-	else
-		dmarc_data="$(
-			cf dns query TXT "$dns_record_name" \
-			| jq -r '.Answer[0].data'
-		)"
-	fi
-
-	# This will be the value the sender domain's DMARC record should have.
-	local correct_dmarc_data="v=DMARC1;"
 
 	# Use variables to store some regex patterns for matching DMARC data so
 	# the variables can be used in place of the patterns later to help make
 	# regex a little more readable.
 	local wsp=$'[ \t]*'
 	local v_tag_pattern="[Vv]${wsp}=${wsp}DMARC1${wsp};"
+
+	# If we have direct DNS access via the Cloudflare API, get the record
+	# information from there since it's the most up-to-date source and
+	# provides more information about the record that we might need later.
+	# If we don't have API access, get it using a DNS query.
+	if [[ "$can_access_dns" ]]; then
+		# To find the DMARC records, query for all TXT records at the
+		# DMARC record name. Then filter the results for just the
+		# records with the correct DMARC version according to RFC 7489
+		# (section 6.4).
+		dns_record_json="$(
+			cf api "/zones/$zone_id/dns_records" \
+				--url-query "type=TXT" \
+				--url-query "name=$dns_record_name" \
+			| jq -c ".result[] | select(.content | test(\"^$v_tag_pattern\"))"
+		)"
+
+		dmarc_data="$(
+			printf '%s\n' "$dns_record_json" | jq -r '.content'
+		)"
+	else
+		# To get the DMARC value, get all the TXT record values under
+		# the sender's domain, remove quotes because quotes are allowed
+		# around parts of a TXT record answer's data, and filter the
+		# list for just the records with the correct DMARC version
+		# according to RFC 7489 (section 6.4). If none are found, do
+		# nothing instead of letting `grep` exit with an error.
+		dmarc_data="$(
+			cf dns query TXT "$dns_record_name" \
+			| jq -r '.Answer[]?.data' \
+			| tr -d '"' \
+			| { grep "^$v_tag_pattern" || :; }
+		)"
+
+	fi
+
+	# Check if there are multiple DMARC records.
+	if [[ "$dmarc_data" == *$'\n'* ]]; then
+		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=DMARC1;' found at '$dns_record_name', which is not allowed." >&2
+		exit 1
+	fi
+
+	# This will be the value the sender domain's DMARC record should have.
+	local correct_dmarc_data="v=DMARC1;"
+
+	# Set some more regex pattern variables.
 	local p_tag_start_pattern="${wsp}[Pp]${wsp}=${wsp}"
 	local tag_end_pattern="${wsp};"
 	local p_tag_pattern="$p_tag_start_pattern[^;]*$tag_end_pattern"
@@ -375,7 +396,7 @@ _check_dmarc() {
 	# We can modify the DNS automatically.
 
 	# If our DMARC record doesn't already exist, create it.
-	if [[ "$dns_record_json" == "null" ]]; then
+	if [[ ! "$dns_record_json" ]]; then
 		printf '%s\n' "Creating DNS record for DMARC at '$dns_record_name'..."
 
 		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dmarc_data"'"}'
