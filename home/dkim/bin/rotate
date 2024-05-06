@@ -93,38 +93,38 @@ sync_key_to_dns() {
 	local selector="$name"
 
 	# The DNS record that should contain the public key.
-	local dns_record_name="$selector._domainkey.$hostname"
+	local record_name="$selector._domainkey.$hostname"
 
 	# If our mail server's hostname (`$hostname`) is outside the domain of
 	# the zone our token has access to (`$zone_name`), correct the record
 	# name to be under our zone.
 	if [[ ".$hostname" != *".$zone_name" ]]; then
-		dns_record_name="$dns_record_name.$zone_name"
+		record_name="$record_name.$zone_name"
 	fi
 
 	# Fetch information for the key's corresponding DNS record. If no such
 	# record exists, this will be `null`.
-	local dns_record_json
-	dns_record_json="$(
+	local record_json
+	record_json="$(
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
-			--url-query "name=$dns_record_name" \
+			--url-query "name=$record_name" \
 		| jq '.result[0]'
 	)"
 
 	# Get the ID of the DNS record in case we need to modify or delete it.
 	# If the DNS record doesn't exist, this will be `null`.
-	local dns_record_id
-	dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
+	local record_id
+	record_id="$(printf '%s\n' "$record_json" | jq -r '.id')"
 
 	# Check if the key's file doesn't exist.
 	if ! [[ -e ~/keys/"$name".pem ]]; then
 		# If key's file doesn't exist but the DNS record does, delete
 		# the DNS record.
-		if [[ "$dns_record_json" != "null" ]]; then
-			printf '%s\n' "Deleting DNS record for key '$name' at '$dns_record_name'..."
+		if [[ "$record_json" != "null" ]]; then
+			printf '%s\n' "Deleting DNS record for key '$name' at '$record_name'..."
 
-			cf api "/zones/$zone_id/dns_records/$dns_record_id" \
+			cf api "/zones/$zone_id/dns_records/$record_id" \
 				-X DELETE > /dev/null
 		fi
 
@@ -142,18 +142,18 @@ sync_key_to_dns() {
 	)"
 
 	# Generate the value that the DNS record should have.
-	local correct_dns_record_content="v=DKIM1; k=rsa; p=$public_key"
+	local correct_record_content="v=DKIM1; k=rsa; p=$public_key"
 
 	# If no DNS record for the key already exists, create a new one.
-	if [[ "$dns_record_json" == "null" ]]; then
-		printf '%s\n' "Creating DNS record for key '$name' at '$dns_record_name'..."
+	if [[ "$record_json" == "null" ]]; then
+		printf '%s\n' "Creating DNS record for key '$name' at '$record_name'..."
 
-		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dns_record_content"'"}'
+		local record_data='{"type":"TXT","name":"'"$record_name"'","content":"'"$correct_record_content"'"}'
 
 		cf api "/zones/$zone_id/dns_records" \
 			-X POST \
 			-H "Content-Type: application/json" \
-			--data-raw "$dns_record_data" > /dev/null
+			--data-raw "$record_data" > /dev/null
 
 		return 0
 	fi
@@ -162,25 +162,23 @@ sync_key_to_dns() {
 	# necessary.
 
 	# Get the DNS record's current value.
-	local dns_record_content
-	dns_record_content="$(
-		printf '%s\n' "$dns_record_json" | jq -r '.content'
-	)"
+	local record_content
+	record_content="$(printf '%s\n' "$record_json" | jq -r '.content')"
 
 	# If the DNS record already has the correct value, no need to continue
 	# syncing.
-	if [[ "$dns_record_content" == "$correct_dns_record_content" ]]; then
+	if [[ "$record_content" == "$correct_record_content" ]]; then
 		return 0
 	fi
 
-	printf '%s\n' "Updating DNS record for key '$name' at '$dns_record_name'..."
+	printf '%s\n' "Updating DNS record for key '$name' at '$record_name'..."
 
-	local dns_record_patch='{"content":"'"$correct_dns_record_content"'"}'
+	local record_patch='{"content":"'"$correct_record_content"'"}'
 
-	cf api "/zones/$zone_id/dns_records/$dns_record_id" \
+	cf api "/zones/$zone_id/dns_records/$record_id" \
 		-X PATCH \
 		-H "Content-Type: application/json" \
-		--data-raw "$dns_record_patch" > /dev/null
+		--data-raw "$record_patch" > /dev/null
 }
 
 # Sync both of our DKIM keys to DNS.

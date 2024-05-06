@@ -15,20 +15,20 @@ dns_cleanup_path="$BASEDIR/cf_dns_cleanup"
 
 # Deletes a DNS record and removes its information from our DNS cleanup file.
 _clean_dns_record() {
-	local zone_id="$1" dns_record_name="$2" token_value="$3"
+	local zone_id="$1" record_name="$2" token_value="$3"
 
-	local dns_record_id
-	dns_record_id="$(
+	local record_id
+	record_id="$(
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
-			--url-query "name=$dns_record_name" \
+			--url-query "name=$record_name" \
 			--url-query "content=$token_value" \
 		| jq -r '.result[0].id'
 	)"
 
 	# Only try to delete the DNS record if it was found.
-	if [[ "$dns_record_id" != "null" ]]; then
-		cf api "/zones/$zone_id/dns_records/$dns_record_id" \
+	if [[ "$record_id" != "null" ]]; then
+		cf api "/zones/$zone_id/dns_records/$record_id" \
 			-X DELETE > /dev/null
 	fi
 
@@ -40,7 +40,7 @@ _clean_dns_record() {
 	# Now that the DNS record is deleted, remove it from our DNS cleanup
 	# file. If `grep` returns an error due to finding no matches, instead do
 	# nothing.
-	grep -Fvxe "$dns_record_name $token_value" -- "$dns_cleanup_path" || : \
+	grep -Fvxe "$record_name $token_value" -- "$dns_cleanup_path" || : \
 		> "$temp_dns_cleanup_path"
 
 	# Save the DNS cleanup file.
@@ -59,11 +59,11 @@ _clean_old_challenges() {
 
 	# Read each line from our DNS cleanup file, and split each line's words
 	# into a Bash array.
-	local dns_record_info
-	while read -ra dns_record_info; do
+	local record_info
+	while read -ra record_info; do
 		# Pass the words in the array as arguments to our DNS cleanup
 		# function.
-		_clean_dns_record "$zone_id" "${dns_record_info[@]}"
+		_clean_dns_record "$zone_id" "${record_info[@]}"
 	done < "$dns_cleanup_path"
 }
 
@@ -85,10 +85,10 @@ deploy_challenge() {
 
 	# The DNS record Let's Encrypt will read (hence "r") to check for our
 	# ACME token.
-	local r_dns_record_name="_acme-challenge.$domain"
+	local r_record_name="_acme-challenge.$domain"
 
 	# The DNS record we'll write (hence "w") the ACME token to.
-	local w_dns_record_name="$r_dns_record_name"
+	local w_record_name="$r_record_name"
 
 	# Check if the domain being validated (`$domain`) is outside the domain
 	# of the zone our token has access to (`$zone_name`).
@@ -96,28 +96,28 @@ deploy_challenge() {
 		# Ensure adding the DNS record to the zone will still indirectly
 		# (through a CNAME record) apply to the domain being validated.
 
-		w_dns_record_name="$r_dns_record_name.$zone_name"
+		w_record_name="$r_record_name.$zone_name"
 
 		printf '%s\n' "The domain '$domain' being validated is outside the zone '$zone_name' your Cloudflare token has access to. Verifying CNAME..."
 
 		# Get the value of the CNAME record (if it exists).
 		local cname
 		cname="$(
-			cf dns query CNAME "$r_dns_record_name" \
+			cf dns query CNAME "$r_record_name" \
 			| jq -r '.Answer[0].data'
 		)"
 
 		# Check if the CNAME record (if it exists) doesn't point to the
 		# name of the DNS record we're creating.
-		if [[ "$cname" != "$w_dns_record_name." ]]; then
+		if [[ "$cname" != "$w_record_name." ]]; then
 			cat <<-END >&2
 			ERROR: Incorrect CNAME! If you want to use a DNS alias, permanently set the following DNS record for ${lblue}$domain${reset}:
 
 			Type: ${lblue}CNAME${reset}
 
-			Name: ${lblue}$r_dns_record_name${reset}
+			Name: ${lblue}$r_record_name${reset}
 
-			Target: ${lblue}$w_dns_record_name${reset}
+			Target: ${lblue}$w_record_name${reset}
 
 			Proxy status: ${lblue}DNS only${reset}
 
@@ -138,41 +138,40 @@ deploy_challenge() {
 	# Save some information about the DNS record we'll create. That way, for
 	# example if the container stops in the middle of the ACME challenge, we
 	# don't lose this information, and we can still remove the record.
-	printf '%s\n' "$w_dns_record_name $token_value" \
-		>> "$temp_dns_cleanup_path"
+	printf '%s\n' "$w_record_name $token_value" >> "$temp_dns_cleanup_path"
 
 	# Save the DNS cleanup file.
 	mv -f -- "$temp_dns_cleanup_path" "$dns_cleanup_path"
 
 	# Try requesting the DNS record we would otherwise create to ensure it
 	# doesn't already exist. If it doesn't exist, this will be `null`.
-	local dns_record_json
-	dns_record_json="$(
+	local record_json
+	record_json="$(
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
-			--url-query "name=$w_dns_record_name" \
+			--url-query "name=$w_record_name" \
 			--url-query "content=$token_value" \
 		| jq '.result[0]'
 	)"
 
 	# Check if the record already exists.
-	if [[ "$dns_record_json" != "null" ]]; then
-		printf '%s\n' "DNS record '$w_dns_record_name' with correct content already exists."
+	if [[ "$record_json" != "null" ]]; then
+		printf '%s\n' "DNS record '$w_record_name' with correct content already exists."
 
 		return 0
 	fi
 
 	# The record doesn't already exist, so create it.
 
-	printf '%s\n' "Creating DNS record '$w_dns_record_name'..."
+	printf '%s\n' "Creating DNS record '$w_record_name'..."
 
-	local dns_record_comment="This record should be deleted automatically. If it isn't, feel free to delete it."
-	local dns_record_data='{"type":"TXT","name":"'"$w_dns_record_name"'","content":"'"$token_value"'","comment":"'"$dns_record_comment"'"}'
+	local record_comment="This record should be deleted automatically. If it isn't, feel free to delete it."
+	local record_data='{"type":"TXT","name":"'"$w_record_name"'","content":"'"$token_value"'","comment":"'"$record_comment"'"}'
 
 	cf api "/zones/$zone_id/dns_records" \
 		-X POST \
 		-H "Content-Type: application/json" \
-		--data-raw "$dns_record_data" > /dev/null
+		--data-raw "$record_data" > /dev/null
 
 	# Reset Bash's timer to 0. It will count up from here.
 	SECONDS=0
@@ -192,16 +191,16 @@ deploy_challenge() {
 		# Get a list of all the DNS record data under this record name.
 		# Remove quotes because quotes are allowed around parts of a TXT
 		# record's data.
-		local dns_record_answers
-		dns_record_answers="$(
-			cf dns query TXT "$w_dns_record_name" \
+		local record_answers
+		record_answers="$(
+			cf dns query TXT "$w_record_name" \
 			| jq -r '.Answer[]?.data' \
 			| tr -d '"'
 		)"
 
 		# If any of the results match the DNS record we created, we can
 		# stop checking for our DNS record.
-		if grep -Fqxe "$token_value" <<< "$dns_record_answers"; then
+		if grep -Fqxe "$token_value" <<< "$record_answers"; then
 			printf '%s\n' "Updated DNS record found."
 			break
 		fi
@@ -211,7 +210,7 @@ deploy_challenge() {
 			exit 1
 		fi
 
-		printf '%s\n' "DNS update for record '$w_dns_record_name' not found yet. Waiting $dns_sleep_seconds more seconds..."
+		printf '%s\n' "DNS update for record '$w_record_name' not found yet. Waiting $dns_sleep_seconds more seconds..."
 	done
 }
 
@@ -225,14 +224,14 @@ clean_challenge() {
 
 	# Use the token value of the DNS record we're cleaning up to find the
 	# record in our DNS cleanup file.
-	local dns_record_info
-	dns_record_info=$(grep -Fe " $token_value" -- "$dns_cleanup_path")
+	local record_info
+	record_info=$(grep -Fe " $token_value" -- "$dns_cleanup_path")
 
 	# Split the record info on whitespace into an array so its values can be
 	# passed as separate arguments to the below function call.
-	read -ra dns_record_info <<< "$dns_record_info"
+	read -ra record_info <<< "$record_info"
 
-	_clean_dns_record "$zone_id" "${dns_record_info[@]}"
+	_clean_dns_record "$zone_id" "${record_info[@]}"
 }
 
 # `dehydrated` runs this on each attempt to issue certificates before running

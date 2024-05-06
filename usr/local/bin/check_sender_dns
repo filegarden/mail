@@ -106,20 +106,20 @@ _check_dkim() {
 
 	# This is our original DKIM record that the sender domains's DKIM record
 	# should point to.
-	local source_dns_record_name="$selector._domainkey.$source_domain"
+	local source_record_name="$selector._domainkey.$source_domain"
 
 	# The name of the DNS record we're checking.
-	local dns_record_name="$selector._domainkey.$sender_domain"
+	local record_name="$selector._domainkey.$sender_domain"
 
 	# If the DKIM DNS record we're checking is already the source record,
 	# there's no need to ensure the former is an alias of the latter.
-	if [[ "$dns_record_name" == "$source_dns_record_name" ]]; then
+	if [[ "$record_name" == "$source_record_name" ]]; then
 		return 0
 	fi
 
 	# This variable will hold information for the DNS record we're checking.
 	# If no such record exists, this will be empty.
-	local dns_record_json=
+	local record_json=
 
 	# This variable will hold the value of the DNS record we're checking. If
 	# no such record exists, this will be empty.
@@ -130,17 +130,17 @@ _check_dkim() {
 	# provides more information about the records that we might need later.
 	# If we don't have API access, get it using a DNS query.
 	if [[ "$can_access_dns" ]]; then
-		dns_record_json="$(
+		record_json="$(
 			cf api "/zones/$zone_id/dns_records" \
 				--url-query "type=CNAME" \
-				--url-query "name=$dns_record_name" \
+				--url-query "name=$record_name" \
 			| jq -c '.result[]'
 		)"
 
-		cname="$(printf '%s\n' "$dns_record_json" | jq -r '.content')"
+		cname="$(printf '%s\n' "$record_json" | jq -r '.content')"
 	else
 		cname="$(
-			cf dns query CNAME "$dns_record_name" \
+			cf dns query CNAME "$record_name" \
 			| jq -r '.Answer[].data'
 		)"
 
@@ -151,11 +151,11 @@ _check_dkim() {
 	fi
 
 	# This will be the value the sender domain's DKIM record should have.
-	local correct_cname="$source_dns_record_name"
+	local correct_cname="$source_record_name"
 
-	_sync_dns_record DKIM CNAME "$dns_record_name" \
+	_sync_dns_record DKIM CNAME "$record_name" \
 		"$cname" "$correct_cname" \
-		"$dns_record_json"
+		"$record_json"
 }
 
 # Ensures the sender's SPF record includes our server's.
@@ -163,20 +163,20 @@ _check_spf() {
 	# This is our original SPF record that sender's SPF record should
 	# include. The name of this record is chosen in our `check_dns` script,
 	# where the record is originally created.
-	local source_dns_record_name="$source_domain"
+	local source_record_name="$source_domain"
 
 	# The name of the DNS record we're checking.
-	local dns_record_name="$sender_domain"
+	local record_name="$sender_domain"
 
 	# If the SPF DNS record we're checking is already the source record,
 	# there's no need to ensure the former includes the latter.
-	if [[ "$dns_record_name" == "$source_dns_record_name" ]]; then
+	if [[ "$record_name" == "$source_record_name" ]]; then
 		return 0
 	fi
 
 	# This variable will hold information for the SPF record we're checking.
 	# If no such record exists, this will be empty.
-	local dns_record_json=
+	local record_json=
 
 	# This variable will hold the value of the SPF record we're checking. If
 	# no such record exists, this will be empty.
@@ -187,11 +187,9 @@ _check_spf() {
 	# provides more information about the records that we might need later.
 	# If we don't have API access, get it using a DNS query.
 	if [[ "$can_access_dns" ]]; then
-		dns_record_json="$(get_spf_record "$dns_record_name")"
+		record_json="$(get_spf_record "$record_name")"
 
-		spf_data="$(
-			printf '%s\n' "$dns_record_json" | jq -r '.content'
-		)"
+		spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
 	else
 		# To get the SPF value, get all the TXT record values under the
 		# sender's domain, remove quotes because quotes are allowed
@@ -200,7 +198,7 @@ _check_spf() {
 		# according to RFC 7208 (section 12). If none are found, do
 		# nothing instead of letting `grep` exit with an error.
 		spf_data="$(
-			cf dns query TXT "$dns_record_name" \
+			cf dns query TXT "$record_name" \
 			| jq -r '.Answer[]?.data' \
 			| tr -d '"' \
 			| { grep -Ei '^v=spf1( |$)' || :; }
@@ -208,7 +206,7 @@ _check_spf() {
 
 		# Check if there are multiple SPF records.
 		if [[ "$spf_data" == *$'\n'* ]]; then
-			printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name', which is not allowed." >&2
+			printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$record_name', which is not allowed." >&2
 			exit 1
 		fi
 	fi
@@ -221,7 +219,7 @@ _check_spf() {
 
 	# An SPF term that includes our server's own SPF policy into another
 	# domain's SPF policy.
-	local include="include:$source_dns_record_name"
+	local include="include:$source_record_name"
 
 	# If the sender domain's SPF policy doesn't include our server's own SPF
 	# policy, include it so we're allowed to send mail for that domain.
@@ -242,19 +240,19 @@ _check_spf() {
 		printf '%s\n' "$correct_spf_data" | sed -E 's/ [+-?~]?all$//gi'
 	) -all"
 
-	_sync_dns_record SPF TXT "$dns_record_name" \
+	_sync_dns_record SPF TXT "$record_name" \
 		"$spf_data" "$correct_spf_data" \
-		"$dns_record_json"
+		"$record_json"
 }
 
 # Ensures the sender's DMARC record is set up correctly.
 _check_dmarc() {
 	# The name of the DMARC record we're checking.
-	local dns_record_name="_dmarc.$sender_domain"
+	local record_name="_dmarc.$sender_domain"
 
 	# This variable will hold information for the DMARC record we're
 	# checking. If no such record exists, this will be empty.
-	local dns_record_json=
+	local record_json=
 
 	# This variable will hold the value of the DMARC record we're checking.
 	# If no such record exists, this will be empty.
@@ -275,16 +273,14 @@ _check_dmarc() {
 		# DMARC record name. Then filter the results for just the
 		# records with the correct DMARC version according to RFC 7489
 		# (section 6.4).
-		dns_record_json="$(
+		record_json="$(
 			cf api "/zones/$zone_id/dns_records" \
 				--url-query "type=TXT" \
-				--url-query "name=$dns_record_name" \
+				--url-query "name=$record_name" \
 			| jq -c ".result[] | select(.content | test(\"^$v_tag_pattern\"))"
 		)"
 
-		dmarc_data="$(
-			printf '%s\n' "$dns_record_json" | jq -r '.content'
-		)"
+		dmarc_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
 	else
 		# To get the DMARC value, get all the TXT record values under
 		# the sender's domain, remove quotes because quotes are allowed
@@ -293,7 +289,7 @@ _check_dmarc() {
 		# according to RFC 7489 (section 6.4). If none are found, do
 		# nothing instead of letting `grep` exit with an error.
 		dmarc_data="$(
-			cf dns query TXT "$dns_record_name" \
+			cf dns query TXT "$record_name" \
 			| jq -r '.Answer[]?.data' \
 			| tr -d '"' \
 			| { grep "^$v_tag_pattern" || :; }
@@ -303,7 +299,7 @@ _check_dmarc() {
 
 	# Check if there are multiple DMARC records.
 	if [[ "$dmarc_data" == *$'\n'* ]]; then
-		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=DMARC1;' found at '$dns_record_name', which is not allowed." >&2
+		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=DMARC1;' found at '$record_name', which is not allowed." >&2
 		exit 1
 	fi
 
@@ -339,9 +335,9 @@ _check_dmarc() {
 		"
 	)"
 
-	_sync_dns_record DMARC TXT "$dns_record_name" \
+	_sync_dns_record DMARC TXT "$record_name" \
 		"$dmarc_data" "$correct_dmarc_data" \
-		"$dns_record_json"
+		"$record_json"
 }
 
 # Ensure the sender's domain points to both of our DKIM keys.

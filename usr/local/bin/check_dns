@@ -32,28 +32,28 @@ _check_hostname_spf() {
 	hostname="$(hostname)"
 
 	# The DNS record that should contain our SPF policy.
-	local dns_record_name="$hostname"
+	local record_name="$hostname"
 
 	# If our mail server's hostname (`$hostname`) is outside the domain of
 	# the zone our token has access to (`$zone_name`), correct the record
 	# name to be under our zone.
 	if [[ ".$hostname" != *".$zone_name" ]]; then
-		dns_record_name="$dns_record_name.$zone_name"
+		record_name="$record_name.$zone_name"
 	fi
 
 	# Start generating the value that the SPF record should have.
-	local correct_dns_record_content="v=spf1"
+	local correct_record_content="v=spf1"
 
 	# If our server has an IPv4 address, add it to our SPF record as an
 	# allowed sender.
 	if [[ "$ipv4" ]]; then
-		correct_dns_record_content="$correct_dns_record_content ip4:$ipv4"
+		correct_record_content="$correct_record_content ip4:$ipv4"
 	fi
 
 	# If our server has an IPv6 address, add it to our SPF record as an
 	# allowed sender.
 	if [[ "$ipv6" ]]; then
-		correct_dns_record_content="$correct_dns_record_content ip6:$ipv6"
+		correct_record_content="$correct_record_content ip6:$ipv6"
 	fi
 
 	# Disallow all other senders. Only our mail server should be able to
@@ -62,23 +62,23 @@ _check_hostname_spf() {
 	# Note that, as per RFC 7208 (section 5.2), this has no effect on other
 	# SPF records that `include:` this one, which is good for domains that
 	# want to allow multiple mail servers (including ours) to send as them.
-	correct_dns_record_content="$correct_dns_record_content -all"
+	correct_record_content="$correct_record_content -all"
 
 	# Fetch information for our server's SPF record. If none exists, this
 	# will be empty.
-	local dns_record_json
-	dns_record_json="$(get_spf_record "$dns_record_name")"
+	local record_json
+	record_json="$(get_spf_record "$record_name")"
 
 	# If our SPF record doesn't already exist, create it.
-	if [[ ! "$dns_record_json" ]]; then
-		printf '%s\n' "Creating DNS record for SPF at '$dns_record_name'..."
+	if [[ ! "$record_json" ]]; then
+		printf '%s\n' "Creating DNS record for SPF at '$record_name'..."
 
-		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dns_record_content"'"}'
+		local record_data='{"type":"TXT","name":"'"$record_name"'","content":"'"$correct_record_content"'"}'
 
 		cf api "/zones/$zone_id/dns_records" \
 			-X POST \
 			-H "Content-Type: application/json" \
-			--data-raw "$dns_record_data" > /dev/null
+			--data-raw "$record_data" > /dev/null
 
 		return 0
 	fi
@@ -87,31 +87,29 @@ _check_hostname_spf() {
 	# necessary.
 
 	# Get the SPF record's current value.
-	local dns_record_content
-	dns_record_content="$(
-		printf '%s\n' "$dns_record_json" | jq -r '.content'
-	)"
+	local record_content
+	record_content="$(printf '%s\n' "$record_json" | jq -r '.content')"
 
 	# If the SPF record already has the correct value, no need to continue
 	# with updating it.
-	if [[ "$dns_record_content" == "$correct_dns_record_content" ]]; then
+	if [[ "$record_content" == "$correct_record_content" ]]; then
 		return 0
 	fi
 
 	# Update the existing SPF record to have the correct value.
 
 	# Get the ID of the existing SPF record.
-	local dns_record_id
-	dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
+	local record_id
+	record_id="$(printf '%s\n' "$record_json" | jq -r '.id')"
 
-	printf '%s\n' "Updating DNS record for SPF at '$dns_record_name'..."
+	printf '%s\n' "Updating DNS record for SPF at '$record_name'..."
 
-	local dns_record_patch='{"content":"'"$correct_dns_record_content"'"}'
+	local record_patch='{"content":"'"$correct_record_content"'"}'
 
-	cf api "/zones/$zone_id/dns_records/$dns_record_id" \
+	cf api "/zones/$zone_id/dns_records/$record_id" \
 		-X PATCH \
 		-H "Content-Type: application/json" \
-		--data-raw "$dns_record_patch" > /dev/null
+		--data-raw "$record_patch" > /dev/null
 }
 
 # Checks the DNS records for all the domains of the addresses in our password

@@ -4,7 +4,7 @@
 set -euo pipefail
 
 # The specified DNS record name to search for SPF records at.
-dns_record_name="$1"
+record_name="$1"
 
 # Fetch our Cloudflare zone information.
 zone_id="$(cf zone | jq -r '.id')"
@@ -15,24 +15,24 @@ zone_id="$(cf zone | jq -r '.id')"
 # To find the SPF records, query for all TXT records at the specified name. Then
 # filter the results for just the records with the correct SPF version according
 # to RFC 7208 (section 12).
-dns_record_jsons="$(
+record_jsons="$(
 	cf api "/zones/$zone_id/dns_records" \
 		--url-query "type=TXT" \
-		--url-query "name=$dns_record_name" \
+		--url-query "name=$record_name" \
 	| jq -c '.result[] | select(.content | test("^v=spf1( |$)"; "i"))'
 )"
 
 # If there are multiple SPF records, exit with an error because it's invalid to
 # have multiple SPF records with the same name.
-if [[ "$dns_record_jsons" == *$'\n'* ]]; then
-	printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$dns_record_name', which is not allowed." >&2
+if [[ "$record_jsons" == *$'\n'* ]]; then
+	printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$record_name', which is not allowed." >&2
 	exit 1
 fi
 
 # If there are no SPF records, exit with no output.
-if [[ ! "$dns_record_jsons" ]]; then
+if [[ ! "$record_jsons" ]]; then
 	exit 0
 fi
 
 # There is exactly one SPF record, so output it.
-printf '%s\n' "$dns_record_jsons"
+printf '%s\n' "$record_jsons"
