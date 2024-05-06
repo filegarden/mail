@@ -168,7 +168,7 @@ remove() {
 	# recommend removing any DNS records this mail server no longer requires
 	# the removed domain to have.
 
-	# Fetch our Cloudflare zone information.
+	# Get our Cloudflare zone information.
 	local zone_name
 	zone_name="$(cf zone | jq -r '.name')"
 

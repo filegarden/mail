@@ -6,7 +6,7 @@ set -euo pipefail
 # The specified DNS record name to search for SPF records at.
 record_name="$1"
 
-# Fetch our Cloudflare zone information.
+# Get our Cloudflare zone information.
 zone_id="$(cf zone | jq -r '.id')"
 
 # Fetch all SPF records with the correct version at the specified name, one per

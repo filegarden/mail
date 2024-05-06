@@ -76,7 +76,7 @@ if [[ "$inactive_key" ]]; then
 	printf '%s\n' "Inactive DKIM key: $inactive_key"
 fi
 
-# Fetch our Cloudflare zone information.
+# Get our Cloudflare zone information.
 zone_json="$(cf zone)"
 zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
 zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"

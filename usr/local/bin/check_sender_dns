@@ -9,7 +9,7 @@ sender_domain="$1"
 reset="$(printf '\e[0m')"
 lblue="$(printf '\e[1;34m')"
 
-# Fetch our Cloudflare zone information.
+# Get our Cloudflare zone information.
 zone_json="$(cf zone)"
 zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
 zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"

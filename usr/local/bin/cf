@@ -48,9 +48,16 @@ api() {
 # Gets the JSON value of the zone the Cloudflare API token has access to. If the
 # API token doesn't have access to exactly one zone, this returns an error.
 #
-# Note that which zone this returns can change without restarting the container
-# if the token's permissions are edited in Cloudflare.
+# Note that this request is cached until the container restarts.
 zone() {
+	# Check if this file already has the zone data cached.
+	if [[ -s /var/cache/cf_zone.json ]]; then
+		# Output the cached data from the file to save time otherwise
+		# spent loading a request to the Cloudflare API.
+		cat /var/cache/cf_zone.json
+		return 0
+	fi
+
 	# Get JSON values for all the zones the token has access to.
 	local zone_jsons
 	zone_jsons="$(cf api /zones | jq -c '.result[]')"
@@ -67,8 +74,13 @@ zone() {
 		exit 1
 	fi
 
-	# Now that we're sure there's only one zone, output it.
-	printf '%s\n' "$zone_jsons"
+	# Now that we're sure there's only one zone, output it and cache it.
+	printf '%s\n' "$zone_jsons" | tee /var/cache/cf_zone.json
+
+	# Let any user with Cloudflare API access read the zone information from
+	# the cache file.
+	chmod g=r /var/cache/cf_zone.json
+	chgrp cf-api-token /var/cache/cf_zone.json
 }
 
 # Calls one of the below DNS functions.

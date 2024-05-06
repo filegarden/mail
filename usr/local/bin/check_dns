@@ -21,7 +21,7 @@ _check_hostname_spf() {
 		return 1
 	fi
 
-	# Fetch our Cloudflare zone information.
+	# Get our Cloudflare zone information.
 	local zone_json zone_name zone_id
 	zone_json="$(cf zone)"
 	zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"

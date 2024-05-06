@@ -23,6 +23,15 @@ rm -f /home/acme/dehydrated/lock
 # the variables can be used.
 load_env
 
+# Delete our Cloudflare zone cache file if it exists from a previous run since
+# it could be outdated now.
+rm -f /var/cache/cf_zone.json
+
+# Make a fresh request for our zone information to create the cache file with
+# the correct permissions (but don't output the zone information).
+printf '%s\n' "Fetching your Cloudflare zone information..."
+cf zone > /dev/null
+
 # As the unprivileged `acme` user, apply any changes to our `.env` file's ACME
 # account information.
 su acme -s /bin/sh -c /home/acme/bin/update_account

@@ -74,8 +74,7 @@ deploy_challenge() {
 
 	# Create the `_acme-challenge` DNS record requested by `dehydrated`.
 
-	printf '%s\n' "Fetching your Cloudflare zone information..."
-
+	# Get our Cloudflare zone information.
 	local zone_json zone_id zone_name
 	zone_json="$(cf zone)"
 	zone_id="$(jq -r '.id' <<< "$zone_json")"
