@@ -19,7 +19,7 @@ dns_record_jsons="$(
 	cf api "/zones/$zone_id/dns_records" \
 		--url-query "type=TXT" \
 		--url-query "name=$dns_record_name" \
-	| jq -c '.result[] | select(.content | test("^v=spf1( |$)", "i"))'
+	| jq -c '.result[] | select(.content | test("^v=spf1( |$)"; "i"))'
 )"
 
 # If there are multiple SPF records, exit with an error because it's invalid to
