@@ -14,7 +14,7 @@ zone_id="$(cf zone | jq -r '.id')"
 #
 # To find SPF records, this queries for all TXT records at the specified name.
 # Then it filters the results for just the records whose first term is `v=spf1`,
-# indicating it's an SPF record.
+# indicating it follows the SPF format defined by RFC 7208 (section 12).
 dns_record_jsons="$(
 	cf api "/zones/$zone_id/dns_records" \
 		--url-query "type=TXT" \

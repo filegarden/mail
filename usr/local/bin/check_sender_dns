@@ -180,7 +180,8 @@ _check_spf() {
 		# To get the SPF value, get all the TXT record values under the
 		# sender's domain, remove quotes because quotes are allowed
 		# around parts of a TXT record answer's data, and filter the
-		# list to only contain SPF records. If no SPF records are found,
+		# list to only contain records that follow the SPF format
+		# defined by RFC 7208 (section 12). If no SPF records are found,
 		# do nothing instead of letting `grep` exit with an error.
 		spf_data="$(
 			cf dns query TXT "$dns_record_name" \
