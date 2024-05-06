@@ -110,10 +110,7 @@ add() {
 	lblue="$(printf '\e[1;34m')"
 
 	cat <<-END
-	Log into your mail server using these SASL credentials.
-
-	${gray}To learn how to sign into your mail server using these credentials, see:
-	https://github.com/filegarden/mail/blob/main/README.md${reset}
+	User created with these SASL credentials:
 
 	Hostname: ${lblue}$hostname${reset}
 
@@ -121,6 +118,9 @@ add() {
 
 	Password:
 	${lblue}$password${reset}
+
+	${gray}To learn how to sign into your mail server using SASL, see:
+	https://github.com/filegarden/mail/blob/main/README.md${reset}
 	END
 }
 
