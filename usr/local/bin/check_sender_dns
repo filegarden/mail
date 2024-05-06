@@ -279,9 +279,136 @@ _check_spf() {
 		--data-raw "$dns_record_patch" > /dev/null
 }
 
+# Ensures the sender's DMARC record is set up correctly.
+_check_dmarc() {
+	# The name of the DMARC record we're checking.
+	local dns_record_name="_dmarc.$sender_domain"
+
+	# This variable will hold information for the DMARC record we're
+	# checking. If no such record exists, this will be `null`.
+	local dns_record_json
+
+	# This variable will hold the value of the DMARC record we're checking.
+	# If no such record exists, this will be `null`.
+	local dmarc_data
+
+	# If we have direct DNS access via the Cloudflare API, get the record
+	# information from there since it's the most up-to-date source and
+	# provides more information about the record that we might need later.
+	# If we don't have API access, get it using a DNS query.
+	if [[ "$can_access_dns" ]]; then
+		dns_record_json="$(
+			cf api "/zones/$zone_id/dns_records" \
+				--url-query "type=TXT" \
+				--url-query "name=$dns_record_name" \
+			| jq '.result[0]'
+		)"
+
+		dmarc_data="$(
+			printf '%s\n' "$dns_record_json" | jq -r '.content'
+		)"
+	else
+		dmarc_data="$(
+			cf dns query TXT "$dns_record_name" \
+			| jq -r '.Answer[0].data'
+		)"
+	fi
+
+	# This will be the value the sender domain's DMARC record should have.
+	local correct_dmarc_data="v=DMARC1;"
+
+	# Use variables to store some regex patterns for matching DMARC data so
+	# the variables can be used in place of the patterns later to help make
+	# regex a little more readable.
+	local wsp=$'[ \t]*'
+	local v_tag_pattern="[Vv]${wsp}=${wsp}DMARC1${wsp};"
+	local p_tag_start_pattern="${wsp}[Pp]${wsp}=${wsp}"
+	local tag_end_pattern="${wsp};"
+	local p_tag_pattern="$p_tag_start_pattern[^;]*$tag_end_pattern"
+
+	# If there's an existing DMARC record starting with a valid version tag
+	# according to RFC 7489 (section 6.4), use its value as a base for the
+	# new value so the existing DMARC configuration isn't lost.
+	if printf '%s\n' "$dmarc_data" | grep -q "^$v_tag_pattern"; then
+		correct_dmarc_data="$dmarc_data"
+	fi
+
+	# Ensure the DMARC record's `p` tag immediately follows the `v` tag as
+	# required by RFC 7489 (section 6.4), and ensure it's set to `reject` so
+	# unauthorized messages can't be sent on behalf of the sender's domain.
+	# Preserve the original case and whitespace wherever possible.
+	# * If there's no existing `p` tag, insert the correct one.
+	# * Move the `p` tag to be immediately after the `v` tag.
+	# * If the `p` tag isn't set to `reject`, set it to `reject`. If
+	#   it is, leave it so the original case of "reject" is preserved.
+	correct_dmarc_data="$(
+		printf '%s\n' "$correct_dmarc_data" \
+		| sed -E "
+			/;$p_tag_pattern/! s/^($v_tag_pattern)/\1 p=reject;/
+			s/^($v_tag_pattern)(.*;)?($p_tag_pattern)/\1\3\2/
+			/^$v_tag_pattern$p_tag_start_pattern[Rr][Ee][Jj][Ee][Cc][Tt]$tag_end_pattern/! s/;($p_tag_start_pattern)[^;]*($tag_end_pattern)/;\1reject\2/
+		"
+	)"
+
+	# If the DMARC value is already correct, no need to continue.
+	if [[ "$dmarc_data" == "$correct_dmarc_data" ]]; then
+		return 0
+	fi
+
+	# If we can't modify the DNS automatically, output an error with
+	# instructions to modify it manually.
+	if [[ ! "$can_access_dns" ]]; then
+		cat <<-END >&2
+		ERROR: The following DNS record must be set for ${lblue}$sender_domain${reset}:
+
+		Type: ${lblue}TXT${reset}
+
+		Name: ${lblue}$dns_record_name${reset}
+
+		Content: ${lblue}$correct_dmarc_data${reset}
+
+		Proxy status: ${lblue}DNS only${reset}
+		END
+		exit 1
+	fi
+
+	# We can modify the DNS automatically.
+
+	# If our DMARC record doesn't already exist, create it.
+	if [[ "$dns_record_json" == "null" ]]; then
+		printf '%s\n' "Creating DNS record for DMARC at '$dns_record_name'..."
+
+		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dmarc_data"'"}'
+
+		cf api "/zones/$zone_id/dns_records" \
+			-X POST \
+			-H "Content-Type: application/json" \
+			--data-raw "$dns_record_data" > /dev/null
+
+		return 0
+	fi
+
+	# Since the record already exists, make a request to modify it.
+
+	local dns_record_id
+	dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
+
+	printf '%s\n' "Updating DNS record for DMARC at '$dns_record_name'..."
+
+	local dns_record_patch='{"content":"'"$correct_dmarc_data"'"}'
+
+	cf api "/zones/$zone_id/dns_records/$dns_record_id" \
+		-X PATCH \
+		-H "Content-Type: application/json" \
+		--data-raw "$dns_record_patch" > /dev/null
+}
+
 # Ensure the sender's domain points to both of our DKIM keys.
 _check_dkim a
 _check_dkim b
 
 # Ensure the sender's domain points to our SPF policy.
 _check_spf
+
+# Ensure the sender's domain has DMARC set up correctly.
+_check_dmarc
