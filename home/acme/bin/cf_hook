@@ -225,7 +225,7 @@ clean_challenge() {
 	# Use the token value of the DNS record we're cleaning up to find the
 	# record in our DNS cleanup file.
 	local record_info
-	record_info=$(grep -Fe " $token_value" -- "$dns_cleanup_path")
+	record_info="$(grep -Fe " $token_value" -- "$dns_cleanup_path")"
 
 	# Split the record info on whitespace into an array so its values can be
 	# passed as separate arguments to the below function call.
