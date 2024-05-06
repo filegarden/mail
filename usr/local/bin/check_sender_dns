@@ -134,7 +134,7 @@ _check_dkim() {
 			cf api "/zones/$zone_id/dns_records" \
 				--url-query "type=CNAME" \
 				--url-query "name=$record_name" \
-			| jq -c '.result[]'
+			| jq -c '.result[]?'
 		)"
 
 		cname="$(printf '%s\n' "$record_json" | jq -r '.content')"
