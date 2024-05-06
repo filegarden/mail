@@ -134,14 +134,14 @@ _check_dkim() {
 			cf api "/zones/$zone_id/dns_records" \
 				--url-query "type=CNAME" \
 				--url-query "name=$record_name" \
-			| jq -c '.result[]?'
+			| jq -c '.result[]'
 		)"
 
 		cname="$(printf '%s\n' "$record_json" | jq -r '.content')"
 	else
 		cname="$(
 			cf dns query CNAME "$record_name" \
-			| jq -r '.Answer[].data'
+			| jq -r '.Answer[]?.data'
 		)"
 
 		# DNS query answers for CNAME records explicitly include a `.`
