@@ -37,6 +37,68 @@ if [[ ".$source_domain" != *".$zone_name" ]]; then
 	source_domain="$source_domain.$zone_name"
 fi
 
+# Automatically sets the specified DNS record to the specified value, or outputs
+# an error with instructions to set it manually if we have no direct DNS access.
+_sync_dns_record() {
+	local record_description="$1" record_type="$2" record_name="$3" \
+		record_content="$4" correct_record_content="$5" record_json="$6"
+
+	# If the record's content is already correct, no need to continue
+	# syncing.
+	if [[ "$record_content" == "$correct_record_content" ]]; then
+		return 0
+	fi
+
+	# If we can't modify the DNS automatically, output an error with
+	# instructions to modify it manually.
+	if [[ ! "$can_access_dns" ]]; then
+		cat <<-END >&2
+		ERROR: The following DNS record must be set for ${lblue}$sender_domain${reset}:
+
+		Type: ${lblue}$record_type${reset}
+
+		Name: ${lblue}$record_name${reset}
+
+		Target: ${lblue}$correct_record_content${reset}
+
+		Proxy status: ${lblue}DNS only${reset}
+		END
+
+		# Don't try to sync automatically since we can't access the DNS.
+		exit 1
+	fi
+
+	# We can modify the DNS automatically.
+
+	# If the DNS record doesn't exist, create it.
+	if [[ ! "$record_json" ]]; then
+		printf '%s\n' "Creating DNS record for $record_description at '$record_name'..."
+
+		local record_data='{"type":"'"$record_type"'","name":"'"$record_name"'","content":"'"$correct_record_content"'"}'
+
+		cf api "/zones/$zone_id/dns_records" \
+			-X POST \
+			-H "Content-Type: application/json" \
+			--data-raw "$record_data" > /dev/null
+
+		return 0
+	fi
+
+	# Since the record already exists, make a request to modify it.
+
+	local record_id
+	record_id="$(printf '%s\n' "$record_json" | jq -r '.id')"
+
+	printf '%s\n' "Updating DNS record for $record_description at '$record_name'..."
+
+	local record_patch='{"content":"'"$correct_record_content"'"}'
+
+	cf api "/zones/$zone_id/dns_records/$record_id" \
+		-X PATCH \
+		-H "Content-Type: application/json" \
+		--data-raw "$record_patch" > /dev/null
+}
+
 # Ensures the sender's DKIM record with the specified DKIM selector is an alias
 # of our server's.
 _check_dkim() {
@@ -56,11 +118,11 @@ _check_dkim() {
 	fi
 
 	# This variable will hold information for the DNS record we're checking.
-	# If no such record exists, this will be `null`.
-	local dns_record_json
+	# If no such record exists, this will be empty.
+	local dns_record_json=
 
 	# This variable will hold the value of the DNS record we're checking. If
-	# no such record exists, this will be `null`.
+	# no such record exists, this will be empty.
 	local cname
 
 	# If we have direct DNS access via the Cloudflare API, get the record
@@ -72,14 +134,14 @@ _check_dkim() {
 			cf api "/zones/$zone_id/dns_records" \
 				--url-query "type=CNAME" \
 				--url-query "name=$dns_record_name" \
-			| jq '.result[0]'
+			| jq -c '.result[]'
 		)"
 
 		cname="$(printf '%s\n' "$dns_record_json" | jq -r '.content')"
 	else
 		cname="$(
 			cf dns query CNAME "$dns_record_name" \
-			| jq -r '.Answer[0].data'
+			| jq -r '.Answer[].data'
 		)"
 
 		# DNS query answers for CNAME records explicitly include a `.`
@@ -88,58 +150,12 @@ _check_dkim() {
 		cname="${cname%.}"
 	fi
 
-	# If the CNAME value already points to our server's DKIM record, no need
-	# to continue.
-	if [[ "$cname" == "$source_dns_record_name" ]]; then
-		return 0
-	fi
+	# This will be the value the sender domain's DKIM record should have.
+	local correct_cname="$source_dns_record_name"
 
-	# If we can't modify the DNS automatically, output an error with
-	# instructions to modify it manually.
-	if [[ ! "$can_access_dns" ]]; then
-		cat <<-END >&2
-		ERROR: The following DNS record must be set for ${lblue}$sender_domain${reset}:
-
-		Type: ${lblue}CNAME${reset}
-
-		Name: ${lblue}$dns_record_name${reset}
-
-		Target: ${lblue}$source_dns_record_name${reset}
-
-		Proxy status: ${lblue}DNS only${reset}
-		END
-		exit 1
-	fi
-
-	# We can modify the DNS automatically.
-
-	# If the DNS record doesn't exist, create it.
-	if [[ "$dns_record_json" == "null" ]]; then
-		printf '%s\n' "Creating DNS record for DKIM at '$dns_record_name'..."
-
-		local dns_record_data='{"type":"CNAME","name":"'"$dns_record_name"'","content":"'"$source_dns_record_name"'"}'
-
-		cf api "/zones/$zone_id/dns_records" \
-			-X POST \
-			-H "Content-Type: application/json" \
-			--data-raw "$dns_record_data" > /dev/null
-
-		return 0
-	fi
-
-	# Since the record already exists, make a request to modify it.
-
-	local dns_record_id
-	dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
-
-	printf '%s\n' "Updating DNS record for DKIM at '$dns_record_name'..."
-
-	local dns_record_patch='{"content":"'"$source_dns_record_name"'"}'
-
-	cf api "/zones/$zone_id/dns_records/$dns_record_id" \
-		-X PATCH \
-		-H "Content-Type: application/json" \
-		--data-raw "$dns_record_patch" > /dev/null
+	_sync_dns_record DKIM CNAME "$dns_record_name" \
+		"$cname" "$correct_cname" \
+		"$dns_record_json"
 }
 
 # Ensures the sender's SPF record includes our server's.
@@ -160,7 +176,7 @@ _check_spf() {
 
 	# This variable will hold information for the SPF record we're checking.
 	# If no such record exists, this will be empty.
-	local dns_record_json
+	local dns_record_json=
 
 	# This variable will hold the value of the SPF record we're checking. If
 	# no such record exists, this will be empty.
@@ -226,57 +242,9 @@ _check_spf() {
 		printf '%s\n' "$correct_spf_data" | sed -E 's/ [+-?~]?all$//gi'
 	) -all"
 
-	# If the SPF value is already correct, no need to continue.
-	if [[ "$spf_data" == "$correct_spf_data" ]]; then
-		return 0
-	fi
-
-	# If we can't modify the DNS automatically, output an error with
-	# instructions to modify it manually.
-	if [[ ! "$can_access_dns" ]]; then
-		cat <<-END >&2
-		ERROR: The following DNS record must be set for ${lblue}$sender_domain${reset}:
-
-		Type: ${lblue}TXT${reset}
-
-		Name: ${lblue}$dns_record_name${reset}
-
-		Content: ${lblue}$correct_spf_data${reset}
-
-		Proxy status: ${lblue}DNS only${reset}
-		END
-		exit 1
-	fi
-
-	# We can modify the DNS automatically.
-
-	# If our SPF record doesn't already exist, create it.
-	if [[ ! "$dns_record_json" ]]; then
-		printf '%s\n' "Creating DNS record for SPF at '$dns_record_name'..."
-
-		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_spf_data"'"}'
-
-		cf api "/zones/$zone_id/dns_records" \
-			-X POST \
-			-H "Content-Type: application/json" \
-			--data-raw "$dns_record_data" > /dev/null
-
-		return 0
-	fi
-
-	# Since the record already exists, make a request to modify it.
-
-	local dns_record_id
-	dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
-
-	printf '%s\n' "Updating DNS record for SPF at '$dns_record_name'..."
-
-	local dns_record_patch='{"content":"'"$correct_spf_data"'"}'
-
-	cf api "/zones/$zone_id/dns_records/$dns_record_id" \
-		-X PATCH \
-		-H "Content-Type: application/json" \
-		--data-raw "$dns_record_patch" > /dev/null
+	_sync_dns_record SPF TXT "$dns_record_name" \
+		"$spf_data" "$correct_spf_data" \
+		"$dns_record_json"
 }
 
 # Ensures the sender's DMARC record is set up correctly.
@@ -286,7 +254,7 @@ _check_dmarc() {
 
 	# This variable will hold information for the DMARC record we're
 	# checking. If no such record exists, this will be empty.
-	local dns_record_json
+	local dns_record_json=
 
 	# This variable will hold the value of the DMARC record we're checking.
 	# If no such record exists, this will be empty.
@@ -371,57 +339,9 @@ _check_dmarc() {
 		"
 	)"
 
-	# If the DMARC value is already correct, no need to continue.
-	if [[ "$dmarc_data" == "$correct_dmarc_data" ]]; then
-		return 0
-	fi
-
-	# If we can't modify the DNS automatically, output an error with
-	# instructions to modify it manually.
-	if [[ ! "$can_access_dns" ]]; then
-		cat <<-END >&2
-		ERROR: The following DNS record must be set for ${lblue}$sender_domain${reset}:
-
-		Type: ${lblue}TXT${reset}
-
-		Name: ${lblue}$dns_record_name${reset}
-
-		Content: ${lblue}$correct_dmarc_data${reset}
-
-		Proxy status: ${lblue}DNS only${reset}
-		END
-		exit 1
-	fi
-
-	# We can modify the DNS automatically.
-
-	# If our DMARC record doesn't already exist, create it.
-	if [[ ! "$dns_record_json" ]]; then
-		printf '%s\n' "Creating DNS record for DMARC at '$dns_record_name'..."
-
-		local dns_record_data='{"type":"TXT","name":"'"$dns_record_name"'","content":"'"$correct_dmarc_data"'"}'
-
-		cf api "/zones/$zone_id/dns_records" \
-			-X POST \
-			-H "Content-Type: application/json" \
-			--data-raw "$dns_record_data" > /dev/null
-
-		return 0
-	fi
-
-	# Since the record already exists, make a request to modify it.
-
-	local dns_record_id
-	dns_record_id="$(printf '%s\n' "$dns_record_json" | jq -r '.id')"
-
-	printf '%s\n' "Updating DNS record for DMARC at '$dns_record_name'..."
-
-	local dns_record_patch='{"content":"'"$correct_dmarc_data"'"}'
-
-	cf api "/zones/$zone_id/dns_records/$dns_record_id" \
-		-X PATCH \
-		-H "Content-Type: application/json" \
-		--data-raw "$dns_record_patch" > /dev/null
+	_sync_dns_record DMARC TXT "$dns_record_name" \
+		"$dmarc_data" "$correct_dmarc_data" \
+		"$dns_record_json"
 }
 
 # Ensure the sender's domain points to both of our DKIM keys.
