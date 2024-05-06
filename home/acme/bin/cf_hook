@@ -119,7 +119,7 @@ deploy_challenge() {
 
 			Target: ${lblue}$w_record_name${reset}
 
-			Proxy status: ${lblue}DNS only${reset}
+			Proxy Status: ${lblue}DNS only${reset}
 
 			${gray}If you don't want to use a DNS alias, ensure your hostname (in \`compose.override.yaml\`) is under the same domain as the zone your Cloudflare API token (in \`.env\`) has DNS editing permissions for.${reset}
 			END

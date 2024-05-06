@@ -61,7 +61,7 @@ _sync_dns_record() {
 
 		Target: ${lblue}$correct_record_content${reset}
 
-		Proxy status: ${lblue}DNS only${reset}
+		Proxy Status: ${lblue}DNS only${reset}
 		END
 
 		# Don't try to sync automatically since we can't access the DNS.
