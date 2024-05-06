@@ -10,6 +10,10 @@ umask 0077
 # the variables can be used.
 load_env
 
+reset="$(printf '\e[0m')"
+gray="$(printf '\e[90m')"
+lblue="$(printf '\e[1;34m')"
+
 # Our Dovecot password database path (from `etc/dovecot/conf.d/10-auth.conf`).
 passdb=/etc/auth/passwd
 
@@ -104,11 +108,6 @@ add() {
 	local hostname
 	hostname="$(hostname)"
 
-	local reset gray lblue
-	reset="$(printf '\e[0m')"
-	gray="$(printf '\e[90m')"
-	lblue="$(printf '\e[1;34m')"
-
 	cat <<-END
 	User created with these SASL credentials:
 
@@ -154,6 +153,61 @@ remove() {
 	_save_passdb "$temp_passdb"
 
 	printf '%s\n' "Removed '$address' from database."
+
+	# Get the domain part of the address (the part after the `@`).
+	local domain
+	domain="$(printf '%s\n' "$address" | cut -d @ -f 2)"
+
+	# If there's still an address in the database with the specified domain,
+	# we can stop here.
+	if user domains | grep -Fqxe "$domain" || _ignore_sigpipe; then
+		return 0
+	fi
+
+	# Otherwise, if there's no longer any address with the specified domain,
+	# recommend removing any DNS records this mail server no longer requires
+	# the removed domain to have.
+
+	# Fetch our Cloudflare zone information.
+	local zone_name
+	zone_name="$(cf zone | jq -r '.name')"
+
+	# Get our mail server's hostname (e.g. `mail.example.com`).
+	local hostname
+	hostname="$(hostname)"
+
+	# The domain name all our DNS records are under which sender domains
+	# reference.
+	local source_domain="$hostname"
+
+	# If our source domain name (`$source_domain`) is outside the domain of
+	# the zone our token has access to (`$zone_name`), correct the source
+	# domain name to be under our zone.
+	if [[ ".$source_domain" != *".$zone_name" ]]; then
+		source_domain="$source_domain.$zone_name"
+	fi
+
+	cat <<-END
+	Because there's no longer any address with the domain '$domain', this mail server no longer needs the following DNS records:
+
+	END
+
+	# If the domain being removed isn't our source domain and doesn't need
+	# the records a source domain requires, those records can be included in
+	# the list.
+	if [[ "$domain" != "$source_domain" ]]; then
+		cat <<-END
+		- ${lblue}a._domainkey.$domain${reset}
+		- ${lblue}b._domainkey.$domain${reset}
+		- ${lblue}$domain${reset} TXT "v=spf1 ..."
+		END
+	fi
+
+	cat <<-END
+	- ${lblue}_dmarc.$domain${reset} TXT "v=DMARC1; ..."
+
+	${gray}Note: The above records may still be required by queued messages that haven't been delivered yet, or by other mail servers using the domain.${reset}
+	END
 }
 
 # Generates a new crytographically secure pseudorandom password for an address
