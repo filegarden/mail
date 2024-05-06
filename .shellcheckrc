@@ -11,3 +11,7 @@ enable=require-double-brackets
 
 # Disable incorrect warnings about unsupported features in `/bin/busybox sh`.
 disable=SC3003
+
+# Disable warnings that try to correct `$variable[...]` into `${variable[...]}`
+# even though that's never the intention.
+disable=SC1087
