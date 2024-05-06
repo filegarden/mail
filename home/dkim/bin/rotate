@@ -71,8 +71,10 @@ if [[ ! "$active_key" ]]; then
 	active_key_updated=y
 fi
 
-printf '%s\n' "Active DKIM key: ${active_key:-(None)}"
-printf '%s\n' "Inactive DKIM key: ${inactive_key:-(None)}"
+printf '%s\n' "Active DKIM key: $active_key"
+if [[ "$inactive_key" ]]; then
+	printf '%s\n' "Inactive DKIM key: $inactive_key"
+fi
 
 # Fetch our Cloudflare zone information.
 zone_json="$(cf zone)"
