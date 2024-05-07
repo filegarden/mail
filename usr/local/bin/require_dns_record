@@ -46,7 +46,7 @@ if [[ ".$record_name" != *".$zone_name" ]]; then
 
 	Content: ${lblue}$correct_record_content${reset}
 
-	Proxy Status: ${lblue}DNS only${reset}
+	Proxy Status (if applicable): ${lblue}DNS only${reset}
 	END
 	exit 1
 fi
