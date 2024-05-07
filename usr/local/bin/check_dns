@@ -44,14 +44,10 @@ _check_hostname_spf() {
 	# Start generating the value that the SPF record should have.
 	local correct_record_content="v=spf1"
 
-	# If our server has an IPv4 address, add it to our SPF record as an
-	# allowed sender.
+	# Add our server's IP addresses to our SPF record as allowed senders.
 	if [[ "$ipv4" ]]; then
 		correct_record_content="$correct_record_content ip4:$ipv4"
 	fi
-
-	# If our server has an IPv6 address, add it to our SPF record as an
-	# allowed sender.
 	if [[ "$ipv6" ]]; then
 		correct_record_content="$correct_record_content ip6:$ipv6"
 	fi
