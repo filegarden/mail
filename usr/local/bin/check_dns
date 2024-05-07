@@ -60,8 +60,8 @@ _check_hostname_spf() {
 	# want to allow multiple mail servers (including ours) to send as them.
 	correct_record_content="$correct_record_content -all"
 
-	# Fetch information for our server's SPF record. If none exists, this
-	# will be empty.
+	# Fetch our server's existing SPF record. If there is none, this will be
+	# empty.
 	local record_json
 	record_json="$(get_spf_record "$record_name")"
 
