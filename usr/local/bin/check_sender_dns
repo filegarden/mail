@@ -62,7 +62,8 @@ _check_dkim() {
 
 	# If we have direct DNS access via the Cloudflare API, get the record
 	# information from there since it's the most up-to-date source and
-	# provides more information about the records that we might need later.
+	# provides more information.
+	#
 	# If we don't have API access, get it using a DNS query.
 	if [[ "$can_access_dns" ]]; then
 		record_json="$(
@@ -176,7 +177,8 @@ _check_dmarc() {
 
 	# If we have direct DNS access via the Cloudflare API, get the record
 	# information from there since it's the most up-to-date source and
-	# provides more information about the record that we might need later.
+	# provides more information.
+	#
 	# If we don't have API access, get it using a DNS query.
 	if [[ "$can_access_dns" ]]; then
 		# To find the DMARC records, query for all TXT records at the
