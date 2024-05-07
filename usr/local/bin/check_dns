@@ -7,6 +7,28 @@ set -euo pipefail
 _check_hostname_spf() {
 	printf '%s\n' "Checking SPF..."
 
+	# Get our mail server's hostname (e.g. `mail.example.com`).
+	local hostname
+	hostname="$(hostname)"
+
+	# The DNS record that should have our SPF policy. This is intentionally
+	# not ensured to be under the zone we can access because having access
+	# to our source SPF record increases our attack surface needlessly.
+	local record_name="$hostname"
+
+	# Fetch the information for the SPF record we're checking. If no such
+	# record exists, this will be empty.
+	local record_json
+	record_json="$(get_spf_record "$record_name")"
+
+	# Get the SPF record's content. If no such record exists, this will be
+	# empty.
+	local spf_data
+	spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
+
+	# Start generating the value the SPF record should have.
+	local correct_spf_data="v=spf1"
+
 	# Obtain this server's public IP addresses to use in our SPF DNS record.
 	# If either request fails, do nothing instead of exiting, because it's
 	# expected that some networks don't support both IPv4 and IPv6.
@@ -20,29 +42,6 @@ _check_hostname_spf() {
 		printf '%s\n' "ERROR: Could not obtain your public IP address (to include in your SPF record)." >&2
 		return 1
 	fi
-
-	# Get our Cloudflare zone information.
-	local zone_json zone_name zone_id
-	zone_json="$(cf zone)"
-	zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
-	zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
-
-	# Get our mail server's hostname (e.g. `mail.example.com`).
-	local hostname
-	hostname="$(hostname)"
-
-	# The DNS record that should contain our SPF policy.
-	local record_name="$hostname"
-
-	# If our mail server's hostname (`$hostname`) is outside the domain of
-	# the zone our token has access to (`$zone_name`), correct the record
-	# name to be under our zone.
-	if [[ ".$hostname" != *".$zone_name" ]]; then
-		record_name="$record_name.$zone_name"
-	fi
-
-	# Start generating the value the SPF record should have.
-	local correct_spf_data="v=spf1"
 
 	# Add our server's IP addresses to our SPF record as allowed senders.
 	if [[ "$ipv4" ]]; then
@@ -65,47 +64,14 @@ _check_hostname_spf() {
 	local record_json
 	record_json="$(get_spf_record "$record_name")"
 
-	# If our SPF record doesn't already exist, create it.
-	if [[ ! "$record_json" ]]; then
-		printf '%s\n' "Creating DNS record for SPF at '$record_name'..."
-
-		local record_data='{"type":"TXT","name":"'"$record_name"'","content":"'"$correct_spf_data"'"}'
-
-		cf api "/zones/$zone_id/dns_records" \
-			-X POST \
-			-H "Content-Type: application/json" \
-			--data-raw "$record_data" > /dev/null
-
-		return 0
-	fi
-
-	# Since the record already exists, make a request to modify it if
-	# necessary.
-
 	# Get the SPF record's current value.
 	local spf_data
 	spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
 
-	# If the SPF record already has the correct value, no need to continue
-	# with updating it.
-	if [[ "$spf_data" == "$correct_spf_data" ]]; then
-		return 0
-	fi
-
-	# Update the existing SPF record to have the correct value.
-
-	# Get the ID of the existing SPF record.
-	local record_id
-	record_id="$(printf '%s\n' "$record_json" | jq -r '.id')"
-
-	printf '%s\n' "Updating DNS record for SPF at '$record_name'..."
-
-	local record_patch='{"content":"'"$correct_spf_data"'"}'
-
-	cf api "/zones/$zone_id/dns_records/$record_id" \
-		-X PATCH \
-		-H "Content-Type: application/json" \
-		--data-raw "$record_patch" > /dev/null
+	# Ensure the SPF record is set correctly.
+	require_dns_record SPF TXT "$record_name" \
+		"$spf_data" "$correct_spf_data" \
+		"$record_json"
 }
 
 # Checks the DNS records for all the domains of the addresses in our password

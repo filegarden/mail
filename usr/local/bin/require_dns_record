@@ -1,0 +1,81 @@
+#!/bin/busybox sh
+# Automatically sets the specified DNS record to the specified value, or outputs
+# an error with instructions to set it manually if we have no direct DNS access.
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# A phrase to describe what the DNS record is for.
+record_description="$1"
+# The DNS record type.
+record_type="$2"
+# The name of the DNS record.
+record_name="$3"
+# The current content of the DNS record.
+record_content="$4"
+# The content that the DNS record should have.
+correct_record_content="$5"
+# Full JSON data for the DNS record from the Cloudflare API, if available. If
+# the record doesn't exist, this should be empty or unspecified. If we don't
+# have API access to the record, this is ignored.
+record_json="${6:-}"
+
+# If the record's content is already correct, no need to continue syncing.
+if [[ "$record_content" == "$correct_record_content" ]]; then
+	exit 0
+fi
+
+# Get our Cloudflare zone information.
+zone_json="$(cf zone)"
+zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
+zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
+
+# If the DNS record (`$record_name`) isn't under the domain of the zone our
+# token has access to (`$zone_name`), then we can't modify the DNS
+# automatically, so output an error with instructions to modify it manually.
+if [[ ".$record_name" != *".$zone_name" ]]; then
+	reset="$(printf '\e[0m')"
+	lblue="$(printf '\e[1;34m')"
+
+	cat <<-END >&2
+	ERROR: The following DNS record must be set:
+
+	Type: ${lblue}$record_type${reset}
+
+	Name: ${lblue}$record_name${reset}
+
+	Content: ${lblue}$correct_record_content${reset}
+
+	Proxy Status: ${lblue}DNS only${reset}
+	END
+	exit 1
+fi
+
+# We can modify the DNS automatically.
+
+# If the DNS record doesn't exist, create it.
+if [[ ! "$record_json" ]]; then
+	printf '%s\n' "Creating DNS record for $record_description at '$record_name'..."
+
+	record_data='{"type":"'"$record_type"'","name":"'"$record_name"'","content":"'"$correct_record_content"'"}'
+
+	cf api "/zones/$zone_id/dns_records" \
+		-X POST \
+		-H "Content-Type: application/json" \
+		--data-raw "$record_data" > /dev/null
+
+	exit 0
+fi
+
+# Since the record already exists, make a request to modify it.
+
+record_id="$(printf '%s\n' "$record_json" | jq -r '.id')"
+
+printf '%s\n' "Updating DNS record for $record_description at '$record_name'..."
+
+record_patch='{"content":"'"$correct_record_content"'"}'
+
+cf api "/zones/$zone_id/dns_records/$record_id" \
+	-X PATCH \
+	-H "Content-Type: application/json" \
+	--data-raw "$record_patch" > /dev/null

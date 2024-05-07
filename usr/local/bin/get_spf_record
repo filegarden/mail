@@ -3,36 +3,72 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# The specified DNS record name to search for SPF records at.
+# The name of the SPF DNS record to get, passed into this script.
 record_name="$1"
 
 # Get our Cloudflare zone information.
-zone_id="$(cf zone | jq -r '.id')"
+zone_json="$(cf zone)"
+zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
+zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
 
-# Fetch all SPF records with the correct version at the specified name, one per
-# line. (Ideally, there should be exactly one.)
+# Exits the script with no output when no records are passed in, or exits with
+# an error when multiple are passed in. If exactly one record is passed in, does
+# nothing and allows the script to continue.
+_require_exactly_one_record() {
+	local records="$1"
+
+	# If there are no SPF records, exit with no output.
+	if [[ ! "$records" ]]; then
+		exit 0
+	fi
+
+	# If there are multiple, exit with an error.
+	if [[ "$records" == *$'\n'* ]]; then
+		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$record_name', which is not allowed." >&2
+		exit 1
+	fi
+}
+
+# If the SPF record (`$record_name`) is under the domain of the zone our token
+# has access to (`$zone_name`), get the record information from the Cloudflare
+# API since it's the most up-to-date source and provides more information.
 #
-# To find the SPF records, query for all TXT records at the specified name. Then
-# filter the results for just the records with the correct SPF version according
-# to RFC 7208 (section 12).
-record_jsons="$(
-	cf api "/zones/$zone_id/dns_records" \
-		--url-query "type=TXT" \
-		--url-query "name=$record_name" \
-	| jq -c '.result[] | select(.content | test("^v=spf1( |$)"; "i"))'
-)"
+# If we don't have API access, get it using a DNS query.
+if [[ ".$record_name" == *".$zone_name" ]]; then
+	# To get the SPF records, query for all TXT records at the specified
+	# name, and filter the results for just the records with the correct SPF
+	# version according to RFC 7208 (section 12).
+	record_json="$(
+		cf api "/zones/$zone_id/dns_records" \
+			--url-query "type=TXT" \
+			--url-query "name=$record_name" \
+		| jq -c '
+			.result[]
+			| select(.content | test("^v=spf1( |$)"; "i"))
+		'
+	)"
 
-# If there are multiple SPF records, exit with an error because it's invalid to
-# have multiple SPF records with the same name.
-if [[ "$record_jsons" == *$'\n'* ]]; then
-	printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$record_name', which is not allowed." >&2
-	exit 1
+	_require_exactly_one_record "$record_json"
+else
+	# To get the SPF values, get all the TXT record values at the specified
+	# name, remove quotes because quotes are allowed around parts of a TXT
+	# record answer's data, and filter the list for just the records with
+	# the correct SPF version according to RFC 7208 (section 12). If none
+	# are found, do nothing instead of letting `grep` exit with an error.
+	spf_data="$(
+		cf dns query TXT "$record_name" \
+		| jq -r '.Answer[]?.data' \
+		| tr -d '"' \
+		| { grep -Ei '^v=spf1( |$)' || :; }
+	)"
+
+	_require_exactly_one_record "$spf_data"
+
+	# Construct the SPF record information ourselves since we only have the
+	# record content. Since we already removed quotes from the data, there's
+	# no need to escape it.
+	record_json='{"content":"'"$spf_data"'"}'
 fi
 
-# If there are no SPF records, exit with no output.
-if [[ ! "$record_jsons" ]]; then
-	exit 0
-fi
-
-# There is exactly one SPF record, so output it.
-printf '%s\n' "$record_jsons"
+# Output the record information.
+printf '%s\n' "$record_json"

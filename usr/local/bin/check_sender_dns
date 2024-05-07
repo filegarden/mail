@@ -6,9 +6,6 @@ set -euo pipefail
 # The specified sender domain to check DNS records for.
 sender_domain="$1"
 
-reset="$(printf '\e[0m')"
-lblue="$(printf '\e[1;34m')"
-
 # Get our Cloudflare zone information.
 zone_json="$(cf zone)"
 zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
@@ -36,68 +33,6 @@ source_domain="$hostname"
 if [[ ".$source_domain" != *".$zone_name" ]]; then
 	source_domain="$source_domain.$zone_name"
 fi
-
-# Automatically sets the specified DNS record to the specified value, or outputs
-# an error with instructions to set it manually if we have no direct DNS access.
-_sync_dns_record() {
-	local record_description="$1" record_type="$2" record_name="$3" \
-		record_content="$4" correct_record_content="$5" record_json="$6"
-
-	# If the record's content is already correct, no need to continue
-	# syncing.
-	if [[ "$record_content" == "$correct_record_content" ]]; then
-		return 0
-	fi
-
-	# If we can't modify the DNS automatically, output an error with
-	# instructions to modify it manually.
-	if [[ ! "$can_access_dns" ]]; then
-		cat <<-END >&2
-		ERROR: The following DNS record must be set for ${lblue}$sender_domain${reset}:
-
-		Type: ${lblue}$record_type${reset}
-
-		Name: ${lblue}$record_name${reset}
-
-		Target: ${lblue}$correct_record_content${reset}
-
-		Proxy Status: ${lblue}DNS only${reset}
-		END
-
-		# Don't try to sync automatically since we can't access the DNS.
-		exit 1
-	fi
-
-	# We can modify the DNS automatically.
-
-	# If the DNS record doesn't exist, create it.
-	if [[ ! "$record_json" ]]; then
-		printf '%s\n' "Creating DNS record for $record_description at '$record_name'..."
-
-		local record_data='{"type":"'"$record_type"'","name":"'"$record_name"'","content":"'"$correct_record_content"'"}'
-
-		cf api "/zones/$zone_id/dns_records" \
-			-X POST \
-			-H "Content-Type: application/json" \
-			--data-raw "$record_data" > /dev/null
-
-		return 0
-	fi
-
-	# Since the record already exists, make a request to modify it.
-
-	local record_id
-	record_id="$(printf '%s\n' "$record_json" | jq -r '.id')"
-
-	printf '%s\n' "Updating DNS record for $record_description at '$record_name'..."
-
-	local record_patch='{"content":"'"$correct_record_content"'"}'
-
-	cf api "/zones/$zone_id/dns_records/$record_id" \
-		-X PATCH \
-		-H "Content-Type: application/json" \
-		--data-raw "$record_patch" > /dev/null
-}
 
 # Ensures the sender's DKIM record with the specified DKIM selector is an alias
 # of our server's.
@@ -153,7 +88,8 @@ _check_dkim() {
 	# This will be the value the sender domain's DKIM record should have.
 	local correct_cname="$source_record_name"
 
-	_sync_dns_record DKIM CNAME "$record_name" \
+	# Ensure the DKIM record is set correctly.
+	require_dns_record DKIM CNAME "$record_name" \
 		"$cname" "$correct_cname" \
 		"$record_json"
 }
@@ -163,7 +99,7 @@ _check_spf() {
 	# This is our original SPF record that sender's SPF record should
 	# include. The name of this record is chosen in our `check_dns` script,
 	# where the record is originally created.
-	local source_record_name="$source_domain"
+	local source_record_name="$hostname"
 
 	# The name of the DNS record we're checking.
 	local record_name="$sender_domain"
@@ -174,42 +110,15 @@ _check_spf() {
 		return 0
 	fi
 
-	# This variable will hold information for the SPF record we're checking.
-	# If no such record exists, this will be empty.
-	local record_json=
+	# Fetch the information for the SPF record we're checking. If no such
+	# record exists, this will be empty.
+	local record_json
+	record_json="$(get_spf_record "$record_name")"
 
-	# This variable will hold the value of the SPF record we're checking. If
-	# no such record exists, this will be empty.
+	# Get the SPF record's content. If no such record exists, this will be
+	# empty.
 	local spf_data
-
-	# If we have direct DNS access via the Cloudflare API, get the record
-	# information from there since it's the most up-to-date source and
-	# provides more information about the records that we might need later.
-	# If we don't have API access, get it using a DNS query.
-	if [[ "$can_access_dns" ]]; then
-		record_json="$(get_spf_record "$record_name")"
-
-		spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
-	else
-		# To get the SPF value, get all the TXT record values under the
-		# sender's domain, remove quotes because quotes are allowed
-		# around parts of a TXT record answer's data, and filter the
-		# list for just the records with the correct SPF version
-		# according to RFC 7208 (section 12). If none are found, do
-		# nothing instead of letting `grep` exit with an error.
-		spf_data="$(
-			cf dns query TXT "$record_name" \
-			| jq -r '.Answer[]?.data' \
-			| tr -d '"' \
-			| { grep -Ei '^v=spf1( |$)' || :; }
-		)"
-
-		# Check if there are multiple SPF records.
-		if [[ "$spf_data" == *$'\n'* ]]; then
-			printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=spf1' found at '$record_name', which is not allowed." >&2
-			exit 1
-		fi
-	fi
+	spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
 
 	# This will be the value the sender domain's SPF record should have.
 	# Start with its existing SPF record value so its preexisting policies
@@ -240,7 +149,8 @@ _check_spf() {
 		printf '%s\n' "$correct_spf_data" | sed -E 's/ [+-?~]?all$//gi'
 	) -all"
 
-	_sync_dns_record SPF TXT "$record_name" \
+	# Ensure the SPF record is set correctly.
+	require_dns_record SPF TXT "$record_name" \
 		"$spf_data" "$correct_spf_data" \
 		"$record_json"
 }
@@ -334,7 +244,8 @@ _check_dmarc() {
 		"
 	)"
 
-	_sync_dns_record DMARC TXT "$record_name" \
+	# Ensure the DMARC record is set correctly.
+	require_dns_record DMARC TXT "$record_name" \
 		"$dmarc_data" "$correct_dmarc_data" \
 		"$record_json"
 }
