@@ -126,19 +126,6 @@ _check_spf() {
 	# If there is no existing SPF record, default to an empty SPF policy.
 	local correct_spf_data="${spf_data:-v=spf1}"
 
-	# An SPF term that includes our server's own SPF policy into another
-	# domain's SPF policy.
-	local include="include:$source_record_name"
-
-	# If the sender domain's SPF policy doesn't include our server's own SPF
-	# policy, include it so we're allowed to send mail for that domain.
-	if ! printf '%s\n' "$correct_spf_data" | grep -Fiqw "$include"; then
-		# Insert our `include:` term after the `v=spf1` (starting at
-		# index 0, ending 6 characters later) and before the rest of the
-		# terms (starting at index 6).
-		correct_spf_data="${correct_spf_data:0:6} $include${correct_spf_data:6}"
-	fi
-
 	# Remove any preexisting `all` term from the policy, and add the correct
 	# one. There should be an `all` term with the `-` (fail) qualifier so
 	# all servers not explicitly covered by the policy are disallowed from
@@ -148,6 +135,19 @@ _check_spf() {
 	correct_spf_data="$(
 		printf '%s\n' "$correct_spf_data" | sed -E 's/ [+-?~]?all$//gi'
 	) -all"
+
+	# An SPF term that includes our server's own SPF policy into another
+	# domain's SPF policy.
+	local include="include:$source_record_name"
+
+	# If the sender domain's SPF policy doesn't include our server's own SPF
+	# policy, include it so we're allowed to send mail for that domain.
+	if ! printf '%s\n' "$correct_spf_data" | grep -Fiq " $include "; then
+		# Insert our `include:` term after the `v=spf1` (starting at
+		# index 0, ending 6 characters later) and before the rest of the
+		# terms (starting at index 6).
+		correct_spf_data="${correct_spf_data:0:6} $include${correct_spf_data:6}"
+	fi
 
 	# Ensure the SPF record is set correctly.
 	require_dns_record SPF TXT "$record_name" \
