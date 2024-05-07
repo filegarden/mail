@@ -294,7 +294,6 @@ _check_dmarc() {
 			| tr -d '"' \
 			| { grep "^$v_tag_pattern" || :; }
 		)"
-
 	fi
 
 	# Check if there are multiple DMARC records.
