@@ -41,7 +41,7 @@ _check_hostname_spf() {
 		record_name="$record_name.$zone_name"
 	fi
 
-	# Start generating the value that the SPF record should have.
+	# Start generating the value the SPF record should have.
 	local correct_spf_data="v=spf1"
 
 	# Add our server's IP addresses to our SPF record as allowed senders.
@@ -57,7 +57,7 @@ _check_hostname_spf() {
 	#
 	# Note that, as per RFC 7208 (section 5.2), this has no effect on other
 	# SPF records that `include:` this one, which is good for domains that
-	# want to allow multiple mail servers (including ours) to send as them.
+	# want to allow multiple mail servers including ours to send as them.
 	correct_spf_data="$correct_spf_data -all"
 
 	# Fetch our server's existing SPF record. If there is none, this will be

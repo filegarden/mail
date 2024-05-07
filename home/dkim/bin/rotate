@@ -143,7 +143,7 @@ sync_key_to_dns() {
 		| openssl base64 -A
 	)"
 
-	# Generate the value that the DNS record should have.
+	# Generate the value the DNS record should have.
 	local correct_record_content="v=DKIM1; k=rsa; p=$public_key"
 
 	# If no DNS record for the key already exists, create a new one.
