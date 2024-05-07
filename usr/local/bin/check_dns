@@ -42,14 +42,14 @@ _check_hostname_spf() {
 	fi
 
 	# Start generating the value that the SPF record should have.
-	local correct_record_content="v=spf1"
+	local correct_spf_data="v=spf1"
 
 	# Add our server's IP addresses to our SPF record as allowed senders.
 	if [[ "$ipv4" ]]; then
-		correct_record_content="$correct_record_content ip4:$ipv4"
+		correct_spf_data="$correct_spf_data ip4:$ipv4"
 	fi
 	if [[ "$ipv6" ]]; then
-		correct_record_content="$correct_record_content ip6:$ipv6"
+		correct_spf_data="$correct_spf_data ip6:$ipv6"
 	fi
 
 	# Disallow all other senders. Only our mail server should be able to
