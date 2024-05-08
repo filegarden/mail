@@ -170,12 +170,9 @@ _check_dmarc() {
 	# If no such record exists, this will be empty.
 	local dmarc_data
 
-	# Use variables to store some regex patterns for matching DMARC data so
-	# the variables can be used in place of the patterns later to help make
-	# regex a little more readable. These are based on RFC 7489 (section
-	# 6.4).
-	local wsp=$'[ \t]*'
-	local v_tag_pattern="[Vv]${wsp}=${wsp}DMARC1${wsp};"
+	# A regex pattern that matches a DMARC version tag (and the required
+	# semicolon following it) according to RFC 7489 (section 6.4).
+	local v_tag_pattern=$'^[Vv][ \t]*=[ \t]*DMARC1[ \t]*;'
 
 	# If we have direct DNS access via the Cloudflare API, get the record
 	# information from there since it's the most up-to-date source and
@@ -190,7 +187,7 @@ _check_dmarc() {
 			cf api "/zones/$zone_id/dns_records" \
 				--url-query "type=TXT" \
 				--url-query "name=$record_name" \
-			| jq -c ".result[] | select(.content | test(\"^$v_tag_pattern\"))"
+			| jq -c ".result[] | select(.content | test(\"$v_tag_pattern\"))"
 		)"
 
 		dmarc_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
@@ -205,7 +202,7 @@ _check_dmarc() {
 			cf dns query TXT "$record_name" \
 			| jq -r '.Answer[]?.data' \
 			| tr -d '"' \
-			| { grep "^$v_tag_pattern" || :; }
+			| { grep "$v_tag_pattern" || :; }
 		)"
 	fi
 
@@ -218,11 +215,6 @@ _check_dmarc() {
 	# This will be the value the sender domain's DMARC record should have.
 	local correct_dmarc_data
 
-	# Set some more regex pattern variables.
-	local p_tag_start_pattern="${wsp}[Pp]${wsp}=${wsp}"
-	local tag_end_pattern="${wsp};"
-	local p_tag_pattern="$p_tag_start_pattern[^;]*$tag_end_pattern"
-
 	# Check if there's an existing DMARC record.
 	if [[ "$dmarc_data" ]]; then
 		# Use the current value as a base for the new value so the
@@ -234,22 +226,30 @@ _check_dmarc() {
 		correct_dmarc_data="v=DMARC1;"
 	fi
 
-	# Ensure the DMARC record's `p` tag immediately follows the `v` tag as
-	# required by RFC 7489 (section 6.4), and ensure it's set to `reject` so
-	# unauthorized messages can't be sent on behalf of the sender's domain.
-	# Preserve the original case and whitespace wherever possible.
-	# * If there's no existing `p` tag, insert the correct one.
-	# * Move the `p` tag to be immediately after the `v` tag.
-	# * If the `p` tag isn't set to `reject`, set it to `reject`. If
-	#   it is, leave it so the original case of "reject" is preserved.
-	correct_dmarc_data="$(
+	# All the tags in the DMARC record other than `v` and `p` can be
+	# preserved, so obtain them via the following steps, using the current
+	# correct DMARC data as a base.
+	# * Remove the existing `v` tag.
+	# * Remove any existing `p` tags.
+	# * If there's a semicolon remaining at the start, delete it. Note that
+	#   any whitespace following the semicolon is preserved.
+	local non_v_and_p_tags
+	non_v_and_p_tags="$(
 		printf '%s\n' "$correct_dmarc_data" \
-		| sed -E "
-			/;$p_tag_pattern/! s/^($v_tag_pattern)/\1 p=reject;/
-			s/^($v_tag_pattern)(.*;)?($p_tag_pattern)/\1\3\2/
-			/^$v_tag_pattern$p_tag_start_pattern[Rr][Ee][Jj][Ee][Cc][Tt]$tag_end_pattern/! s/;($p_tag_start_pattern)[^;]*($tag_end_pattern)/;\1reject\2/
-		"
+		| sed -E '
+			s/'"$v_tag_pattern"$'//
+			s/(^|;)[ \t]*[Pp][ \t]*=[^;]*//g
+			s/^;//
+		'
 	)"
+
+	# Ensure the `p` tag immediately follows the `v` tag as required by RFC
+	# 7489 (section 6.4), and ensure it's set to `reject` so unauthorized
+	# messages can't be sent on behalf of the sender's domain. Normalize
+	# formatting (capitalization, spacing, and semicolons) for the `v` and
+	# `p` tags to maximize compatibility with other parties (since not
+	# everyone obeys the RFC when parsing DMARC records).
+	correct_dmarc_data="v=DMARC1; p=reject;$non_v_and_p_tags"
 
 	# Ensure the DMARC record is set correctly.
 	require_dns_record DMARC TXT "$record_name" \
