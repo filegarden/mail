@@ -33,8 +33,9 @@ printf '%s\n' "Fetching your Cloudflare zone information..."
 cf zone > /dev/null
 
 # Ensure our DNS records have the right values. This runs early in the script in
-# case you're using our server's error output to learn what records to set. That
-# way, you don't have to wait as long between restarts to see the next record.
+# case you're using our server's error messages to learn what records to set.
+# That way, you don't have to wait as long between restarts to see the next
+# record.
 check_dns
 
 # As the unprivileged `acme` user, apply any changes to our `.env` file's ACME
