@@ -73,8 +73,7 @@ add() {
 	fi
 
 	# Get the domain part of the address (the part after the `@`).
-	local domain
-	domain="$(printf '%s\n' "$address" | cut -d @ -f 2)"
+	local domain="${address#*@}"
 
 	# Ensure the domain's DNS records allow our mail server to send as this
 	# address.
@@ -86,7 +85,8 @@ add() {
 	# length as per RFC 4616 (section 2). Then cut the password off at that
 	# maximum length.
 	local password
-	password="$(openssl rand 192 | openssl base64 -A | cut -c -255)"
+	password="$(openssl rand 192 | openssl base64 -A)"
+	password="${password:0:255}"
 
 	# Hash the password using Argon2.
 	local password_hash
@@ -155,8 +155,7 @@ remove() {
 	printf '%s\n' "Removed '$address' from database."
 
 	# Get the domain part of the address (the part after the `@`).
-	local domain
-	domain="$(printf '%s\n' "$address" | cut -d @ -f 2)"
+	local domain="${address#*@}"
 
 	# If there's still an address in the database with the specified domain,
 	# we can stop here.
