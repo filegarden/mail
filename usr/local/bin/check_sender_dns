@@ -162,7 +162,8 @@ _check_dmarc() {
 	local record_name="_dmarc.$sender_domain"
 
 	# This variable will hold information for the DMARC record we're
-	# checking. If no such record exists, this will be empty.
+	# checking. If no such record exists or we can't access the full record
+	# information, this will be empty.
 	local record_json=
 
 	# This variable will hold the value of the DMARC record we're checking.
