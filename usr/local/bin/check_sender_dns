@@ -215,18 +215,22 @@ _check_dmarc() {
 	fi
 
 	# This will be the value the sender domain's DMARC record should have.
-	local correct_dmarc_data="v=DMARC1;"
+	local correct_dmarc_data
 
 	# Set some more regex pattern variables.
 	local p_tag_start_pattern="${wsp}[Pp]${wsp}=${wsp}"
 	local tag_end_pattern="${wsp};"
 	local p_tag_pattern="$p_tag_start_pattern[^;]*$tag_end_pattern"
 
-	# If there's an existing DMARC record starting with a valid version tag
-	# according to RFC 7489 (section 6.4), use its value as a base for the
-	# new value so the existing DMARC configuration isn't lost.
-	if printf '%s\n' "$dmarc_data" | grep -q "^$v_tag_pattern"; then
+	# Check if there's an existing DMARC record.
+	if [[ "$dmarc_data" ]]; then
+		# Use the current value as a base for the new value so the
+		# existing DMARC configuration isn't lost.
 		correct_dmarc_data="$dmarc_data"
+	else
+		# Since there's no existing DMARC record, start with an empty
+		# DMARC value.
+		correct_dmarc_data="v=DMARC1;"
 	fi
 
 	# Ensure the DMARC record's `p` tag immediately follows the `v` tag as
