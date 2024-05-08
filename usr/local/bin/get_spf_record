@@ -35,9 +35,9 @@ _require_exactly_one_record() {
 #
 # If we don't have API access, get it using a DNS query.
 if [[ ".$record_name" == *".$zone_name" ]]; then
-	# To get the SPF records, query for all TXT records at the specified
-	# name, and filter the results for just the records with the correct SPF
-	# version according to RFC 7208 (section 12).
+	# To get the SPF records, fetch all TXT records at the specified name,
+	# and filter for only the records with the correct SPF version according
+	# to RFC 7208 (section 12).
 	record_json="$(
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
@@ -50,11 +50,11 @@ if [[ ".$record_name" == *".$zone_name" ]]; then
 
 	_require_exactly_one_record "$record_json"
 else
-	# To get the SPF values, get all the TXT record values at the specified
-	# name, remove quotes because quotes are allowed around parts of a TXT
-	# record answer's data, and filter the list for just the records with
-	# the correct SPF version according to RFC 7208 (section 12). If none
-	# are found, do nothing instead of letting `grep` exit with an error.
+	# To get the SPF values, fetch all TXT record values at the specified
+	# name, remove quotes since quotes are allowed around parts of a TXT
+	# record answer's data, and filter for only the records with the correct
+	# SPF version according to RFC 7208 (section 12). If none are found, do
+	# nothing instead of letting `grep` exit with an error.
 	spf_data="$(
 		cf dns query TXT "$record_name" \
 		| jq -r '.Answer[]?.data' \

@@ -171,7 +171,8 @@ _check_dmarc() {
 
 	# Use variables to store some regex patterns for matching DMARC data so
 	# the variables can be used in place of the patterns later to help make
-	# regex a little more readable.
+	# regex a little more readable. These are based on RFC 7489 (section
+	# 6.4).
 	local wsp=$'[ \t]*'
 	local v_tag_pattern="[Vv]${wsp}=${wsp}DMARC1${wsp};"
 
@@ -181,10 +182,9 @@ _check_dmarc() {
 	#
 	# If we don't have API access, get it using a DNS query.
 	if [[ "$can_access_dns" ]]; then
-		# To find the DMARC records, query for all TXT records at the
-		# DMARC record name. Then filter the results for just the
-		# records with the correct DMARC version according to RFC 7489
-		# (section 6.4).
+		# To get the DMARC records, fetch all TXT records at the DMARC
+		# record name, and filter for only the records with the correct
+		# DMARC version.
 		record_json="$(
 			cf api "/zones/$zone_id/dns_records" \
 				--url-query "type=TXT" \
@@ -194,12 +194,12 @@ _check_dmarc() {
 
 		dmarc_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
 	else
-		# To get the DMARC value, get all the TXT record values under
-		# the sender's domain, remove quotes because quotes are allowed
-		# around parts of a TXT record answer's data, and filter the
-		# list for just the records with the correct DMARC version
-		# according to RFC 7489 (section 6.4). If none are found, do
-		# nothing instead of letting `grep` exit with an error.
+		# To get the DMARC values, fetch all TXT record values at the
+		# DMARC record name, remove quotes since quotes are allowed
+		# around parts of a TXT record answer's data, and filter for
+		# only the records with the correct DMARC version. If none are
+		# found, do nothing instead of letting `grep` exit with an
+		# error.
 		dmarc_data="$(
 			cf dns query TXT "$record_name" \
 			| jq -r '.Answer[]?.data' \
