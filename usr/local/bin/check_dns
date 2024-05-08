@@ -3,13 +3,112 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# Checks the SPF DNS record for our hostname.
+# Obtain this server's public IP addresses to use in our A, AAAA, and SPF DNS
+# records. If either request fails, do nothing instead of exiting, because it's
+# expected that some networks don't support both IPv4 and IPv6.
+ipv4="$(curl -s --ipv4 https://icanhazip.com/ || :)"
+ipv6="$(curl -s --ipv6 https://icanhazip.com/ || :)"
+
+# If no IPs are found, something is wrong.
+if [[ ! "$ipv4$ipv6" ]]; then
+	printf '%s\n' "ERROR: Could not obtain any public IP address for this server." >&2
+	exit 1
+fi
+
+# Get our mail server's hostname (e.g. `mail.example.com`).
+hostname="$(hostname)"
+
+# Checks our hostname's A or AAAA DNS records.
+_check_hostname_a() {
+	local record_type="$1"
+
+	# This will be the IP address that should be set in the DNS record.
+	local correct_ip
+
+	if [[ "$record_type" == "A" ]]; then
+		correct_ip="$ipv4"
+	elif [[ "$record_type" == "AAAA" ]]; then
+		correct_ip="$ipv6"
+	else
+		printf '%s\n' "ERROR: Invalid record type '$record_type'. Must be either 'A' or 'AAAA'." >&2
+		exit 1
+	fi
+
+	# If we don't know our IP address for this record, don't check the
+	# record.
+	if [[ ! "$correct_ip" ]]; then
+		# Note the record could still exist, but we can't tell whether
+		# its value is correct since we don't know our IP, so we
+		# shouldn't require the record to be absent either. It's
+		# possible this server accepts traffic for an IP (via this
+		# record) while being unable to use the IP for outbound traffic.
+		return 0
+	fi
+
+	printf '%s\n' "Checking hostname's $record_type record..."
+
+	# The name of the DNS record we're checking. This is intentionally not
+	# ensured to be under the zone we can access because having access to
+	# our source A or AAAA record increases our attack surface needlessly.
+	local record_name="$hostname"
+
+	# Get our Cloudflare zone information.
+	local zone_json zone_id zone_name
+	zone_json="$(cf zone)"
+	zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
+	zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
+
+	# This variable will hold information for the DNS record we're checking.
+	# If no such record exists, this will be empty.
+	local record_json=
+
+	# This variable will hold the value of the DNS record we're checking. If
+	# no such record exists, this will be empty.
+	local ip
+
+	# If the record (`$record_name`) is under the domain of the zone our
+	# token has access to (`$zone_name`), get the record information from
+	# the Cloudflare API since it's the most up-to-date source and provides
+	# more information.
+	#
+	# If we don't have API access, get it using a DNS query.
+	if [[ ".$record_name" == *".$zone_name" ]]; then
+		record_json="$(
+			cf api "/zones/$zone_id/dns_records" \
+				--url-query "type=$record_type" \
+				--url-query "name=$record_name" \
+			| jq -c '.result[]'
+		)"
+
+		ip="$(printf '%s\n' "$record_json" | jq -r '.content')"
+	else
+		ip="$(
+			cf dns query "$record_type" "$record_name" \
+			| jq -r '.Answer[]?.data'
+		)"
+	fi
+
+	# Check if there are multiple IP addresses found at the record name.
+	if [[ "$ip" == *$'\n'* ]]; then
+		cat <<-END >&2
+		ERROR: Multiple $record_type DNS records found at '$record_name'. Generally, a hostname should uniquely identify a server, so this is likely a mistake.
+
+		If you use Cloudflare for DNS and only see one $record_type record at '$record_name', ensure its proxy status is set to "DNS Only".
+
+		(If you set multiple records intentionally, note that multiple servers with different hostnames can handle mail for the same domains.)
+		END
+		exit 1
+	fi
+
+	# Ensure the A or AAAA record is set correctly.
+	require_dns_record "$record_type" "$record_type" "$record_name" \
+		"$ip" "$correct_ip" \
+		"$record_json"
+}
+
+# Checks our hostname's SPF DNS record.
 _check_hostname_spf() {
 	printf '%s\n' "Checking SPF..."
-
-	# Get our mail server's hostname (e.g. `mail.example.com`).
-	local hostname
-	hostname="$(hostname)"
 
 	# The DNS record that should have our SPF policy. This is intentionally
 	# not ensured to be under the zone we can access because having access
@@ -28,20 +127,6 @@ _check_hostname_spf() {
 
 	# Start generating the value the SPF record should have.
 	local correct_spf_data="v=spf1"
-
-	# Obtain this server's public IP addresses to use in our SPF DNS record.
-	# If either request fails, do nothing instead of exiting, because it's
-	# expected that some networks don't support both IPv4 and IPv6.
-	local ipv4 ipv6
-	ipv4="$(curl -s --ipv4 https://icanhazip.com/ || :)"
-	ipv6="$(curl -s --ipv6 https://icanhazip.com/ || :)"
-
-	# If no IPs are found, something is wrong, and we won't be able to add
-	# this server as an allowed sender in our SPF record.
-	if [[ ! "$ipv4$ipv6" ]]; then
-		printf '%s\n' "ERROR: Could not obtain your public IP address (to include in your SPF record)." >&2
-		return 1
-	fi
 
 	# Add our server's IP addresses to our SPF record as allowed senders.
 	if [[ "$ipv4" ]]; then
@@ -85,5 +170,9 @@ _check_sender_domains() {
 	done
 }
 
+_check_hostname_a A
+_check_hostname_a AAAA
+
 _check_hostname_spf
+
 _check_sender_domains
