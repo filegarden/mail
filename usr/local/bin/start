@@ -32,6 +32,11 @@ rm -f /var/cache/cf_zone.json
 printf '%s\n' "Fetching your Cloudflare zone information..."
 cf zone > /dev/null
 
+# Ensure our DNS records have the right values. This runs early in the script in
+# case you're using our server's error output to learn what records to set. That
+# way, you don't have to wait as long between restarts to see the next record.
+check_dns
+
 # As the unprivileged `acme` user, apply any changes to our `.env` file's ACME
 # account information.
 su acme -s /bin/sh -c /home/acme/bin/update_account
@@ -45,9 +50,6 @@ deploy_tls files
 
 # Give our DKIM key information to OpenDKIM.
 deploy_dkim files
-
-# Ensure our DNS records have the right values.
-check_dns
 
 # Run everything needed for our mail server in parallel, replacing this script's
 # shell process (using `exec`) since the shell is no longer needed.
