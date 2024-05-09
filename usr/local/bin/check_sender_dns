@@ -187,7 +187,10 @@ _check_dmarc() {
 			cf api "/zones/$zone_id/dns_records" \
 				--url-query "type=TXT" \
 				--url-query "name=$record_name" \
-			| jq -c ".result[] | select(.content | test(\"$v_tag_pattern\"))"
+			| jq -c '
+				.result[]
+				| select(.content | test("'"$v_tag_pattern"'"))
+			'
 		)"
 
 		dmarc_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
