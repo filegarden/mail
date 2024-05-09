@@ -80,8 +80,6 @@ deploy_challenge() {
 	zone_id="$(jq -r '.id' <<< "$zone_json")"
 	zone_name="$(jq -r '.name' <<< "$zone_json")"
 
-	printf '%s\n' "Zone '$zone_name' found."
-
 	# The DNS record Let's Encrypt will read (hence "r") to check for our
 	# ACME token.
 	local r_record_name="_acme-challenge.$domain"
