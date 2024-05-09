@@ -14,10 +14,10 @@ zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
 # Exits the script with no output when no records are passed in, or exits with
 # an error when multiple are passed in. If exactly one record is passed in, does
 # nothing and allows the script to continue.
-_require_exactly_one_record() {
+_require_exactly_one_spf_record() {
 	local records="$1"
 
-	# If there are no SPF records, exit with no output.
+	# If there are no records, exit with no output.
 	if [[ ! "$records" ]]; then
 		exit 0
 	fi
@@ -48,7 +48,7 @@ if [[ ".$record_name" == *".$zone_name" ]]; then
 		'
 	)"
 
-	_require_exactly_one_record "$record_json"
+	_require_exactly_one_spf_record "$record_json"
 else
 	# To get the SPF values, fetch all TXT record values at the specified
 	# name, remove quotes since quotes are allowed around parts of a TXT
@@ -62,7 +62,7 @@ else
 		| { grep -Ei '^v=spf1( |$)' || :; }
 	)"
 
-	_require_exactly_one_record "$spf_data"
+	_require_exactly_one_spf_record "$spf_data"
 
 	# Construct the SPF record information ourselves since we only have the
 	# record content. Since we already removed quotes from the data, there's
