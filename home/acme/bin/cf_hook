@@ -100,7 +100,7 @@ deploy_challenge() {
 		# Get the value of the CNAME record (if it exists).
 		local cname
 		cname="$(
-			cf dns query CNAME "$r_record_name" \
+			cf dns query "$r_record_name" CNAME \
 			| jq -r '.Answer[0].data'
 		)"
 
@@ -196,7 +196,7 @@ deploy_challenge() {
 		# record data can have multiple lines.
 		local is_record_found
 		is_record_found="$(
-			cf dns query TXT "$w_record_name" \
+			cf dns query "$w_record_name" TXT \
 			| jq --arg token_value "$token_value" '
 				any(
 					.Answer[]?.data | gsub("\""; "");

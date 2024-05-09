@@ -76,7 +76,7 @@ _check_dkim() {
 		cname="$(printf '%s\n' "$record_json" | jq -r '.content')"
 	else
 		cname="$(
-			cf dns query CNAME "$record_name" \
+			cf dns query "$record_name" CNAME \
 			| jq -r '.Answer[]?.data'
 		)"
 

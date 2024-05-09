@@ -83,7 +83,7 @@ _check_hostname_a() {
 		ip="$(printf '%s\n' "$record_json" | jq -r '.content')"
 	else
 		ip="$(
-			cf dns query "$record_type" "$record_name" \
+			cf dns query "$record_name" "$record_type" \
 			| jq -r '.Answer[]?.data'
 		)"
 	fi

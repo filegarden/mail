@@ -98,28 +98,28 @@ dns() {
 	esac
 }
 
-# Makes a query to Cloudflare's DNS.
+# Makes a query to Cloudflare's DNS for the specified record name and type.
 dns_query() {
-	local type="$1" name="$2"
+	local name="$1" type="$2"
 
 	# Refresh Cloudflare's DNS cache for the record we're querying so we get
 	# the most updated answer.
-	cf dns purge "$type" "$name"
+	cf dns purge "$name" "$type"
 
 	curl -LSs https://cloudflare-dns.com/dns-query \
-		--url-query "type=$type" \
 		--url-query "name=$name" \
+		--url-query "type=$type" \
 		-H "Accept: application/dns-json" \
 		--fail-with-body
 }
 
-# Refreshes Cloudflare's DNS cache.
+# Purges Cloudflare's DNS cache for the specified record name and type.
 dns_purge() {
-	local type="$1" domain="$2"
+	local name="$1" type="$2"
 
 	curl -LSs -X POST https://cloudflare-dns.com/api/v1/purge \
+		--url-query "domain=$name" \
 		--url-query "type=$type" \
-		--url-query "domain=$domain" \
 		--fail-with-body > /dev/null
 }
 

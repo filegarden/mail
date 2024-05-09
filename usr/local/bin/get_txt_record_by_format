@@ -77,7 +77,7 @@ else
 	# have multiple lines. Note this outputs the data as JSON strings
 	# (escaped and quoted), not raw strings; see next comment for why.
 	record_content="$(
-		cf dns query TXT "$record_name" \
+		cf dns query "$record_name" TXT \
 		| jq -c '
 			.Answer[]?.data
 			| gsub("\""; "")
