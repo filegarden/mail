@@ -16,8 +16,7 @@ RUN apk add --no-cache \
     # obtains and renews our hostname's TLS certificates for encrypting mail in
     # transit.
     bash \
-    # The tool `dehydrated` uses to communicate with our certificate authority
-    # in order to issue and renew certificates.
+    # A tool for making HTTP requests.
     curl \
     # Lets us parse JSON results from Cloudflare's API, which we use to prove to
     # Let's Encrypt that we own the domain we're requesting certificates for.
