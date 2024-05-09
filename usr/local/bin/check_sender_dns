@@ -156,6 +156,17 @@ _check_spf() {
 		"$record_json"
 }
 
+# Exits the script with an error when multiple records are passed in. Otherwise,
+# does nothing and allows the script to continue.
+_forbid_multiple_dmarc_records() {
+	local records="$1"
+
+	if [[ "$records" == *$'\n'* ]]; then
+		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=DMARC1;' found at '$record_name', which is not allowed." >&2
+		exit 1
+	fi
+}
+
 # Ensures the sender's DMARC record is set up correctly.
 _check_dmarc() {
 	# The name of the DMARC record we're checking.
@@ -193,26 +204,39 @@ _check_dmarc() {
 			'
 		)"
 
+		_forbid_multiple_dmarc_records "$record_json"
+
+		# Extract the record's content to get the DMARC data.
 		dmarc_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
 	else
 		# To get the DMARC values, fetch all TXT record values at the
 		# DMARC record name, remove quotes since quotes are allowed
 		# around parts of a TXT record answer's data, and filter for
-		# only the records with the correct DMARC version. If none are
-		# found, do nothing instead of letting `grep` exit with an
-		# error.
+		# only the records with the correct DMARC version.
+		#
+		# This is all done in `jq` because otherwise a multi-line string
+		# is ambiguous with multiple single-line strings, since TXT
+		# record data can have multiple lines. Note this outputs the
+		# data as JSON strings (escaped and quoted), not raw strings;
+		# see next comment for why.
 		dmarc_data="$(
 			cf dns query TXT "$record_name" \
-			| jq -r '.Answer[]?.data' \
-			| tr -d '"' \
-			| { grep "$v_tag_pattern" || :; }
+			| jq -c '
+				.Answer[]?.data
+				| gsub("\""; "")
+				| select(test("'"$v_tag_pattern"'"))
+			'
 		)"
-	fi
 
-	# Check if there are multiple DMARC records.
-	if [[ "$dmarc_data" == *$'\n'* ]]; then
-		printf '%s\n' "ERROR: Multiple TXT DNS records starting with 'v=DMARC1;' found at '$record_name', which is not allowed." >&2
-		exit 1
+		# Exit with an error if there are multiple DMARC records. This
+		# detects multiple records by checking for multiple lines, so to
+		# prevent false positives, any line breaks in the DMARC data
+		# itself must be escaped when outputted above.
+		_forbid_multiple_dmarc_records "$dmarc_data"
+
+		# Since `$dmarc_data` is still a JSON-encoded string, decode it
+		# here so it can be used normally as a raw string from now on.
+		dmarc_data="$(printf '%s\n' "$dmarc_data" | jq -r)"
 	fi
 
 	# This will be the value the sender domain's DMARC record should have.
@@ -228,6 +252,11 @@ _check_dmarc() {
 		# DMARC value.
 		correct_dmarc_data="v=DMARC1;"
 	fi
+
+	# Replace any line breaks in the DMARC data with spaces since line
+	# breaks aren't allowed in a DMARC record, and otherwise extra care
+	# would have to be taken to support them in later operations.
+	correct_dmarc_data="${correct_dmarc_data//$'\n'/ }"
 
 	# All the tags in the DMARC record other than `v` and `p` can be
 	# preserved, so obtain them via the following steps, using the current

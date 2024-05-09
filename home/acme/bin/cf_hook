@@ -185,19 +185,29 @@ deploy_challenge() {
 	while true; do
 		sleep "$dns_sleep_seconds"
 
-		# Get a list of all the DNS record data under this record name.
-		# Remove quotes because quotes are allowed around parts of a TXT
-		# record's data.
-		local record_answers
-		record_answers="$(
+		# Get the values of all TXT records at the name of the record we
+		# created. Remove quotes since quotes are allowed around parts
+		# of a TXT record answer's data. Then check if any value matches
+		# the record we created, setting this variable to either `true`
+		# or `false`.
+		#
+		# This is all done in `jq` because otherwise a multi-line string
+		# is ambiguous with multiple single-line strings, since TXT
+		# record data can have multiple lines.
+		local is_record_found
+		is_record_found="$(
 			cf dns query TXT "$w_record_name" \
-			| jq -r '.Answer[]?.data' \
-			| tr -d '"'
+			| jq --arg token_value "$token_value" '
+				any(
+					.Answer[]?.data | gsub("\""; "");
+					. == $token_value
+				)
+			'
 		)"
 
 		# If any of the results match the DNS record we created, we can
 		# stop checking for our DNS record.
-		if grep -Fqxe "$token_value" <<< "$record_answers"; then
+		if [[ "$is_record_found" == "true" ]]; then
 			printf '%s\n' "Updated DNS record found."
 			break
 		fi
