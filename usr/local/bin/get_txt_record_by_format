@@ -1,0 +1,101 @@
+#!/bin/busybox sh
+# Finds a TXT DNS record with the specified format at the specified name. If
+# none are found, this outputs nothing. If exactly one is found, this outputs
+# its JSON information. If multiple are found, this exits with an error.
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# The format of the TXT DNS record to find.
+format="$1"
+# The name of the record to get.
+record_name="$2"
+
+# Get our Cloudflare zone information.
+zone_json="$(cf zone)"
+zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
+zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
+
+# Set the `jq` expression that checks for the specified format.
+if [[ "$format" == "SPF" ]]; then
+	# This checks for the correct SPF version according to RFC 7208 (section
+	# 12).
+	jq_predicate='test("^v=spf1( |$)"; "i")'
+elif [[ "$format" == "DMARC" ]]; then
+	# This checks for the correct DMARC version according to RFC 7489
+	# (section 6.4).
+	jq_predicate=$'test("^[Vv][ \t]*=[ \t]*DMARC1[ \t]*;")'
+else
+	printf '%s\n' "ERROR: Invalid record format '$format'. Must be either 'SPF' or 'DMARC'." >&2
+	exit 1
+fi
+
+# Exits the script with no output when no records are passed in, or exits with
+# an error when multiple are passed in. If exactly one record is passed in, does
+# nothing and allows the script to continue.
+_require_exactly_one_record() {
+	local records="$1"
+
+	# If there are no records, exit with no output.
+	if [[ ! "$records" ]]; then
+		exit 0
+	fi
+
+	# If there are multiple, exit with an error.
+	if [[ "$records" == *$'\n'* ]]; then
+		printf '%s\n' "ERROR: Multiple TXT DNS records for $format found at '$record_name', which is not allowed." >&2
+		exit 1
+	fi
+}
+
+# If the record (`$record_name`) is under the domain of the zone our token has
+# access to (`$zone_name`), get its information from the Cloudflare API since
+# it's the most up-to-date source and provides more information.
+#
+# If we don't have API access, get it using a DNS query.
+if [[ ".$record_name" == *".$zone_name" ]]; then
+	# Fetch all TXT records at the specified name, and filter for only the
+	# records with the correct format.
+	record_json="$(
+		cf api "/zones/$zone_id/dns_records" \
+			--url-query "type=TXT" \
+			--url-query "name=$record_name" \
+		| jq -c '
+			.result[]
+			| select(.content | '"$jq_predicate"')
+		'
+	)"
+
+	_require_exactly_one_record "$record_json"
+else
+	# Fetch all TXT record values at the specified name, remove quotes since
+	# quotes are allowed around parts of a TXT record answer's data, and
+	# filter for only the records with the correct format.
+	#
+	# This is all done in `jq` because otherwise a multi-line string is
+	# ambiguous with multiple single-line strings, since TXT record data can
+	# have multiple lines. Note this outputs the data as JSON strings
+	# (escaped and quoted), not raw strings; see next comment for why.
+	record_content="$(
+		cf dns query TXT "$record_name" \
+		| jq -c '
+			.Answer[]?.data
+			| gsub("\""; "")
+			| select('"$jq_predicate"')
+		'
+	)"
+
+	# Exit with an error if there isn't exactly one record. This detects
+	# multiple records by checking for multiple lines, so to prevent false
+	# positives, any line breaks in the record content must be escaped when
+	# outputted above.
+	_require_exactly_one_record "$record_content"
+
+	# Construct the JSON record information ourselves since we only have the
+	# record content. Because the content is already a JSON-encoded string,
+	# there's no need to escape or quote it.
+	record_json='{"content":'"$record_content"'}'
+fi
+
+# Output the record information.
+printf '%s\n' "$record_json"

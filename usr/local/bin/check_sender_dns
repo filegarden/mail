@@ -114,7 +114,7 @@ _check_spf() {
 	# Fetch the information for the SPF record we're checking. If no such
 	# record exists, this will be empty.
 	local record_json
-	record_json="$(get_spf_record "$record_name")"
+	record_json="$(get_txt_record_by_format SPF "$record_name")"
 
 	# Get the SPF record's content. If no such record exists, this will be
 	# empty.
@@ -173,71 +173,14 @@ _check_dmarc() {
 	local record_name="_dmarc.$sender_domain"
 
 	# This variable will hold information for the DMARC record we're
-	# checking. If no such record exists or we can't access the full record
-	# information, this will be empty.
-	local record_json=
+	# checking. If no such record exists, this will be empty.
+	local record_json
+	record_json="$(get_txt_record_by_format DMARC "$record_name")"
 
 	# This variable will hold the value of the DMARC record we're checking.
 	# If no such record exists, this will be empty.
 	local dmarc_data
-
-	# A regex pattern that matches a DMARC version tag (and the required
-	# semicolon following it) according to RFC 7489 (section 6.4).
-	local v_tag_pattern=$'^[Vv][ \t]*=[ \t]*DMARC1[ \t]*;'
-
-	# If we have direct DNS access via the Cloudflare API, get the record
-	# information from there since it's the most up-to-date source and
-	# provides more information.
-	#
-	# If we don't have API access, get it using a DNS query.
-	if [[ "$can_access_dns" ]]; then
-		# To get the DMARC records, fetch all TXT records at the DMARC
-		# record name, and filter for only the records with the correct
-		# DMARC version.
-		record_json="$(
-			cf api "/zones/$zone_id/dns_records" \
-				--url-query "type=TXT" \
-				--url-query "name=$record_name" \
-			| jq -c '
-				.result[]
-				| select(.content | test("'"$v_tag_pattern"'"))
-			'
-		)"
-
-		_forbid_multiple_dmarc_records "$record_json"
-
-		# Extract the record's content to get the DMARC data.
-		dmarc_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
-	else
-		# To get the DMARC values, fetch all TXT record values at the
-		# DMARC record name, remove quotes since quotes are allowed
-		# around parts of a TXT record answer's data, and filter for
-		# only the records with the correct DMARC version.
-		#
-		# This is all done in `jq` because otherwise a multi-line string
-		# is ambiguous with multiple single-line strings, since TXT
-		# record data can have multiple lines. Note this outputs the
-		# data as JSON strings (escaped and quoted), not raw strings;
-		# see next comment for why.
-		dmarc_data="$(
-			cf dns query TXT "$record_name" \
-			| jq -c '
-				.Answer[]?.data
-				| gsub("\""; "")
-				| select(test("'"$v_tag_pattern"'"))
-			'
-		)"
-
-		# Exit with an error if there are multiple DMARC records. This
-		# detects multiple records by checking for multiple lines, so to
-		# prevent false positives, any line breaks in the DMARC data
-		# itself must be escaped when outputted above.
-		_forbid_multiple_dmarc_records "$dmarc_data"
-
-		# Since `$dmarc_data` is still a JSON-encoded string, decode it
-		# here so it can be used normally as a raw string from now on.
-		dmarc_data="$(printf '%s\n' "$dmarc_data" | jq -r)"
-	fi
+	dmarc_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
 
 	# This will be the value the sender domain's DMARC record should have.
 	local correct_dmarc_data
@@ -261,15 +204,16 @@ _check_dmarc() {
 	# All the tags in the DMARC record other than `v` and `p` can be
 	# preserved, so obtain them via the following steps, using the current
 	# correct DMARC data as a base.
-	# * Remove the existing `v` tag.
+	# * Remove the existing `v` tag according to the format specified in RFC
+	#   7489 (section 6.4).
 	# * Remove any existing `p` tags.
 	# * If there's a semicolon remaining at the start, delete it. Note that
 	#   any whitespace following the semicolon is preserved.
 	local non_v_and_p_tags
 	non_v_and_p_tags="$(
 		printf '%s\n' "$correct_dmarc_data" \
-		| sed -E '
-			s/'"$v_tag_pattern"$'//
+		| sed -E $'
+			s/^[Vv][ \t]*=[ \t]*DMARC1[ \t]*;//
 			s/(^|;)[ \t]*[Pp][ \t]*=[^;]*//g
 			s/^;//
 		'

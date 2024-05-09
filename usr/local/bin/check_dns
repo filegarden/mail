@@ -118,7 +118,7 @@ _check_hostname_spf() {
 	# Fetch the information for the SPF record we're checking. If no such
 	# record exists, this will be empty.
 	local record_json
-	record_json="$(get_spf_record "$record_name")"
+	record_json="$(get_txt_record_by_format SPF "$record_name")"
 
 	# Get the SPF record's content. If no such record exists, this will be
 	# empty.
@@ -147,7 +147,7 @@ _check_hostname_spf() {
 	# Fetch our server's existing SPF record. If there is none, this will be
 	# empty.
 	local record_json
-	record_json="$(get_spf_record "$record_name")"
+	record_json="$(get_txt_record_by_format SPF "$record_name")"
 
 	# Get the SPF record's current value.
 	local spf_data
