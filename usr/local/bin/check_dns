@@ -209,7 +209,10 @@ _check_host_ptr() {
 		# field is exactly 4 hexadecimal digits long.
 		record_name="$(
 			printf '%s\n' "$ipv6" \
-			| sed -E 's/([0-9a-f]+)/000\1/g; s/0+([0-9a-f]{4})/\1/g'
+			| sed -E '
+				s/([0-9a-f]+)/000\1/gi
+				s/0+([0-9a-f]{4})/\1/gi
+			'
 		)"
 
 		# If the address contains `::`, expand it into zeros.
