@@ -3,6 +3,10 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
+reset="$(printf '\e[0m')"
+gray="$(printf '\e[90m')"
+lblue="$(printf '\e[1;34m')"
+
 # Obtain this server's public IP addresses to use in our A, AAAA, and SPF DNS
 # records. If either request fails, do nothing instead of exiting, because it's
 # expected that some networks don't support both IPv4 and IPv6.
@@ -159,6 +163,112 @@ _check_hostname_spf() {
 		"$record_json"
 }
 
+# Checks the PTR record at the specified name.
+_check_host_ptr() {
+	local ip_format="$1"
+
+	# The IP address for the specified format.
+	local ip
+
+	if [[ "$ip_format" == "IPv4" ]]; then
+		ip="$ipv4"
+	elif [[ "$ip_format" == "IPv6" ]]; then
+		ip="$ipv6"
+	else
+		printf '%s\n' "Invalid IP address format '$ip_format'. Must be either 'IPv4' or 'IPv6'."
+		exit 1
+	fi
+
+	# If we don't know our IP address for this record, we can't determine
+	# the name of the record to check.
+	if [[ ! "$ip" ]]; then
+		return 0
+	fi
+
+	printf '%s\n' "Checking $ip_format PTR..."
+
+	# The PTR record name.
+	local record_name
+
+	# Construct the PTR record name based on the IP address.
+	if [[ "$ip_format" == "IPv4" ]]; then
+		# IPv4 PTR record names are specified by RFC 1035 (section 3.5).
+
+		# Replace all `.`s in the address with line breaks, and reverse
+		# the lines.
+		record_name="$(printf '%s\n' "${ipv4//./$'\n'}" | tac)"
+
+		# Restore the `.`s and append `.in-addr.arpa`.
+		record_name="${record_name//$'\n'/.}.in-addr.arpa"
+	elif [[ "$ip_format" == "IPv6" ]]; then
+		# IPv6 addresses are specified by RFC 2373 (section 2.2). IPv6
+		# PTR record names are specified by RFC 3596 (section 2.5).
+
+		# Start with the address as a base for the record name, but add
+		# enough leading zeros to each field in the address so that each
+		# field is exactly 4 hexadecimal digits long.
+		record_name="$(
+			printf '%s\n' "$ipv6" \
+			| sed -E 's/([0-9a-f]+)/000\1/g; s/0+([0-9a-f]{4})/\1/g'
+		)"
+
+		# If the address contains `::`, expand it into zeros.
+		if [[ "$record_name" == *"::"* ]]; then
+			# The part of the address before the `::`.
+			local ip_start="${record_name/::*/}"
+			# The part of the address after the `::`.
+			local ip_end="${record_name/*::/}"
+
+			# Start with an IPv6 address of all zeros.
+			local zeros="0000:0000:0000:0000:0000:0000:0000:0000"
+
+			# Slice out just the zeros that should replace the `::`.
+			zeros="${zeros:"${#ip_start}"}"
+			if [[ "${ip_end}" ]]; then
+				zeros="${zeros:0:-"${#ip_end}"}"
+			fi
+
+			# Join together the part before the `::`, the zeros
+			# replacing the `::`, and part after the `::` to get the
+			# final expanded IPv6 address.
+			record_name="$ip_start$zeros$ip_end"
+		fi
+
+		# Remove the colons, separate each hexadecimal digit with a `.`,
+		# reverse it, and append `.ip6.arpa` to get the final PTR record
+		# name.
+		record_name="$(
+			printf '%s\n' "$record_name" \
+			| sed -E 's/://g; s/(.)/.\1/g; s/^\.//' \
+			| rev
+		).ip6.arpa"
+	fi
+
+	# Get the PTR record's content. If no record is found, this will be
+	# empty.
+	local record_content
+	record_content="$(
+		cf dns query "$record_name" PTR | jq -r '.Answer[]?.data'
+	)"
+
+	# DNS query answers for PTR records explicitly include a `.` at the end.
+	# Our hostname doesn't, so trim it off here to be consistent with that.
+	record_content="${record_content%.}"
+
+	if [[ "$record_content" != "$hostname" ]]; then
+		cat <<-END >&2
+		ERROR: The following PTR record must be set:
+
+		$ip_format Address: ${lblue}$ip${reset}
+
+		Hostname: ${lblue}$hostname${reset}
+
+		${gray}PTR records can't be found in your domain's DNS zone; they're set by your server's host. Look up how to set a PTR record for your hosting provider.${reset}
+		END
+		exit 1
+	fi
+}
+
 # Checks the DNS records for all the domains of the addresses in our password
 # database to ensure we're allowed to send as them.
 _check_sender_domains() {
@@ -174,5 +284,8 @@ _check_hostname_a A
 _check_hostname_a AAAA
 
 _check_hostname_spf
+
+_check_host_ptr IPv4
+_check_host_ptr IPv6
 
 _check_sender_domains
