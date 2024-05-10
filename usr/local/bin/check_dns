@@ -227,7 +227,7 @@ _check_host_ptr() {
 
 			# Slice out just the zeros that should replace the `::`.
 			zeros="${zeros:"${#ip_start}"}"
-			if [[ "${ip_end}" ]]; then
+			if [[ "$ip_end" ]]; then
 				zeros="${zeros:0:-"${#ip_end}"}"
 			fi
 
