@@ -40,5 +40,6 @@ COPY --chmod=0500 --chown=dkim home/dkim/bin /home/dkim/bin
 # Run our image build script.
 RUN /usr/local/bin/build
 
-# When the container starts, run our start script.
+# When the container starts, run our start script by default. (Note this can be
+# overwritten using `docker compose run`.)
 CMD /usr/local/bin/start
