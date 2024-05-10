@@ -232,8 +232,8 @@ _check_host_ptr() {
 			fi
 
 			# Join together the part before the `::`, the zeros
-			# replacing the `::`, and part after the `::` to get the
-			# final expanded IPv6 address.
+			# replacing the `::`, and the part after the `::` to get
+			# the final expanded IPv6 address.
 			record_name="$ip_start$zeros$ip_end"
 		fi
 
