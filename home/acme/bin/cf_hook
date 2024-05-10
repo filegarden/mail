@@ -17,17 +17,19 @@ dns_cleanup_path="$BASEDIR/cf_dns_cleanup"
 _clean_dns_record() {
 	local zone_id="$1" record_name="$2" token_value="$3"
 
+	# Get the ID of the specified DNS record. If it doesn't exist, this will
+	# be empty.
 	local record_id
 	record_id="$(
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
 			--url-query "name=$record_name" \
 			--url-query "content=$token_value" \
-		| jq -r '.result[0].id'
+		| jq -r '.result[].id'
 	)"
 
 	# Only try to delete the DNS record if it was found.
-	if [[ "$record_id" != "null" ]]; then
+	if [[ "$record_id" ]]; then
 		cf api "/zones/$zone_id/dns_records/$record_id" \
 			-X DELETE > /dev/null
 	fi
@@ -97,11 +99,12 @@ deploy_challenge() {
 
 		printf '%s\n' "The domain '$domain' being validated is outside the zone '$zone_name' your Cloudflare token has access to. Verifying CNAME..."
 
-		# Get the value of the CNAME record (if it exists).
+		# Get the value of the CNAME record. If the record isn't found,
+		# this will be empty.
 		local cname
 		cname="$(
 			cf dns query "$r_record_name" CNAME \
-			| jq -r '.Answer[0].data'
+			| jq -r '.Answer[]?.data'
 		)"
 
 		# Check if the CNAME record (if it exists) doesn't point to the
@@ -141,20 +144,19 @@ deploy_challenge() {
 	mv -f -- "$temp_dns_cleanup_path" "$dns_cleanup_path"
 
 	# Try requesting the DNS record we would otherwise create to ensure it
-	# doesn't already exist. If it doesn't exist, this will be `null`.
+	# doesn't already exist. If it doesn't exist, this will be empty.
 	local record_json
 	record_json="$(
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
 			--url-query "name=$w_record_name" \
 			--url-query "content=$token_value" \
-		| jq '.result[0]'
+		| jq '.result[]'
 	)"
 
 	# Check if the record already exists.
-	if [[ "$record_json" != "null" ]]; then
+	if [[ "$record_json" ]]; then
 		printf '%s\n' "DNS record '$w_record_name' with correct content already exists."
-
 		return 0
 	fi
 
