@@ -251,11 +251,8 @@ _check_host_ptr() {
 		cf dns query "$record_name" PTR | jq -r '.Answer[]?.data'
 	)"
 
-	# DNS query answers for PTR records explicitly include a `.` at the end.
-	# Our hostname doesn't, so trim it off here to be consistent with that.
-	record_content="${record_content%.}"
-
-	if [[ "$record_content" != "$hostname" ]]; then
+	# Check if the PTR record (if it exists) doesn't point to our hostname.
+	if [[ "$record_content" != "$hostname." ]]; then
 		cat <<-END >&2
 		ERROR: The following PTR record must be set:
 
