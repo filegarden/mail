@@ -207,17 +207,18 @@ _check_host_ptr() {
 		# Start with the address as a base for the record name, but add
 		# enough leading zeros to each field in the address so that each
 		# field is exactly 4 hexadecimal digits long.
-		record_name="$(
+		local expanded_ip
+		expanded_ip="$(
 			printf '%s\n' "$ipv6" \
 			| sed -E 's/[0-9a-f]+/000&/gi; s/0+([0-9a-f]{4})/\1/gi'
 		)"
 
 		# If the address contains `::`, expand it into zeros.
-		if [[ "$record_name" == *"::"* ]]; then
+		if [[ "$expanded_ip" == *"::"* ]]; then
 			# The part of the address before the `::`.
-			local ip_start="${record_name/::*/}"
+			local ip_start="${expanded_ip/::*/}"
 			# The part of the address after the `::`.
-			local ip_end="${record_name/*::/}"
+			local ip_end="${expanded_ip/*::/}"
 
 			# Start with an IPv6 address of all zeros.
 			local zeros="0000:0000:0000:0000:0000:0000:0000:0000"
@@ -231,14 +232,14 @@ _check_host_ptr() {
 			# Join together the part before the `::`, the zeros
 			# replacing the `::`, and the part after the `::` to get
 			# the final expanded IPv6 address.
-			record_name="$ip_start$zeros$ip_end"
+			expanded_ip="$ip_start$zeros$ip_end"
 		fi
 
 		# Remove the colons, separate each hexadecimal digit with a `.`,
 		# reverse it, and append `.ip6.arpa` to get the final PTR record
 		# name.
 		record_name="$(
-			printf '%s\n' "$record_name" \
+			printf '%s\n' "$expanded_ip" \
 			| sed 's/://g; s/./.&/g; s/^\.//' \
 			| rev
 		).ip6.arpa"
