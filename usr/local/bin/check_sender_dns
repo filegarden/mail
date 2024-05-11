@@ -1,4 +1,6 @@
 #!/bin/busybox sh
+# Ensures all the DNS records for the specified domain are set to allow our
+# server to send mail from that domain.
 
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail

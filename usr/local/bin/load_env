@@ -1,4 +1,6 @@
 #!/bin/busybox sh
+# Loads variables defined in our `.env` file into the `/run/.env` directory so
+# each variable can have its own maximally restrictive permissions.
 
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
@@ -10,9 +12,6 @@ set -euo pipefail
 # Disable ShellCheck from trying to analyze the file; it only exists at runtime.
 # shellcheck disable=SC1091
 source /run/secrets/.env
-
-# We'll put each `.env` variable in a separate file in our `/run/.env` directory
-# so each variable can have maximally restrictive permissions.
 
 # Loads a `.env` variable with the specified name into a file with the same name
 # in the `/run/.env` directory, and gives only the specified group read-only

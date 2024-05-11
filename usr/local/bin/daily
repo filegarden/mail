@@ -1,4 +1,5 @@
 #!/bin/busybox sh
+# A script that runs at least once every 24 hours while this server is online.
 
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail

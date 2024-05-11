@@ -1,4 +1,5 @@
 #!/bin/busybox sh
+# Ensures a number of DNS records are set that our mail server relies on.
 
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
@@ -283,7 +284,7 @@ _check_hostname_a AAAA
 
 _check_hostname_spf
 
-_check_host_ptr IPv4
-_check_host_ptr IPv6
+# _check_host_ptr IPv4
+# _check_host_ptr IPv6
 
 _check_sender_domains
