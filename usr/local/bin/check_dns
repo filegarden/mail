@@ -120,16 +120,6 @@ _check_hostname_spf() {
 	# to our source SPF record increases our attack surface needlessly.
 	local record_name="$hostname"
 
-	# Fetch the information for the SPF record we're checking. If no such
-	# record exists, this will be empty.
-	local record_json
-	record_json="$(get_txt_record_by_format SPF "$record_name")"
-
-	# Get the SPF record's content. If no such record exists, this will be
-	# empty.
-	local spf_data
-	spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
-
 	# Start generating the value the SPF record should have.
 	local correct_spf_data="v=spf1"
 
