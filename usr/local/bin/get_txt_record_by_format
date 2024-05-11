@@ -55,14 +55,19 @@ _require_exactly_one_record() {
 # If we don't have API access, get it using a DNS query.
 if [[ ".$record_name" == *".$zone_name" ]]; then
 	# Fetch all TXT records at the specified name, and filter for only the
-	# records with the correct format.
+	# records with the correct format, ignoring quotes around the content
+	# since Cloudflare generally treats TXT records the same either way.
 	record_json="$(
 		cf api "/zones/$zone_id/dns_records" \
 			--url-query "type=TXT" \
 			--url-query "name=$record_name" \
 		| jq -c '
 			.result[]
-			| select(.content | '"$jq_predicate"')
+			| select(
+				.content
+				| sub("^\"(?<x>.*)\"$"; "\(.x)")
+				| '"$jq_predicate"'
+			)
 		'
 	)"
 

@@ -128,14 +128,19 @@ _check_spf() {
 	# If there is no existing SPF record, default to an empty SPF policy.
 	local correct_spf_data="${spf_data:-v=spf1}"
 
-	# Remove any preexisting `all` term from the policy, and add the correct
-	# one. There should be an `all` term with the `-` (fail) qualifier so
-	# all servers not explicitly covered by the policy are disallowed from
-	# sending for the domain. Only authorized senders should be allowed.
+	# First, remove any quotes around the SPF data to make it easier to work
+	# with. Cloudflare generally treats TXT records the same either way.
 	#
-	# RFC 7208 (section 4.6.2) lists all SPF qualifiers.
+	# Then, remove any existing `all` terms from the policy, and add the
+	# correct one. The `all` term should be at the end with the `-` (fail)
+	# qualifier so all servers not explicitly covered by the policy are
+	# disallowed from sending for the domain. Only authorized senders should
+	# be allowed.
+	#
+	# RFC 7208 (section 4.6.2) lists all SPF qualifiers, as used here.
 	correct_spf_data="$(
-		printf '%s\n' "$correct_spf_data" | sed -E 's/ [+-?~]?all$//gi'
+		printf '%s\n' "$correct_spf_data" \
+		| sed -E 's/^"(.*)"$/\1/; s/ [+-?~]?all$//gi'
 	) -all"
 
 	# An SPF term that includes our server's own SPF policy into another
@@ -188,18 +193,22 @@ _check_dmarc() {
 	# Check if there's an existing DMARC record.
 	if [[ "$dmarc_data" ]]; then
 		# Use the current value as a base for the new value so the
-		# existing DMARC configuration isn't lost.
-		correct_dmarc_data="$dmarc_data"
+		# existing DMARC configuration isn't lost, but replace any line
+		# breaks with spaces since line breaks aren't allowed in a DMARC
+		# record, and otherwise extra care would have to be taken to
+		# support them in later operations.
+		correct_dmarc_data="${dmarc_data//$'\n'/ }"
 	else
 		# Since there's no existing DMARC record, start with an empty
 		# DMARC value.
 		correct_dmarc_data="v=DMARC1;"
 	fi
 
-	# Replace any line breaks in the DMARC data with spaces since line
-	# breaks aren't allowed in a DMARC record, and otherwise extra care
-	# would have to be taken to support them in later operations.
-	correct_dmarc_data="${correct_dmarc_data//$'\n'/ }"
+	# Remove any quotes around the DMARC data to make it easier to work
+	# with. Cloudflare generally treats TXT records the same either way.
+	correct_dmarc_data="$(
+		printf '%s\n' "$correct_dmarc_data" | sed -E 's/^"(.*)"$/\1/'
+	)"
 
 	# All the tags in the DMARC record other than `v` and `p` can be
 	# preserved, so obtain them via the following steps, using the current

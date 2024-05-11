@@ -20,6 +20,19 @@ correct_record_content="$5"
 # have API access to the record, this is ignored.
 record_json="${6-}"
 
+# If this is a TXT record, remove quotes around the contents since Cloudflare
+# generally treats quoted TXT records the same as unquoted TXT records.
+# Otherwise there could be a mismatch, unnecessarily requiring a DNS edit.
+if [[ "$record_type" == "TXT" ]]; then
+	record_content="$(
+		printf '%s\n' "$record_content" | sed -E 's/^"(.*)"$/\1/'
+	)"
+	correct_record_content="$(
+		printf '%s\n' "$correct_record_content" \
+		| sed -E 's/^"(.*)"$/\1/'
+	)"
+fi
+
 # If the record's content is already correct, no need to continue syncing.
 if [[ "$record_content" == "$correct_record_content" ]]; then
 	exit 0
