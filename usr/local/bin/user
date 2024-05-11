@@ -26,7 +26,54 @@ _ignore_sigpipe() {
 	fi
 }
 
-# Saves the file at the specified path as the new password database.
+# Locks the password database. If another running instance of this script
+# already has a lock on the database, this exits with an error to prevent lost
+# writes due to each instance trying to save a different version of the
+# database.
+_lock_passdb() {
+	# If the lock file is active, this will contain its path. Otherwise,
+	# this will be empty.
+	local active_lock=
+
+	# If the lock file exists, set `active_lock` to its path only if it was
+	# updated in the last 5 minutes, since otherwise a crash likely
+	# prevented it from ever being removed.
+	if [[ -e "$passdb.lock" ]]; then
+		active_lock="$(find "$passdb.lock" -maxdepth 0 -mmin -5)"
+	fi
+
+	# If there's an active lock, exit with an error.
+	if [[ "$active_lock" ]]; then
+		printf '%s\n' "ERROR: Another process is currently writing to the password database. Wait for it to complete and try again." >&2
+		exit 1
+	fi
+
+	# If this script exits, unlock the database. Note this can't catch
+	# crashes.
+	trap 'TRAP=y _unlock_passdb' EXIT HUP INT QUIT TERM
+
+	# Create or update the lock file.
+	touch -- "$passdb.lock"
+}
+
+# Unlocks the password database so other instances of this script can write to
+# it.
+_unlock_passdb() {
+	# Delete the lock file created by `_lock_passdb`.
+	rm -f -- "$passdb.lock"
+
+	# Remove the `trap` set by `_lock_passdb`.
+	trap - EXIT HUP INT QUIT TERM
+
+	# If this function was called by `_lock_passdb`'s exit `trap`, let the
+	# script continue exiting.
+	if [[ "${TRAP-}" ]]; then
+		exit
+	fi
+}
+
+# Saves the file at the specified path as the new password database and unlocks
+# the database.
 _save_passdb() {
 	local temp_passdb="$1"
 
@@ -39,6 +86,9 @@ _save_passdb() {
 
 	# Save the database.
 	mv -f -- "$temp_passdb" "$passdb"
+
+	# Unlock the database.
+	_unlock_passdb
 }
 
 # Adds an address to the password database and generates a crytographically
@@ -92,6 +142,9 @@ add() {
 	local password_hash
 	password_hash="$(doveadm pw -s ARGON2ID -p "$password")"
 
+	# Lock the password database file.
+	_lock_passdb
+
 	# Use a temporary file for writing to the password database to prevent
 	# corrupting the original in case of a failure.
 	local temp_passdb
@@ -101,7 +154,7 @@ add() {
 	# Append the new user entry to the database.
 	printf '%s\n' "$address:$password_hash" >> "$temp_passdb"
 
-	# Save the database.
+	# Save and unlock the database.
 	_save_passdb "$temp_passdb"
 
 	# Get our mail server's hostname (e.g. `mail.example.com`).
@@ -137,6 +190,9 @@ remove() {
 		exit 1
 	fi
 
+	# Lock the password database file.
+	_lock_passdb
+
 	# Use a temporary file for writing to the password database to prevent
 	# corrupting the original in case of a failure.
 	local temp_passdb
@@ -149,7 +205,7 @@ remove() {
 	# Remove the specified address from the database.
 	sed "/^$escaped_address:/d" -- "$passdb" > "$temp_passdb"
 
-	# Save the password database.
+	# Save and unlock the password database.
 	_save_passdb "$temp_passdb"
 
 	printf '%s\n' "Removed '$address' from database."
