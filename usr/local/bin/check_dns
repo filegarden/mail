@@ -284,7 +284,7 @@ _check_hostname_a AAAA
 
 _check_hostname_spf
 
-# _check_host_ptr IPv4
-# _check_host_ptr IPv6
+_check_host_ptr IPv4
+_check_host_ptr IPv6
 
 _check_sender_domains
