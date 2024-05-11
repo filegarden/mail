@@ -194,8 +194,8 @@ _check_dmarc() {
 	if [[ "$dmarc_data" ]]; then
 		# Use the current value as a base for the new value so the
 		# existing DMARC configuration isn't lost, but replace any line
-		# breaks with spaces since line breaks aren't allowed in a DMARC
-		# record, and otherwise extra care would have to be taken to
+		# breaks with spaces since line breaks aren't allowed in DMARC
+		# records, and otherwise extra care would have to be taken to
 		# support them in later operations.
 		correct_dmarc_data="${dmarc_data//$'\n'/ }"
 	else
