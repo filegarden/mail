@@ -240,13 +240,26 @@ _check_dmarc() {
 		'
 	)"
 
+	# Save any spaces after the `v` tag so we can preserve them.
+	local post_v_tag_spaces
+	post_v_tag_spaces="$(
+		printf '%s\n' "$correct_dmarc_data" | sed -E 's/.*;( *).*/\1/'
+	)"
+
+	# If there's no space after the `v` tag, default to a single space.
+	post_v_tag_spaces="${post_v_tag_spaces:- }"
+
 	# Ensure the `p` tag immediately follows the `v` tag as required by RFC
 	# 7489 (section 6.4), and ensure it's set to `reject` so unauthorized
-	# messages can't be sent on behalf of the sender's domain. Normalize
-	# formatting (capitalization, spacing, and semicolons) for the `v` and
-	# `p` tags to maximize compatibility with other parties (since not
-	# everyone obeys the RFC when parsing DMARC records).
-	correct_dmarc_data="v=DMARC1; p=reject;$non_v_and_p_tags"
+	# messages can't be sent on behalf of the sender's domain.
+	#
+	# Normalize formatting (capitalization, spacing, and semicolons) in the
+	# `v` and `p` tags to maximize compatibility with other parties (since
+	# not everyone obeys the RFC when parsing DMARC records). But preserving
+	# the current SPF data helps prevent unneeded (especially manual) DNS
+	# updates, so don't normalize any spaces after the `v` tag since I
+	# expect no one to handle that poorly.
+	correct_dmarc_data="v=DMARC1;${post_v_tag_spaces}p=reject;$non_v_and_p_tags"
 
 	# Ensure the DMARC record is set correctly.
 	require_dns_record DMARC TXT "$record_name" \
