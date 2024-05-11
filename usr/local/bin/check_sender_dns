@@ -122,11 +122,23 @@ _check_spf() {
 	local spf_data
 	spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
 
-	# This will be the value the sender domain's SPF record should have.
-	# Start with its existing SPF record value so its preexisting policies
-	# (e.g. allowing other mail servers to send for the domain) aren't lost.
-	# If there is no existing SPF record, default to an empty SPF policy.
-	local correct_spf_data="${spf_data:-v=spf1}"
+	# This will be the value the SPF record should have.
+	local correct_spf_data
+
+	# Check if there's an existing SPF record.
+	if [[ "$spf_data" ]]; then
+		# Use the current value as a base for the new value so the
+		# existing SPF configuration (e.g. allowing other mail servers
+		# to send for the domain) isn't lost, but replace any line
+		# breaks with spaces since line breaks aren't allowed in SPF
+		# records, and otherwise extra care would have to be taken to
+		# support them in later operations.
+		correct_spf_data="${spf_data//$'\n'/ }"
+	else
+		# Since there's no existing SPF record, start with an empty
+		# SPF value.
+		correct_spf_data="v=spf1"
+	fi
 
 	# First, remove any quotes around the SPF data to make it easier to work
 	# with. Cloudflare generally treats TXT records the same either way.
