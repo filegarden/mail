@@ -18,7 +18,7 @@ correct_record_content="$5"
 # Full JSON data for the DNS record from the Cloudflare API, if available. If
 # the record doesn't exist, this should be empty or unspecified. If we don't
 # have API access to the record, this is ignored.
-record_json="${6:-}"
+record_json="${6-}"
 
 # If the record's content is already correct, no need to continue syncing.
 if [[ "$record_content" == "$correct_record_content" ]]; then
