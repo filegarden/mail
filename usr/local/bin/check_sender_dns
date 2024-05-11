@@ -113,12 +113,11 @@ _check_spf() {
 		return 0
 	fi
 
-	# Fetch the information for the SPF record we're checking. If no such
-	# record exists, this will be empty.
+	# Fetch the existing SPF record. If none is found, this will be empty.
 	local record_json
 	record_json="$(get_txt_record_by_format SPF "$record_name")"
 
-	# Get the SPF record's content. If no such record exists, this will be
+	# Get the SPF record's content. If the record isn't found, this will be
 	# empty.
 	local spf_data
 	spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
@@ -174,17 +173,16 @@ _check_dmarc() {
 	# The name of the DMARC record we're checking.
 	local record_name="_dmarc.$sender_domain"
 
-	# This variable will hold information for the DMARC record we're
-	# checking. If no such record exists, this will be empty.
+	# Fetch the existing DMARC record. If none is found, this will be empty.
 	local record_json
 	record_json="$(get_txt_record_by_format DMARC "$record_name")"
 
-	# This variable will hold the value of the DMARC record we're checking.
-	# If no such record exists, this will be empty.
+	# Get the DMARC record's content. If the record isn't found, this will
+	# be empty.
 	local dmarc_data
 	dmarc_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
 
-	# This will be the value the sender domain's DMARC record should have.
+	# This will be the value the DMARC record should have.
 	local correct_dmarc_data
 
 	# Check if there's an existing DMARC record.
