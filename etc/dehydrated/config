@@ -11,7 +11,7 @@ DEHYDRATED_USER=acme
 DEHYDRATED_GROUP=acme
 
 # The certificate authority to request certificates from.
-CA=letsencrypt-test
+CA=letsencrypt
 
 # Use our domain's DNS records to prove to the certificate authority (above)
 # that we own the domain we're requesting certificates for.
