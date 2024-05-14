@@ -6,7 +6,6 @@ set -euo pipefail
 shopt -s inherit_errexit
 
 reset=$'\e[0m'
-gray=$'\e[90m'
 lblue=$'\e[1;34m'
 
 # Each line in the below file has information about a DNS record this script
