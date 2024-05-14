@@ -172,7 +172,7 @@ add() {
 	${lblue}$password${reset}
 
 	${gray}To learn how to sign into your mail server and send mail, see:
-	https://github.com/filegarden/mail/blob/main/README.md${reset}
+	https://github.com/filegarden/mail/blob/main/README.md#sending-mail${reset}
 	END
 }
 
