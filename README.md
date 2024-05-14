@@ -81,6 +81,73 @@ To obtain a Cloudflare API token:
 
 You can always change the values in your `.env` file later and restart the mail server. Changing the domain used in your Cloudflare token's permissions also requires a restart.
 
+## Managing email addresses
+
+### Add a user
+
+To add a user to your mail server that you can log into and send mail as, run the following command from inside the repository, replacing `user@example.com` with the email address to create for the new user.
+
+```sh
+docker compose run -it --rm mail user add user@example.com
+```
+
+If this outputs an error requiring you to set a DNS record, set it and run the command again. You may have to do this a few times; there are a few DNS records that must be set.
+
+If there are no errors, a strong password for the new user will be generated and outputted for you to copy. To log in as the user, see [Sending mail](#sending-mail). This password will never appear again and is not stored anywhere. (Passwords are irreversibly hashed using Argon2, and only the hash is stored.)
+
+### Reset a user's password
+
+To generate and display a new password for an existing user, overwriting the old password, use this command.
+
+```sh
+docker compose run -it --rm mail user reset user@example.com
+```
+
+### Remove a user
+
+Use this command to remove a user so it can no longer log in or send mail.
+
+```sh
+docker compose run -it --rm mail user remove user@example.com
+```
+
+If you remove all addresses that used a particular domain, this will also output a list of any DNS records the mail server no longer needs under that domain.
+
+### List all users
+
+Use this command to list every user's email address.
+
+```sh
+docker compose run -it --rm mail user list
+```
+
+If you have no users, this won't output anything.
+
+## Sending mail
+
+After successfully [creating a user](#add-a-user), you'll see output similar to the following.
+
+```
+User created with these credentials:
+
+SMTP Server: mail.example.com
+
+Username: user@example.com
+
+Password:
+AVnJwwbQcg5SEJac0/WSZhI6IxOXIB9PfVfdNBn5NJTxEA8IA6Aqp2pPzLHYMRSpgI5kKDw3No/OOooM+ui1qMX/NbeuVONDprTqRI8Z/tmRHVatNoc4NYrp4RvsT48d0NCGFO8RiRG2NU9/4mJR/KwMLFe88PoCKMZpVvG4MkiTDZs2LVlFajunvhfbvuNqAoe4c3saL2v/vosuA0HW4yh5yi4ANwdEoKuGuc+x/DGnYHG6ZPHATQHxM49vJ8q
+```
+
+The credentials you see can be used in your mail client to log into your mail server and send mail. For example, here's [instructions for Gmail](https://support.google.com/mail/answer/22370). You can look up how to send as a different address for your mail client.
+
+**Note this is an SMTP server, not IMAP or POP3.** Mail clients often let you set IMAP or POP3 information too, but that's only needed if the mail server stores mail. This mail server doesn't, so it only needs SMTP.
+
+If your mail client has a port option, choose port 465, as it's recommended by [RFC 8314 (section 3.3)](https://datatracker.ietf.org/doc/html/rfc8314#section-3.3).
+
+Mail clients let you set a name (not username) for the user you're sending as. You can set this to anything you want. Recipients will see it as your display name.
+
+Mail clients also ask for the email address separately from the username. For simplicity, this mail server always uses addresses as usernames, so be sure to input the full email address as both the username and the address.
+
 ## Configure your PTR record
 
 <details>
