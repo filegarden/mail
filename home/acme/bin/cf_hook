@@ -111,7 +111,7 @@ deploy_challenge() {
 		# name of the DNS record we're creating.
 		if [[ "$cname" != "$w_record_name." ]]; then
 			cat <<-END >&2
-			ERROR: Incorrect CNAME! If you want to use a DNS alias, permanently set the following DNS record for ${lblue}$domain${reset}:
+			ERROR: The following DNS record must be set:
 
 			Type: ${lblue}CNAME${reset}
 
@@ -120,8 +120,6 @@ deploy_challenge() {
 			Content: ${lblue}$w_record_name${reset}
 
 			Proxy Status (if applicable): ${lblue}DNS only${reset}
-
-			${gray}If you don't want to use a DNS alias, ensure your hostname (in \`compose.override.yaml\`) is under the same domain as the zone your Cloudflare API token (in \`.env\`) has DNS editing permissions for.${reset}
 			END
 			exit 1
 		fi
