@@ -1,0 +1,60 @@
+#!/bin/busybox sh
+# Performs all initial operations and checks to ensure the mail server is ready
+# to start.
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# By default, use maximally restrictive permissions for new files created during
+# setup.
+umask 0077
+
+# Delete any temporary files left over from a previous run.
+rm -rf /tmp/*
+
+# Delete any named pipes left over from a previous run. Otherwise, our scripts
+# can't use the fact that these files haven't been created yet to detect that
+# the pipe isn't ready for use.
+rm -f /run/*.fifo
+
+# Delete `dehydrated`'s lock file if it was left over from a previous run.
+# Otherwise `dehydrated` will refuse to run.
+rm -f /home/acme/dehydrated/lock
+
+# Load variables defined in our `.env` file into the `/run/.env` directory so
+# the variables can be used.
+load_env
+
+# Delete our Cloudflare zone cache file if it exists from a previous run since
+# it could be outdated now.
+rm -f /var/cache/cf_zone.json
+
+printf '%s\n' "Fetching your Cloudflare zone information..."
+
+# Make a fresh request for our zone information to create its cache file with
+# the correct permissions (but don't output the zone information).
+zone_name="$(cf zone | jq -r '.name')"
+
+printf '%s\n' "Zone '$zone_name' found."
+
+# Ensure our DNS records have the right values. This runs early in the script in
+# case you're using our server's error messages to learn what records to set.
+# That way, you don't have to wait as long between restarts to see the next
+# record.
+check_dns
+
+# As the unprivileged `acme` user, apply any changes to our `.env` file's ACME
+# account information.
+su acme -s /bin/sh -c /home/acme/bin/update_account
+
+# Run our `daily` script initially since it has operations that must run before
+# the mail server can fully function.
+daily
+
+# Give our TLS certificate files to Postfix.
+deploy_tls files
+
+# Give our DKIM key information to OpenDKIM.
+deploy_dkim files
+
+printf '%s\n' "Setup complete!"
