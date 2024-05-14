@@ -38,6 +38,10 @@ cd mail
 
 ## Configuration
 
+All configuration described below is mandatory.
+
+### Docker Compose File
+
 Create a file named `compose.override.yaml` in your own copy of this repository, and paste the following into it:
 
 ```yaml
@@ -52,7 +56,9 @@ Change `mail.example.com` to the hostname you want your mail server to use, unde
 >
 > A mail server's hostname is different from the domain used in its email addresses. A mail server is uniquely identified by one hostname, but one mail server can handle email addresses for any number of domains. For example, a mail server at `mail.example.com` can be configured to handle mail for `user@example.com` and `user@foo.com`.
 
-Next, create a file named `.env` in your copy of the repository, and paste the following into it:
+### Environment Variables
+
+Create a file named `.env` in your copy of the repository, and paste the following into it:
 
 ```sh
 ACME_ACCOUNT_EMAIL=
