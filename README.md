@@ -81,9 +81,9 @@ To obtain a Cloudflare API token:
 
 You can always change the values in your `.env` file later and restart the mail server. Changing the domain used in your Cloudflare token's permissions also requires a restart.
 
-## Managing email addresses
+## Managing Email Addresses
 
-### Add a user
+### Add a User
 
 To add a user to your mail server that you can log into and send mail as, run the following command from inside the repository, replacing `user@example.com` with the email address to create for the new user.
 
@@ -93,9 +93,9 @@ docker compose run -it --rm mail user add user@example.com
 
 If this outputs an error requiring you to set a DNS record, set it and run the command again. You may have to do this a few times; there are a few DNS records that must be set.
 
-If there are no errors, a strong password for the new user will be generated and outputted for you to copy. To log in as the user, see [Sending mail](#sending-mail). This password will never appear again and is not stored anywhere. (Passwords are irreversibly hashed using Argon2, and only the hash is stored.)
+If there are no errors, a strong password for the new user will be generated and outputted for you to copy. To log in as the user, see [Sending Mail](#sending-mail). This password will never appear again and is not stored anywhere. (Passwords are irreversibly hashed using Argon2, and only the hash is stored.)
 
-### Reset a user's password
+### Reset a User's Password
 
 To generate and display a new password for an existing user, overwriting the old password, use this command.
 
@@ -103,7 +103,7 @@ To generate and display a new password for an existing user, overwriting the old
 docker compose run -it --rm mail user reset user@example.com
 ```
 
-### Remove a user
+### Remove a User
 
 Use this command to remove a user so it can no longer log in or send mail.
 
@@ -113,7 +113,7 @@ docker compose run -it --rm mail user remove user@example.com
 
 If you remove all addresses that used a particular domain, this will also output a list of any DNS records the mail server no longer needs under that domain.
 
-### List all users
+### List All Users
 
 Use this command to list every user's email address.
 
@@ -123,7 +123,7 @@ docker compose run -it --rm mail user list
 
 If you have no users, this won't output anything.
 
-## Sending mail
+## Sending Mail
 
 After successfully [creating a user](#add-a-user), you'll see output similar to the following.
 
@@ -148,7 +148,7 @@ Mail clients let you set a name (not username) for the user you're sending as. Y
 
 Mail clients also ask for the email address separately from the username. For simplicity, this mail server always uses addresses as usernames, so be sure to input the full email address as both the username and the address.
 
-## Configure your PTR record
+## Configure Your PTR Record
 
 <details>
   <summary>Why should I configure my PTR record?</summary>
