@@ -1,4 +1,4 @@
-## Introduction
+# File Garden's Mail Server
 
 This README walks you through setting up an instance of our mail server.
 
