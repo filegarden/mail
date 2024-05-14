@@ -7,8 +7,25 @@ set -euo pipefail
 # this container.
 umask 0077
 
-# Run our setup script.
-setup
+# A function that should be called when our `setup` script fails.
+_handle_setup_error() {
+	# Save the `setup` script's exit status.
+	local status="$?"
+
+	# Wait this duration before letting the server restart. Restarting too
+	# quickly wastes CPU and can cause APIs being called to rate limit us.
+	local failure_sleep_seconds=10
+
+	printf '%s\n' "Setup failed with exit status $status. Exiting in $failure_sleep_seconds seconds..." >&2
+
+	sleep "$failure_sleep_seconds"
+
+	# Exit with the same status our `setup` script failed with.
+	exit "$status"
+}
+
+# Run our setup script. If it fails, call `_handle_setup_error`.
+setup || _handle_setup_error
 
 # Run everything needed for our mail server in parallel, replacing this script's
 # shell process (using `exec`) since the shell is no longer needed.
