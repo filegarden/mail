@@ -9,7 +9,7 @@ enable=quote-safe-variables
 # `[[` is generally better than `[`. We should use it when possible.
 enable=require-double-brackets
 
-# Disable incorrect warnings about unsupported features in `/bin/busybox sh`.
+# Fix koalaman/shellcheck#1678.
 disable=SC3003
 
 # Disable warnings that try to correct `$variable[...]` into `${variable[...]}`
