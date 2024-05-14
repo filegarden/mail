@@ -162,16 +162,16 @@ add() {
 	hostname="$(hostname)"
 
 	cat <<-END
-	User created with these SASL credentials:
+	User created with these credentials:
 
-	Hostname: ${lblue}$hostname${reset}
+	SMTP Server: ${lblue}$hostname${reset}
 
-	Login Name: ${lblue}$address${reset}
+	Username: ${lblue}$address${reset}
 
 	Password:
 	${lblue}$password${reset}
 
-	${gray}To learn how to sign into your mail server using SASL, see:
+	${gray}To learn how to sign into your mail server and send mail, see:
 	https://github.com/filegarden/mail/blob/main/README.md${reset}
 	END
 }
