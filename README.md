@@ -235,15 +235,7 @@ This does nothing if the server isn't already running.
 
 ### Update the Server
 
-To update the mail server, run this.
-
-```sh
-git pull && docker compose build
-```
-
-Then [restart the server](#restart-the-server) when you're ready.
-
-Alternatively, to update and restart the mail server both at once, run this.
+To update and restart the mail server, run this.
 
 ```sh
 git pull && docker compose up -d --build
