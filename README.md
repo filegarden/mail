@@ -110,7 +110,7 @@ When the mail server exits (other than from being manually shut down), Docker au
 To check for errors without that inconvenience, you can run just the mail server's setup stage without automatic restarts by using the following command from inside the repository.
 
 ```sh
-docker compose run -it --rm mail setup
+docker compose run --rm mail setup
 ```
 
 This setup stage already runs when starting the server normally, but using it separately like this makes it easy to run this command, fix any errors, run the command again, and repeat until there are no errors left.
