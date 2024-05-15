@@ -116,7 +116,7 @@ You can always change the values in your `.env` file later and restart the mail 
 
 When the mail server exits (other than from being manually shut down), Docker automatically restarts it. This is inconvenient while you're still setting things up, because if you're missing DNS records the server needs, the server will exit with an error and go into an infinite restart loop.
 
-To check for errors without that inconvenience, you can run just the mail server's setup stage without automatic restarts by using the following command from inside the repository.
+To check for errors without that inconvenience, you can run just the mail server's setup stage without automatic restarts using this command.
 
 ```sh
 docker compose run --rm mail setup
