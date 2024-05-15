@@ -12,6 +12,20 @@ Note we aren't interested in maintaining a mail server that can handle every use
 
 If you want an unopinionated, configurable mail server with none of the above, you might be interested in [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver).
 
+## Table of Contents
+
+* [Installation](#installation)
+* [Configuration](#configuration)
+  * [Docker Compose File](#docker-compose-file)
+  * [Environment Variables](#environment-variables)
+* [Setting DNS Records](#setting-dns-records)
+* [Managing Email Addresses](#managing-email-addresses)
+  * [Add a User](#add-a-user)
+  * [Reset a User's Password](#reset-a-users-password)
+  * [Remove a User](#remove-a-user)
+  * [List All Users](#list-all-users)
+* [Sending Mail](#sending-mail)
+
 ## Installation
 
 **By using this, you agree to the Let's Encrypt Subscriber Agreement.**
