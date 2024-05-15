@@ -37,9 +37,9 @@ If you want an unopinionated, configurable mail server with none of the above, y
 
 **By using this mail server, you agree to the Let's Encrypt Subscriber Agreement.**
 
-First, you must own a server. We recommend a VPS running Linux. (Debian is our favorite Linux distro!)
+First, you must own a server. We recommend a VPS running Linux. (Debian is our favorite Linux distro!) A mail server isn't resource-intensive unless it handles massive volumes of mail, so we recommend choosing a cheap one.
 
-Mail servers that don't handle massive volumes of mail aren't resource-intensive, so we recommend choosing a cheap one. **It must have a static IPv4 address** (which for especially cheap servers can cost extra), or else you'll be unable to set all your [DNS records](#setting-dns-records).
+It must have a static IPv4 address (which for especially cheap servers can cost extra), or else your mail won't be deliverable to any recipient using a mail provider that only supports IPv4, which is unfortunately very common.
 
 Inbound ports 465 and 587 are used to submit mail for the server to relay, so you may need to allow them through your firewall. Different firewalls work differently, so look up how to allow inbound ports for your system's firewall. If you don't have a firewall, you should first install one and ensure it's enabled! (For Debian-based systems, we recommend UFW, which sometimes comes preinstalled.) Some hosting providers also enforce another firewall outside the server through some sort of network configuration on their website.
 
