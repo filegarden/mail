@@ -37,9 +37,11 @@ If you want an unopinionated, configurable mail server with none of the above, y
 
 **By using this mail server, you agree to the Let's Encrypt Subscriber Agreement.**
 
-First, you must own a server. (We recommend a VPS running Linux, but any OS will work. Debian is our favorite Linux distro!)
+First, you must own a server. We recommend a VPS running Linux. (Debian is our favorite Linux distro!)
 
-Inbound ports 465 and 587 are used to submit mail for the server to relay, so you may need to allow them through your firewall. Different firewalls work differently, so look up how to allow inbound ports for your system's firewall. If you don't have a firewall, you should first install one and ensure it's enabled! (For Debian-based systems, we recommend UFW, which often comes preinstalled.)
+Mail servers that don't handle massive volumes of mail aren't resource-intensive, so we recommend choosing a cheap one. **It must have a static IPv4 address** (which for especially cheap servers can cost extra), or else you'll be unable to set all your [DNS records](#setting-dns-records).
+
+Inbound ports 465 and 587 are used to submit mail for the server to relay, so you may need to allow them through your firewall. Different firewalls work differently, so look up how to allow inbound ports for your system's firewall. If you don't have a firewall, you should first install one and ensure it's enabled! (For Debian-based systems, we recommend UFW, which sometimes comes preinstalled.) Some hosting providers also enforce another firewall outside the server through some sort of network configuration on their website.
 
 Outbound port 25 is used to send mail, but sometimes hosting providers block it by default to mitigate spam. You may have to contact your provider to allow outbound (NOT inbound) port 25 for your server. Look up information for your provider if necessary.
 
