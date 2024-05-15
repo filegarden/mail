@@ -25,6 +25,13 @@ If you want an unopinionated, configurable mail server with none of the above, y
   * [Remove a User](#remove-a-user)
   * [List All Users](#list-all-users)
 * [Sending Mail](#sending-mail)
+* [Managing the Server](#managing-the-server)
+  * [Start the Server](#start-the-server)
+  * [Viewing Server Logs](#viewing-server-logs)
+  * [Restart the Server](#restart-the-server)
+  * [Update the Server](#update-the-server)
+  * [Stop the Server](#stop-the-server)
+  * [Uninstall the Server](#uninstall-the-server)
 
 ## Installation
 
@@ -119,7 +126,7 @@ This setup stage already runs when starting the server normally, but using it se
 
 Note that sometimes it can take a moment for the server to recognize a newly updated DNS record. In my experience using Cloudflare DNS, it can take up to two minutes but usually only takes a few seconds.
 
-Once the command says "Setup complete!", you're ready to start the server for real!
+Once the command says "Setup complete!", you're ready to [start the server for real](#start-the-server)!
 
 ## Managing Email Addresses
 
@@ -187,3 +194,83 @@ If your mail client has a port option, choose port 465, as it's recommended by [
 Mail clients let you set a name (not username) for the user you're sending as. You can set this to anything you want. Recipients will see it as your display name.
 
 Mail clients also ask for the email address separately from the username. For simplicity, this mail server always uses addresses as usernames, so be sure to input the full email address as both the username and the address.
+
+## Managing the Server
+
+### Start the Server
+
+To start the server, run this.
+
+```sh
+docker compose up -d
+```
+
+After running this, the server will start automatically when the server boots from now on.
+
+### Viewing Server Logs
+
+To view the mail server's logs, run this.
+
+```sh
+docker compose logs -f
+```
+
+To stop viewing, press `ctrl`+`C`.
+
+### Restart the Server
+
+To restart the server, run this.
+
+```sh
+docker compose restart
+```
+
+This does nothing if the server isn't already running.
+
+> [!NOTE]
+>
+> During a restart, the server will be down for a brief moment. There are techniques for restarting with zero downtime in Docker, but they're less simple and outside the scope of this README.
+
+### Update the Server
+
+To update the mail server, run this.
+
+```sh
+git pull && docker compose build
+```
+
+Then [restart the server](#restart-the-server) when you're ready.
+
+Alternatively, to update and restart the mail server both at once, run this.
+
+```sh
+git pull && docker compose up -d --build
+```
+
+If the mail server is already up to date, the server won't be restarted.
+
+When the server is updated, the previous version of the Docker image becomes "dangling" (unused and untagged) but isn't deleted. To delete all dangling Docker images on your machine, run this command.
+
+```sh
+docker image prune -f
+```
+
+### Stop the Server
+
+To stop the server, run this.
+
+```sh
+docker compose down
+```
+
+After running this, the server will no longer start automatically when the server boots.
+
+### Uninstall the Server
+
+To delete the mail server and all of its data irreversibly, run this.
+
+```sh
+docker compose down -v --rmi local
+```
+
+After running this, you can delete the repository's directory too.
