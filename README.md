@@ -57,7 +57,9 @@ This creates a directory called `mail` containing this repository's files. You c
 cd mail
 ```
 
-**All commands used in this README must be ran from inside the repository's directory!**
+> [!IMPORTANT]
+>
+> All commands used in this README must be ran from inside the repository's directory.
 
 ## Configuration
 
