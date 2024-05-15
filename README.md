@@ -87,6 +87,24 @@ To obtain a Cloudflare API token:
 
 You can always change the values in your `.env` file later and restart the mail server. Changing the domain used in your Cloudflare token's permissions also requires a restart.
 
+## Setting DNS Records
+
+When the mail server exits (other than from being manually shut down), Docker automatically restarts it. This is inconvenient while you're still setting things up, because if you're missing DNS records the server needs, the server will exit with an error and go into an infinite restart loop.
+
+To check for errors without that inconvenience, you can run just the mail server's setup stage without any automatic restarts using the following command.
+
+```sh
+docker compose run -it --rm mail setup
+```
+
+This setup stage already runs when starting the server normally, but using it separately like this makes it easy to run this command, fix any errors, run the command again, and repeat until there are no errors left.
+
+**This process walks you through all the DNS records you need to set (if there are any), one by one.** When a DNS record is missing or incorrect, the error message has instructions on how to set it correctly.
+
+Note that sometimes it can take a moment for the server to recognize a newly updated DNS record. In my experience using Cloudflare DNS, it can take up to two minutes but usually only takes a few seconds.
+
+Once the command says "Setup complete!", you're ready to start the server for real!
+
 ## Managing Email Addresses
 
 ### Add a User
@@ -153,11 +171,3 @@ If your mail client has a port option, choose port 465, as it's recommended by [
 Mail clients let you set a name (not username) for the user you're sending as. You can set this to anything you want. Recipients will see it as your display name.
 
 Mail clients also ask for the email address separately from the username. For simplicity, this mail server always uses addresses as usernames, so be sure to input the full email address as both the username and the address.
-
-## Configure Your PTR Record
-
-<details>
-  <summary>Why should I configure my PTR record?</summary>
-
-  > PTR records help increase the deliverability of your mail. Mail from servers without a valid PTR record is often marked as spam or rejected entirely, because a valid PTR record verifies that you actually own the server you're sending from, and you're less likely to be a spammer taking advantage of someone else's poorly secured server.
-</details>
