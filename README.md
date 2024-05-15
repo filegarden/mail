@@ -104,7 +104,7 @@ To obtain a Cloudflare API token:
 
 > [!CAUTION]
 >
-> It's highly recommended the domain you choose for your Cloudflare token is **not** used for anything security-sensitive. That way, if an attacker ever compromises your token, their ability to impact you negatively will be limited. For security-critical applications, we advise using a throwaway domain **that isn't used in your hostname or email addresses.** You'll simply point some DNS records from your main domain(s) to the throwaway domain. We'll walk through how to do this.
+> It's highly recommended the domain you choose for your Cloudflare token is **not** used for anything security-sensitive. That way, if an attacker ever compromises your token, their ability to impact you negatively will be limited. For security-critical applications, we advise using a throwaway domain **that isn't used in your hostname or email addresses.** You'll simply point some DNS records from your main domain(s) to the throwaway domain. We'll walk through how to do this when [setting DNS records](#setting-dns-records).
 >
 > There's a set of `.xyz` domains which are perfect for this, known as the "1.111B class". They're designed to be cheap, costing less than $1/year from [Namecheap](https://www.namecheap.com/). It's called the 1.111B class because there are 1.111 billion domains in it: any domain that's 6 to 9 digits followed by `.xyz`. For example, File Garden uses `985532063.xyz`. (985532063 is "garden" converted from base 36 to base 10.)
 >
