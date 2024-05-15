@@ -58,7 +58,7 @@ All configuration described below is mandatory.
 
 ### Docker Compose File
 
-Create a file named `compose.override.yaml` in your own copy of this repository, and paste the following into it:
+Create a file named `compose.override.yaml` in your own copy of this repository, and paste the following into it.
 
 ```yaml
 services:
@@ -74,7 +74,7 @@ Change `mail.example.com` to the hostname you want your mail server to use, unde
 
 ### Environment Variables
 
-Create a file named `.env` in your copy of the repository, and paste the following into it:
+Create a file named `.env` in your copy of the repository, and paste the following into it.
 
 ```sh
 ACME_ACCOUNT_EMAIL=
