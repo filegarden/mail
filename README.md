@@ -35,7 +35,7 @@ If you want an unopinionated, configurable mail server with none of the above, y
 
 ## Installation
 
-**By using this, you agree to the Let's Encrypt Subscriber Agreement.**
+**By using this mail server, you agree to the Let's Encrypt Subscriber Agreement.**
 
 First, you must own a server. (We recommend a VPS running Linux, but any OS will work. Debian is our favorite Linux distro!)
 
@@ -205,13 +205,13 @@ Mail clients also ask for the email address separately from the username. For si
 
 ### Start the Server
 
-To start the server, run this.
+To start the mail server, run this.
 
 ```sh
 docker compose up -d
 ```
 
-After running this, the server will start automatically when the server boots from now on.
+After running this, the mail server will start automatically on boot from now on.
 
 ### Viewing Server Logs
 
@@ -225,17 +225,17 @@ To stop viewing, press `ctrl`+`C`.
 
 ### Restart the Server
 
-To restart the server, run this.
+To restart the mail server, run this.
 
 ```sh
 docker compose restart
 ```
 
-This does nothing if the server isn't already running.
+This does nothing if the mail server isn't already running.
 
 > [!NOTE]
 >
-> During a restart, the server will be down for a brief moment. There are techniques for restarting with zero downtime in Docker, but they're less simple and outside the scope of this README.
+> During a restart, the mail server will be down for a brief moment. There are techniques for restarting with zero downtime in Docker, but they're less simple and outside the scope of this README.
 
 ### Update the Server
 
@@ -245,9 +245,9 @@ To update and restart the mail server, run this.
 git pull && docker compose up -d --build
 ```
 
-If the mail server is already up to date, the server won't be restarted.
+If the mail server is already up to date, it won't be restarted.
 
-When the server is updated, the previous version of the Docker image becomes "dangling" (unused and untagged) but isn't deleted. To delete all dangling Docker images on your machine, run this command.
+When the mail server is updated, the previous version of the Docker image becomes "dangling" (unused and untagged) but isn't deleted. To delete all dangling Docker images on your machine, run this command.
 
 ```sh
 docker image prune -f
