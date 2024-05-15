@@ -128,6 +128,10 @@ This setup stage already runs when starting the server normally, but using it se
 
 Note that sometimes it can take a moment for the server to recognize a newly updated DNS record. In my experience using Cloudflare DNS, it can take up to two minutes but usually only takes a few seconds.
 
+> [!NOTE]
+>
+> If the mail server ever requires a DNS record that's under the domain your Cloudflare token has access to, the server can set it automatically rather than outputting an error with manual instructions. When this happens, the server outputs the DNS record that was set.
+
 Once the command says "Setup complete!", you're ready to [start the server for real](#start-the-server)!
 
 ## Managing Email Addresses
