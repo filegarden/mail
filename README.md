@@ -19,12 +19,6 @@ If you want an unopinionated, configurable mail server with none of the above, y
   * [Docker Compose File](#docker-compose-file)
   * [Environment Variables](#environment-variables)
 * [Setting DNS Records](#setting-dns-records)
-* [Managing Email Addresses](#managing-email-addresses)
-  * [Add a User](#add-a-user)
-  * [Reset a User's Password](#reset-a-users-password)
-  * [Remove a User](#remove-a-user)
-  * [List All Users](#list-all-users)
-* [Sending Mail](#sending-mail)
 * [Managing the Server](#managing-the-server)
   * [Start the Server](#start-the-server)
   * [Viewing Server Logs](#viewing-server-logs)
@@ -32,6 +26,12 @@ If you want an unopinionated, configurable mail server with none of the above, y
   * [Update the Server](#update-the-server)
   * [Stop the Server](#stop-the-server)
   * [Uninstall the Server](#uninstall-the-server)
+* [Managing Email Addresses](#managing-email-addresses)
+  * [Add a User](#add-a-user)
+  * [Reset a User's Password](#reset-a-users-password)
+  * [Remove a User](#remove-a-user)
+  * [List All Users](#list-all-users)
+* [Sending Mail](#sending-mail)
 
 ## Installation
 
@@ -136,73 +136,6 @@ Note that sometimes it can take a moment for the server to recognize a newly upd
 
 Once the command says "Setup complete!", you're ready to [start the server for real](#start-the-server)!
 
-## Managing Email Addresses
-
-### Add a User
-
-To add a user to your mail server that you can log into and send mail as, run the following command from inside the repository, replacing `user@example.com` with the email address to create for the new user.
-
-```sh
-docker compose run -it --rm mail user add user@example.com
-```
-
-If this outputs an error requiring you to set a DNS record, set it and run the command again. You may have to do this a few times; there are a few DNS records that must be set.
-
-If there are no errors, a strong password for the new user will be generated and outputted for you to copy. To log in as the user, see [Sending Mail](#sending-mail). This password will never appear again and is not stored anywhere. (Passwords are irreversibly hashed using Argon2, and only the hash is stored.)
-
-### Reset a User's Password
-
-To generate and display a new password for an existing user, overwriting the old password, use this command.
-
-```sh
-docker compose run -it --rm mail user reset user@example.com
-```
-
-### Remove a User
-
-Use this command to remove a user so it can no longer log in or send mail.
-
-```sh
-docker compose run -it --rm mail user remove user@example.com
-```
-
-If you remove all addresses that used a particular domain, this will also output a list of any DNS records the mail server no longer needs under that domain.
-
-### List All Users
-
-Use this command to list every user's email address.
-
-```sh
-docker compose run -it --rm mail user list
-```
-
-If you have no users, this won't output anything.
-
-## Sending Mail
-
-After successfully [creating a user](#add-a-user), you'll see output similar to the following.
-
-```
-User created with these credentials:
-
-SMTP Server: mail.example.com
-
-Username: user@example.com
-
-Password:
-AVnJwwbQcg5SEJac0/WSZhI6IxOXIB9PfVfdNBn5NJTxEA8IA6Aqp2pPzLHYMRSpgI5kKDw3No/OOooM+ui1qMX/NbeuVONDprTqRI8Z/tmRHVatNoc4NYrp4RvsT48d0NCGFO8RiRG2NU9/4mJR/KwMLFe88PoCKMZpVvG4MkiTDZs2LVlFajunvhfbvuNqAoe4c3saL2v/vosuA0HW4yh5yi4ANwdEoKuGuc+x/DGnYHG6ZPHATQHxM49vJ8q
-```
-
-The credentials you see can be used in your mail client to log into your mail server and send mail. For example, here's [instructions for Gmail](https://support.google.com/mail/answer/22370). You can look up how to send as a different address for your mail client.
-
-**Note this is an SMTP server, not IMAP or POP3.** Mail clients often let you set IMAP or POP3 information too, but that's only needed if the mail server stores mail. This mail server doesn't, so it only needs SMTP.
-
-If your mail client has a port option, choose port 465, as it's recommended by [RFC 8314 (section 3.3)](https://datatracker.ietf.org/doc/html/rfc8314#section-3.3).
-
-Mail clients let you set a name (not username) for the user you're sending as. You can set this to anything you want. Recipients will see it as your display name.
-
-Mail clients also ask for the email address separately from the username. For simplicity, this mail server always uses addresses as usernames, so be sure to input the full email address as both the username and the address.
-
 ## Managing the Server
 
 ### Start the Server
@@ -284,3 +217,70 @@ docker compose down -v --rmi local
 ```
 
 After running this, you can delete the repository's directory too.
+
+## Managing Email Addresses
+
+### Add a User
+
+To add a user to your mail server that you can log into and send mail as, run the following command from inside the repository, replacing `user@example.com` with the email address to create for the new user.
+
+```sh
+docker compose run -it --rm mail user add user@example.com
+```
+
+If this outputs an error requiring you to set a DNS record, set it and run the command again. You may have to do this a few times; there are a few DNS records that must be set.
+
+If there are no errors, a strong password for the new user will be generated and outputted for you to copy. To log in as the user, see [Sending Mail](#sending-mail). This password will never appear again and is not stored anywhere. (Passwords are irreversibly hashed using Argon2, and only the hash is stored.)
+
+### Reset a User's Password
+
+To generate and display a new password for an existing user, overwriting the old password, use this command.
+
+```sh
+docker compose run -it --rm mail user reset user@example.com
+```
+
+### Remove a User
+
+Use this command to remove a user so it can no longer log in or send mail.
+
+```sh
+docker compose run -it --rm mail user remove user@example.com
+```
+
+If you remove all addresses that used a particular domain, this will also output a list of any DNS records the mail server no longer needs under that domain.
+
+### List All Users
+
+Use this command to list every user's email address.
+
+```sh
+docker compose run -it --rm mail user list
+```
+
+If you have no users, this won't output anything.
+
+## Sending Mail
+
+After successfully [creating a user](#add-a-user), you'll see output similar to the following.
+
+```
+User created with these credentials:
+
+SMTP Server: mail.example.com
+
+Username: user@example.com
+
+Password:
+AVnJwwbQcg5SEJac0/WSZhI6IxOXIB9PfVfdNBn5NJTxEA8IA6Aqp2pPzLHYMRSpgI5kKDw3No/OOooM+ui1qMX/NbeuVONDprTqRI8Z/tmRHVatNoc4NYrp4RvsT48d0NCGFO8RiRG2NU9/4mJR/KwMLFe88PoCKMZpVvG4MkiTDZs2LVlFajunvhfbvuNqAoe4c3saL2v/vosuA0HW4yh5yi4ANwdEoKuGuc+x/DGnYHG6ZPHATQHxM49vJ8q
+```
+
+The credentials you see can be used in your mail client to log into your mail server and send mail. For example, here's [instructions for Gmail](https://support.google.com/mail/answer/22370). You can look up how to send as a different address for your mail client.
+
+**Note this is an SMTP server, not IMAP or POP3.** Mail clients often let you set IMAP or POP3 information too, but that's only needed if the mail server stores mail. This mail server doesn't, so it only needs SMTP.
+
+If your mail client has a port option, choose port 465, as it's recommended by [RFC 8314 (section 3.3)](https://datatracker.ietf.org/doc/html/rfc8314#section-3.3).
+
+Mail clients let you set a name (not username) for the user you're sending as. You can set this to anything you want. Recipients will see it as your display name.
+
+Mail clients also ask for the email address separately from the username. For simplicity, this mail server always uses addresses as usernames, so be sure to input the full email address as both the username and the address.
