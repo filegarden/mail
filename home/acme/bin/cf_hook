@@ -176,7 +176,7 @@ deploy_challenge() {
 	local dns_sleep_seconds=5
 
 	# Show a warning that something might be wrong after this duration.
-	local dns_warning_seconds=60
+	local dns_warning_seconds=120
 
 	# Give up checking after this duration.
 	local dns_timeout_seconds=1200
