@@ -1,3 +1,5 @@
+# WARNING: Don't edit this file unless you know what you're doing.
+
 services:
   mail:
     # Our mail server's hostname. For important information on choosing this
