@@ -175,6 +175,9 @@ deploy_challenge() {
 	# Check our DNS this often.
 	local dns_sleep_seconds=5
 
+	# Show a warning that something might be wrong after this duration.
+	local dns_warning_seconds=60
+
 	# Give up checking after this duration.
 	local dns_timeout_seconds=1200
 
@@ -212,11 +215,15 @@ deploy_challenge() {
 		fi
 
 		if [[ "$SECONDS" -gt "$dns_timeout_seconds" ]]; then
-			printf '%s\n' "ERROR: Timed out. DNS updates shouldn't take this long, so something is probably wrong." >&2
+			printf '%s\n' "ERROR: Timed out. Something is probably wrong." >&2
 			exit 1
 		fi
 
 		printf '%s\n' "DNS update for record '$w_record_name' not found yet. Waiting $dns_sleep_seconds more seconds..."
+
+		if [[ "$SECONDS" -gt "$dns_warning_seconds" ]]; then
+			printf '%s\n' "WARNING: This is taking unusually long. Something might be wrong." >&2
+		fi
 	done
 }
 
