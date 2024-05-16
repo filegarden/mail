@@ -59,23 +59,39 @@ zone() {
 	fi
 
 	# Get JSON values for all the zones the token has access to.
-	local zone_jsons
-	zone_jsons="$(cf api /zones | jq -c '.result[]?')"
+	local zone_json
+	zone_json="$(cf api /zones | jq -c '.result[]?')"
 
 	# Check if the token doesn't have access to any zones.
-	if [[ ! "$zone_jsons" ]]; then
+	if [[ ! "$zone_json" ]]; then
 		printf '%s\n' "ERROR: Your Cloudflare API token cannot access any zones. Please enable its permission to edit DNS for a zone." >&2
 		exit 1
 	fi
 
 	# Check if the token has access to multiple zones.
-	if [[ "$zone_jsons" == *$'\n'* ]]; then
+	if [[ "$zone_json" == *$'\n'* ]]; then
 		printf '%s\n' "ERROR: Your Cloudflare API token can access multiple zones, which is insecure. Please restrict its permissions so it can only edit DNS for a single zone." >&2
 		exit 1
 	fi
 
-	# Now that we're sure there's only one zone, output it and cache it.
-	printf '%s\n' "$zone_jsons" | tee /var/cache/cf_zone.json
+	# Now we're sure there's only one zone.
+
+	# Get the zone's status.
+	local zone_status
+	zone_status="$(printf '%s\n' "$zone_json" | jq -r '.status')"
+
+	# Ensure the zone is active, or else using it won't do anything.
+	if [[ "$zone_status" != "active" ]]; then
+		# Get the domain name of the zone.
+		local zone_name
+		zone_name="$(cf zone | jq -r '.name')"
+
+		printf '%s\n' "ERROR: Zone '$zone_name' found, but its status is '$zone_status'. It should be 'active'. Check '$zone_name' in your Cloudflare dashboard." >&2
+		exit 1
+	fi
+
+	# Output and cache the zone data.
+	printf '%s\n' "$zone_json" | tee /var/cache/cf_zone.json
 
 	# Let any user with Cloudflare API access read the zone information from
 	# the cache file.
