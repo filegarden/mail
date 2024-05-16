@@ -40,6 +40,10 @@ COPY --chmod=0500 --chown=dkim home/dkim/bin /home/dkim/bin
 # Run our image build script.
 RUN /usr/local/bin/build
 
+# Use our `usr/local/bin/healthcheck` script to check if the server is ready to
+# accept mail.
+HEALTHCHECK --start-period=120s --start-interval=1s CMD [ "healthcheck" ]
+
 # When the container starts, run our start script by default. (Note this can be
 # overwritten using `docker compose run`.)
 CMD /usr/local/bin/start

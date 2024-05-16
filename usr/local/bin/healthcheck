@@ -1,0 +1,15 @@
+#!/bin/busybox sh
+# Checks if the server is ready to accept mail, exiting with status 0 if ready
+# or 1 if not.
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# By default, don't let unprivileged users access files created by this script.
+umask 0077
+
+# Check if TCP port 465 is being listened to, meaning Postfix can accept SMTP
+# connections.
+#
+# `grep` exits early when it finds a match, so `ignore_sigpipe` is needed.
+netstat -lnt | grep -Fqw 465 || ignore_sigpipe "$?"
