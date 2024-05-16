@@ -215,6 +215,8 @@ docker compose up -d
 
 After running this, the mail server will start automatically on boot from now on.
 
+If there's an outdated build of the mail server already running, this stops it and then starts the most recently built version. See information on [building updates](#update-the-server).
+
 ### Viewing Server Logs
 
 To view the mail server's logs, run this.
@@ -227,7 +229,7 @@ To stop viewing, press `ctrl`+`C`.
 
 ### Restart the Server
 
-To restart the mail server, run this.
+To restart the mail server **using the version that's already running**, run this. This does **not** restart to a new version after [updating](#update-the-server).
 
 ```sh
 docker compose restart
@@ -241,13 +243,21 @@ This does nothing if the mail server isn't already running.
 
 ### Update the Server
 
-To update and restart the mail server, run this.
+To update the mail server and restart it with the updated version, run this.
 
 ```sh
 git pull && docker compose up -d --build
 ```
 
 If the mail server is already up to date, it won't be restarted.
+
+To update the mail server and build the updated version without starting it, run this.
+
+```sh
+git pull && docker compose build
+```
+
+When you're ready, use the updated build by [starting](#start-the-server) (NOT [RESTARTING](#restart-the-server)) the mail server.
 
 When the mail server is updated, the previous version of the Docker image becomes "dangling" (unused and untagged) but isn't deleted. To delete all dangling Docker images on your machine, run this command.
 
