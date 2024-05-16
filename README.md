@@ -277,10 +277,10 @@ AVnJwwbQcg5SEJac0/WSZhI6IxOXIB9PfVfdNBn5NJTxEA8IA6Aqp2pPzLHYMRSpgI5kKDw3No/OOooM
 
 The credentials you see can be used in your mail client to log into your mail server and send mail. For example, here's [instructions for Gmail](https://support.google.com/mail/answer/22370). You can look up how to send as a different address for your mail client.
 
-**Note this is an SMTP server, not IMAP or POP3.** Mail clients often let you set IMAP or POP3 information too, but that's only needed if the mail server stores mail. This mail server doesn't, so it only needs SMTP.
-
-If your mail client has a port option, choose port 465, as it's recommended by [RFC 8314 (section 3.3)](https://datatracker.ietf.org/doc/html/rfc8314#section-3.3).
+**If your mail client has a port option, choose port 465,** as it's recommended by [RFC 8314 (section 3.3)](https://datatracker.ietf.org/doc/html/rfc8314#section-3.3).
 
 Mail clients let you set a name (not username) for the user you're sending as. You can set this to anything you want. Recipients will see it as your display name.
 
 Mail clients also ask for the email address separately from the username. For simplicity, this mail server always uses addresses as usernames, so be sure to input the full email address as both the username and the address.
+
+Note this is an SMTP server, not IMAP or POP3. Mail clients often let you set IMAP or POP3 information too, but that's only needed if the mail server stores mail. This mail server doesn't, so it only needs SMTP.
