@@ -84,7 +84,7 @@ zone() {
 	if [[ "$zone_status" != "active" ]]; then
 		# Get the domain name of the zone.
 		local zone_name
-		zone_name="$(cf zone | jq -r '.name')"
+		zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
 
 		printf '%s\n' "ERROR: Zone '$zone_name' found, but its status is '$zone_status'. It should be 'active'. Check '$zone_name' in your Cloudflare dashboard." >&2
 		exit 1
