@@ -1,0 +1,19 @@
+#!/bin/busybox sh
+# Use this by putting `|| ignore_sigpipe "$?"` after a pipeline. If the pipeline
+# exits with status 141 due to a command being piped into something that exits
+# early, this catches and ignores the error.
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# The exit status of the pipeline to check.
+status="$1"
+
+# If the exit status wasn't 141, propagate the original exit status so it isn't
+# ignored.
+if [[ "$status" != "141" ]]; then
+	exit "$status"
+fi
+
+# The exit status was 141, so ignore it by letting this script naturally exit
+# with status 0.

@@ -17,15 +17,6 @@ lblue="$(printf '\e[1;34m')"
 # Our Dovecot password database path (from `etc/dovecot/conf.d/10-auth.conf`).
 passdb=/etc/auth/passwd
 
-# If the previous pipeline exits with status 141 due to a command being piped
-# into something that exits early, this catches and ignores the error.
-_ignore_sigpipe() {
-	local status="$?"
-	if [[ "$status" != "141" ]]; then
-		return "$status"
-	fi
-}
-
 # Locks the password database. If another running instance of this script
 # already has a lock on the database, this exits with an error to prevent lost
 # writes due to each instance trying to save a different version of the
@@ -215,7 +206,10 @@ remove() {
 
 	# If there's still an address in the database with the specified domain,
 	# we can stop here.
-	if user domains | grep -Fqxe "$domain" || _ignore_sigpipe; then
+	#
+	# `grep` exits early when it finds a match, so `ignore_sigpipe` is
+	# needed.
+	if user domains | grep -Fqxe "$domain" || ignore_sigpipe "$?"; then
 		return 0
 	fi
 
@@ -292,9 +286,11 @@ list() {
 exists() {
 	local address="$1"
 
-	# `grep` exits early when it finds a match, so `_ignore_sigpipe` is
+	# Check if the address can be found in the user list.
+	#
+	# `grep` exits early when it finds a match, so `ignore_sigpipe` is
 	# needed.
-	user list | grep -Fqxe "$address" || _ignore_sigpipe
+	user list | grep -Fqxe "$address" || ignore_sigpipe "$?"
 }
 
 # Lists all the domains of addresses in the password database, one per line.
