@@ -116,6 +116,10 @@ You can always change the values in your `.env` file later and restart the mail 
 
 ## Setting DNS Records
 
+> [!NOTE]
+>
+> If the mail server ever requires a DNS record that's under the domain your Cloudflare token has access to, the server can set it automatically rather than outputting an error with manual instructions. When this happens, the server outputs the DNS record that was set.
+
 When the mail server exits (other than from being manually shut down), Docker automatically restarts it. This is inconvenient while you're still setting things up, because if you're missing DNS records the server needs, the server will exit with an error and go into an infinite restart loop.
 
 To check for errors without that inconvenience, you can run just the mail server's setup stage without automatic restarts using this command.
@@ -129,10 +133,6 @@ This setup stage already runs when starting the server normally, but using it se
 **This process walks you through all the DNS records you need to set (if there are any), one by one.** When a DNS record is missing or incorrect, the error message has instructions on how to set it correctly.
 
 Note that sometimes it can take a moment for the server to recognize a newly updated DNS record. In my experience using Cloudflare DNS, it can take up to two minutes but usually only takes a few seconds.
-
-> [!NOTE]
->
-> If the mail server ever requires a DNS record that's under the domain your Cloudflare token has access to, the server can set it automatically rather than outputting an error with manual instructions. When this happens, the server outputs the DNS record that was set.
 
 Once the command says "Setup complete!", you're ready to [start the server for real](#start-the-server)!
 
