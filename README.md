@@ -4,7 +4,7 @@ This README walks you through setting up an instance of our mail server.
 
 Note we aren't interested in maintaining a mail server that can handle every use case. This mail server is opinionated, catering primarily to our own needs with no configuration. Currently, that means:
 * Only sending/replying is supported, not receiving. We receive mail using Cloudflare Email Routing.
-* This doesn't store any mail persistently (and thus doesn't support IMAP or POP3).
+* This doesn't store any mail persistently (and thus doesn't support IMAP or POP3). We store mail in the inbox at the address Cloudflare Email Routing forwards to.
 * This is a batteries-included solution. Some automation features require a domain using Cloudflare DNS and can't be disabled:
   * Let's Encrypt TLS certificates are renewed every 60 days.
   * DKIM keys are rotated every 30 days.
