@@ -152,13 +152,28 @@ If there's an outdated build of the mail server already running, this stops it a
 
 ### Viewing Server Logs
 
-To view the mail server's logs, run this.
+For a live view of the mail server's logs, run this.
 
 ```sh
 docker compose logs -f
 ```
 
 To stop viewing, press `ctrl`+`C`.
+
+If you only want the logs for when your mail is bounced and fails to send, run this.
+
+```sh
+docker compose logs -f | grep -F ' status=bounced '
+```
+
+It's recommended you occasionally check this for any fixable issues.
+
+> [!TIP]
+> If the output of any of these commmands doesn't fit in your terminal, you can enter the same command but with ` | less` at the end to see only one screen of its output at a time, starting from the beginning.
+>
+> When using `less`, type `q` to stop viewing, and don't scroll to navigate. Instead, use the arrow keys, `Page Up`, and `Page Down`.
+>
+> You can also type `F` (capitalized, so hold `shift`) to stay scrolled to the end like the original command. Then press `ctrl`+`C` to navigate manually again.
 
 ### Restart the Server
 
