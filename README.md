@@ -88,11 +88,11 @@ Change `mail.example.com` to the hostname you want your mail server to use, unde
 Create a file named `.env` in your copy of the repository, and paste the following into it.
 
 ```sh
-ACME_ACCOUNT_EMAIL=
+POSTMASTER_ADDRESS=
 CF_API_TOKEN=
 ```
 
-Set `ACME_ACCOUNT_EMAIL` equal to an email address you own. If there's ever a problem concerning your TLS certificates, then Let's Encrypt, the certificate authority that signs your certificates, will warn you via email at this address.
+Set `POSTMASTER_ADDRESS` equal to an email address you own. If there's ever a problem concerning your TLS certificates, then Let's Encrypt, the certificate authority that signs your certificates, will warn you via email at this address.
 
 To set `CF_API_TOKEN`, you must own a domain that uses [Cloudflare](https://www.cloudflare.com/) for DNS. Cloudflare DNS is free and can be used with any domain. Setting a Cloudflare API token here lets the mail server automatically manage DNS records under the domain you choose.
 

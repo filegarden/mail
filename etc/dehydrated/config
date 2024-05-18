@@ -25,9 +25,9 @@ BASEDIR=/home/acme/dehydrated
 # domain verification.
 HOOK=/home/acme/bin/hook
 
-# Load the ACME account email from our `.env` file so `dehydrated` can tell our
-# certificate authority where to send us important notifications.
-CONTACT_EMAIL="$(< /run/.env/ACME_ACCOUNT_EMAIL)"
+# Load the postmaster's address from our `.env` file so `dehydrated` can tell
+# our certificate authority where to send us important notifications.
+CONTACT_EMAIL="$(< /run/.env/POSTMASTER_ADDRESS)"
 
 # Automatically remove outdated certificate files not in use anymore.
 AUTO_CLEANUP=yes

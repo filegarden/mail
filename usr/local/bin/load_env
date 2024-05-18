@@ -28,9 +28,9 @@ _load() {
 	chgrp -- "$group" "/run/.env/$variable"
 }
 
-# Load the account email to give to Let's Encrypt, so it can send us important
-# notifications like expiring TLS certificates that failed to renew.
-_load acme ACME_ACCOUNT_EMAIL
+# Load the postmaster's address. Our ACME account needs this so Let's Encrypt
+# can send us notifications for problems concerning our TLS certificates.
+_load acme POSTMASTER_ADDRESS
 
 # Load the Cloudflare API token for our domain, so our server can manage its DNS
 # records automatically.

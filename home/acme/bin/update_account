@@ -14,7 +14,7 @@ if [[ "$nonempty_accounts" ]]; then
 	# the last time it ran.
 	rm -f ~/dehydrated/accounts/*/registration_info-*.json
 
-	# Update our ACME account information, in case the `ACME_ACCOUNT_EMAIL`
+	# Update our ACME account information, in case the `POSTMASTER_ADDRESS`
 	# value from our `.env` file was changed.
 	dehydrated --account
 fi
