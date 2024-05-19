@@ -1,8 +1,0 @@
-# Discard all local system messages.
-root:           /dev/null
-
-# Below is copied directly from this file's defaults.
-
-# Basic system aliases -- these MUST be present
-MAILER-DAEMON:  postmaster
-postmaster:     root
