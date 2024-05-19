@@ -127,6 +127,14 @@ _check_hostname_spf() {
 	local record_name="$hostname"
 
 	# Start generating the value the SPF record should have.
+	#
+	# While we could set this to `v=spf a -all` to automatically include any
+	# IP addresses from our hostname's A and AAAA DNS records, RFC 7208
+	# (section 4.6.4) limits the number of SPF terms that cause DNS queries
+	# to 10, and an `a` term would count toward that. That wouldn't be a
+	# problem in isolation, but other SPF records can `include:` this one
+	# directly or indirectly, so an `a` term would count toward their limits
+	# too. It's best to simply minimize DNS queries in this case.
 	local correct_spf_data="v=spf1"
 
 	# Add our server's IP addresses to our SPF record as allowed senders.
