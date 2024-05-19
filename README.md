@@ -60,7 +60,6 @@ cd mail
 ```
 
 > [!IMPORTANT]
->
 > All commands used in this README must be ran from inside the repository's directory.
 
 ## Configuration
@@ -80,7 +79,6 @@ services:
 Change `mail.example.com` to the hostname you want your mail server to use, under a domain you own. This hostname must uniquely identify your mail server, so unless your domain is used for nothing but this mail server, you should include an extra subdomain (like `mail.` in `mail.example.com`). You can always change this later and restart the mail server.
 
 > [!NOTE]
->
 > A mail server's hostname is different from the domain used in its email addresses. A mail server is uniquely identified by one hostname, but one mail server can handle email addresses for any number of domains. For example, a mail server at `mail.example.com` can be configured to handle mail for `user@example.com` and `user@foo.com`.
 
 ### Environment Variables
@@ -105,7 +103,6 @@ To obtain a Cloudflare API token:
 6. Copy the token and paste it after `CF_API_TOKEN=` in your `.env` file.
 
 > [!CAUTION]
->
 > It's highly recommended the domain you choose for your Cloudflare token is **not** used for anything security-sensitive. That way, if an attacker ever compromises your token, their ability to impact you negatively will be limited. For security-critical applications, we advise using a throwaway domain **that isn't used in your hostname or email addresses.** You'll simply point some DNS records from your main domain(s) to the throwaway domain. We'll walk through how to do this when [setting DNS records](#setting-dns-records).
 >
 > There's a set of `.xyz` domains which are perfect for this, known as the "1.111B class". They're designed to be cheap, costing less than $1/year from [Namecheap](https://www.namecheap.com/). It's called the 1.111B class because there are 1.111 billion domains in it: any domain that's 6 to 9 digits followed by `.xyz`. For example, File Garden uses `985532063.xyz`. (985532063 is "garden" converted from base 36 to base 10.)
@@ -117,7 +114,6 @@ You can always change the values in your `.env` file later and restart the mail 
 ## Setting DNS Records
 
 > [!NOTE]
->
 > If the mail server ever requires a DNS record that's under the domain your Cloudflare token has access to, the server can set it automatically rather than outputting an error with manual instructions. When this happens, the server outputs the DNS record that was set.
 
 When the mail server exits (other than from being manually shut down), Docker automatically restarts it. This is inconvenient while you're still setting things up, because if you're missing DNS records the server needs, the server will exit with an error and go into an infinite restart loop.
@@ -186,7 +182,6 @@ docker compose restart
 This does nothing if the mail server isn't already running.
 
 > [!NOTE]
->
 > During a restart, the mail server will be down for a brief moment. There are techniques for restarting with zero downtime in Docker, but they're less simple and outside the scope of this README.
 
 ### Update the Server
