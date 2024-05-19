@@ -118,6 +118,12 @@ _check_hostname_spf() {
 	# The DNS record that should have our SPF policy. This is intentionally
 	# not ensured to be under the zone we can access because having access
 	# to our source SPF record increases our attack surface needlessly.
+	#
+	# A message's reverse-path normally determines which domain's SPF policy
+	# to check, but for mail with a null reverse-path (such as non-delivery
+	# notifications), our hostname is checked instead as per RFC 7208
+	# (section 2.4). Setting the SPF record on our hostname directly lets
+	# such messages use our SPF policy without extra records.
 	local record_name="$hostname"
 
 	# Start generating the value the SPF record should have.
@@ -259,10 +265,10 @@ _check_host_ptr() {
 	fi
 }
 
-# Checks the DNS records for all the domains of the addresses in our password
-# database to ensure we're allowed to send as them.
+# Checks the DNS records for all the domains this mail server can send as to
+# ensure it's allowed to send as them.
 _check_sender_domains() {
-	user domains \
+	get_sender_domains \
 	| while read -r sender_domain; do
 		printf '%s\n' "Checking DNS for sender domain '$sender_domain'..."
 

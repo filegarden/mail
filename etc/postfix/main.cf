@@ -10,6 +10,29 @@ maillog_file = /dev/stdout
 # Prevent Postfix from ever storing mail locally on the server.
 mydestination =
 
+# This is the domain used in the `From` address of internally generated mail
+# (such as non-delivery notifications).
+#
+# A message's reverse-path normally determines which domain's SPF policy to
+# check, but because internally generated mail has a null reverse-path, our
+# hostname is checked instead as per RFC 7208 (section 2.4). So to ensure this
+# mail passes DMARC alignment for SPF (i.e. the domain SPF is checked for
+# matches the domain in the message's `From` address), such mail must use the
+# hostname itself as the `From` address's domain.
+#
+# Mail servers that can store mail locally don't necessarily have this problem
+# since internally generated mail can be delivered to a local mailbox rather
+# than an external address. This mail server sends internally generated mail to
+# an external address, so it must pass DMARC.
+myorigin = $myhostname
+
+# When Postfix needs to send important notifications concerning the mail server,
+# it sends them to `postmaster`, using this config option to determine the full
+# address `postmaster` should be remapped to. This remaps `postmaster` to the
+# address in the `_postmaster_address` config variable, which is set by our
+# `usr/local/bin/setup` script.
+virtual_alias_maps = inline:{ { postmaster = $_postmaster_address } }
+
 # Disable "new mail" notifications. It's useless without local mail, and it's
 # useless in a container where there are no users to see it.
 biff = no

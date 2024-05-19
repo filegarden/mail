@@ -204,18 +204,19 @@ remove() {
 	# Get the domain part of the address (the part after the `@`).
 	local domain="${address#*@}"
 
-	# If there's still an address in the database with the specified domain,
-	# we can stop here.
+	# If the specified domain is one of the domains the server can still
+	# send as, stop here.
 	#
 	# `grep` exits early when it finds a match, so `ignore_sigpipe` is
 	# needed.
-	if user domains | grep -Fqxe "$domain" || ignore_sigpipe "$?"; then
+	if get_sender_domains | grep -Fqxe "$domain" || ignore_sigpipe "$?"
+	then
 		return 0
 	fi
 
-	# Otherwise, if there's no longer any address with the specified domain,
-	# recommend removing any DNS records this mail server no longer requires
-	# the removed domain to have.
+	# Otherwise, if this mail server can no longer send as the specified
+	# domain, recommend removing any DNS records the server no longer
+	# requires the removed domain to have.
 
 	# Get our Cloudflare zone information.
 	local zone_name
@@ -237,7 +238,7 @@ remove() {
 	fi
 
 	cat <<-END
-	Because there's no longer any address with the domain '$domain', this mail server no longer needs the following DNS records:
+	Because the domain '$domain' isn't used for sending anymore, this mail server no longer needs the following DNS records:
 
 	END
 
@@ -293,15 +294,8 @@ exists() {
 	user list | grep -Fqxe "$address" || ignore_sigpipe "$?"
 }
 
-# Lists all the domains of addresses in the password database, one per line.
-domains() {
-	# For each address in the password database, get the domain part of the
-	# address, and dedupe them so each domain is only outputted once.
-	user list | cut -d @ -f 2 | sort -u
-}
-
 case "$1" in
-add | remove | reset | list | exists | domains)
+add | remove | reset | list | exists)
 	"$@"
 	;;
 *)

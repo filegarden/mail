@@ -1,0 +1,17 @@
+#!/bin/busybox sh
+# Outputs every domain this server can send as, one per line.
+
+# Exit if an error occurs or an unset variable is referenced.
+set -euo pipefail
+
+# Output every domain this server can send as, and filter out any duplicates
+# afterwards so each domain is only checked once.
+{
+	# This server can send as any user's domain from the password database.
+	# For each address in the password database, output the domain part.
+	user list | cut -d @ -f 2
+
+	# Postfix can send internally generated mail as the domain set in its
+	# `myorigin` config option, so output that option's value.
+	postconf -hx myorigin
+} | sort -u

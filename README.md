@@ -92,7 +92,7 @@ POSTMASTER_ADDRESS=
 CF_API_TOKEN=
 ```
 
-Set `POSTMASTER_ADDRESS` equal to an email address you own. If there's ever a problem concerning your TLS certificates, then Let's Encrypt, the certificate authority that signs your certificates, will warn you via email at this address.
+Set `POSTMASTER_ADDRESS` equal to an email address you own. If there's ever a problem with your mail server, the mail server itself will email you at this address. If there's a problem with the mail server's TLS certificates, you'll be emailed by Let's Encrypt, the certificate authority that signs the certificates.
 
 To set `CF_API_TOKEN`, you must own a domain that uses [Cloudflare](https://www.cloudflare.com/) for DNS. Cloudflare DNS is free and can be used with any domain. Setting a Cloudflare API token here lets the mail server automatically manage DNS records under the domain you choose.
 

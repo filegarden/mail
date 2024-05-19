@@ -57,4 +57,11 @@ deploy_tls files
 # Give our DKIM key information to OpenDKIM.
 deploy_dkim files
 
+# Get the value of our `.env` file's `POSTMASTER_ADDRESS` variable.
+postmaster_address="$(cat /run/.env/POSTMASTER_ADDRESS)"
+
+# Set this config variable to our postmaster's address so `etc/postfix/main.cf`
+# can configure Postfix to use it.
+postconf "_postmaster_address = $postmaster_address"
+
 printf '%s\n' "Setup complete!"
