@@ -202,11 +202,12 @@ git pull && docker compose build
 
 When you're ready, use the updated build by [starting](#start-the-server) the mail server (NOT [RESTARTING](#restart-the-server), which restarts the old build).
 
-When the mail server is updated, the previous version of the Docker image becomes "dangling" (unused and untagged) but isn't deleted. To delete all dangling Docker images on your machine, run this command.
-
-```sh
-docker image prune -f
-```
+> [!CAUTION]
+> When the mail server is updated, the previous version of the Docker image becomes "dangling" (unused and untagged) but isn't deleted. To delete all dangling Docker images on your machine, run this command.
+>
+> ```sh
+> docker image prune -f
+> ```
 
 ### Stop the Server
 
