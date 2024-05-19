@@ -15,23 +15,26 @@ source /run/secrets/.env
 
 # Loads a `.env` variable with the specified name into a file with the same name
 # in the `/run/.env` directory, and gives only the specified group read-only
-# access to the file.
+# access to the file. If no group is specified, the variable will only be
+# accessible with root privileges.
 _load() {
-	local group="$1" variable="$2"
+	local variable="$1" group="${2-}"
 
 	# Get the value of the variable with the specified name, and write it to
 	# a file with the same name in `/run/.env`.
 	eval "printf '%s\n' \"\$$variable\"" > "/run/.env/$variable"
 
-	# Give the specified group read-only access to the file.
-	chmod g=r "/run/.env/$variable"
-	chgrp -- "$group" "/run/.env/$variable"
+	# If there's a specified group, give it read-only access to the file.
+	if [[ "$group" ]]; then
+		chmod g=r "/run/.env/$variable"
+		chgrp -- "$group" "/run/.env/$variable"
+	fi
 }
 
 # Load the postmaster's address. Our ACME account needs this so Let's Encrypt
 # can send us notifications for problems concerning our TLS certificates.
-_load acme POSTMASTER_ADDRESS
+_load POSTMASTER_ADDRESS acme
 
 # Load the Cloudflare API token for our domain, so our server can manage its DNS
 # records automatically.
-_load cf-api-token CF_API_TOKEN
+_load CF_API_TOKEN cf-api-token
