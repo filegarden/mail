@@ -26,6 +26,10 @@ chmod a+rx /run/.env
 chmod g=rx /usr/local/bin/cf
 chgrp cf-api-token /usr/local/bin/cf
 
+# Build the default `/etc/postfix/aliases` file so Postfix doesn't output an
+# error the first time it tries to open `/etc/postfix/aliases.lmdb`.
+newaliases
+
 # Create our password database.
 mkdir -p /etc/auth
 touch /etc/auth/passwd
