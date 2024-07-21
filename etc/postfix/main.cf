@@ -2,7 +2,7 @@
 # Postfix updates, read the release announcement, check the container's logs for
 # warnings, consider if anything should be changed accordingly, and then
 # increase this value.
-compatibility_level = 3.8
+compatibility_level = 3.9
 
 # Log all Postfix output to the container's output.
 maillog_file = /dev/stdout
@@ -81,13 +81,6 @@ smtpd_recipient_restrictions =
     reject_non_fqdn_recipient
     # Reject mail to domains missing the DNS records needed to receive mail.
     reject_unknown_recipient_domain
-
-# Restrict how clients can submit an email's content using the DATA command.
-# TODO: Remove in Postfix 3.9, where it's the effective default.
-smtpd_data_restrictions =
-    # Reject clients that use this command earlier than allowed. Spammers do
-    # that to increase delivery speed.
-    reject_unauth_pipelining
 
 # Stop mail from poorly written software using incorrect address formats, since
 # it's most likely from a spammer.
