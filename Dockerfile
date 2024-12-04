@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1
 
-FROM alpine
+FROM alpine:3
 
 # This installs the following packages.
 RUN apk add --no-cache \
