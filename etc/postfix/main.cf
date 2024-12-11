@@ -10,6 +10,9 @@ maillog_file = /dev/stdout
 # Prevent Postfix from ever storing mail locally on the server.
 mydestination =
 
+# Allow messages (with or without attachments) up to 50 MiB.
+message_size_limit = 52428800
+
 # This is the domain used in the `From` address of internally generated mail
 # (such as non-delivery notifications).
 #
