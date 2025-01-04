@@ -120,7 +120,13 @@ _check_spf() {
 	# Get the SPF record's content. If the record isn't found, this will be
 	# empty.
 	local spf_data
-	spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
+	spf_data="$(
+		printf '%s\n' "$record_json" \
+		| jq -r '
+			import "/usr/lib/jq/dns" as dns;
+			.content | dns::decode_character_strings
+		'
+	)"
 
 	# This will be the value the SPF record should have.
 	local correct_spf_data
@@ -140,19 +146,15 @@ _check_spf() {
 		correct_spf_data="v=spf1"
 	fi
 
-	# First, remove any quotes around the SPF data to make it easier to work
-	# with. Cloudflare generally treats TXT records the same either way.
-	#
-	# Then, remove any existing `all` terms from the policy, and add the
-	# correct one. The `all` term should be at the end with the `-` (fail)
-	# qualifier so all servers not explicitly covered by the policy are
-	# disallowed from sending for the domain. Only authorized senders should
-	# be allowed.
+	# Remove any existing `all` terms from the policy, and add the correct
+	# one. The `all` term should be at the end with the `-` (fail) qualifier
+	# so all servers not explicitly covered by the policy are disallowed
+	# from sending for the domain. Only authorized senders should be
+	# allowed.
 	#
 	# RFC 7208 (section 4.6.2) lists all SPF qualifiers, as used here.
 	correct_spf_data="$(
-		printf '%s\n' "$correct_spf_data" \
-		| sed -E 's/^"(.*)"$/\1/; s/ [+-?~]?all$//gi'
+		printf '%s\n' "$correct_spf_data" | sed -E 's/ [+-?~]?all$//gi'
 	) -all"
 
 	# An SPF term that includes our server's own SPF policy into another
@@ -197,7 +199,13 @@ _check_dmarc() {
 	# Get the DMARC record's content. If the record isn't found, this will
 	# be empty.
 	local dmarc_data
-	dmarc_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
+	dmarc_data="$(
+		printf '%s\n' "$record_json" \
+		| jq -r '
+			import "/usr/lib/jq/dns" as dns;
+			.content | dns::decode_character_strings
+		'
+	)"
 
 	# This will be the value the DMARC record should have.
 	local correct_dmarc_data
@@ -215,12 +223,6 @@ _check_dmarc() {
 		# DMARC value.
 		correct_dmarc_data="v=DMARC1;"
 	fi
-
-	# Remove any quotes around the DMARC data to make it easier to work
-	# with. Cloudflare generally treats TXT records the same either way.
-	correct_dmarc_data="$(
-		printf '%s\n' "$correct_dmarc_data" | sed -E 's/^"(.*)"$/\1/'
-	)"
 
 	# All the tags in the DMARC record other than `v` and `p` can be
 	# preserved, so obtain them via the following steps, using the current

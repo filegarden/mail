@@ -162,7 +162,14 @@ deploy_challenge() {
 	printf '%s\n' "Creating DNS record '$w_record_name'..."
 
 	local record_comment="This record should be deleted automatically. If it isn't, feel free to delete it."
-	local record_data='{"type":"TXT","name":"'"$w_record_name"'","content":"'"$token_value"'","comment":"'"$record_comment"'"}'
+	local record_data
+	record_data="$(
+		printf '%s\n' '{"type":"TXT","name":"'"$w_record_name"'","content":"'"$token_value"'","comment":"'"$record_comment"'"}' \
+		| jq -c '
+			import "/usr/lib/jq/dns" as dns;
+			.content |= dns::encode_character_strings
+		'
+	)"
 
 	cf api "/zones/$zone_id/dns_records" \
 		-X POST \
@@ -187,11 +194,10 @@ deploy_challenge() {
 	while true; do
 		sleep "$dns_sleep_seconds"
 
-		# Get the values of all TXT records at the name of the record we
-		# created. Remove quotes since quotes are allowed around parts
-		# of a TXT record answer's data. Then check if any value matches
-		# the record we created, setting this variable to either `true`
-		# or `false`.
+		# Get and decode the values of all TXT records at the name of
+		# the record we created. Then check if any value matches the
+		# record we created, setting this variable to either `true` or
+		# `false`.
 		#
 		# This is all done in `jq` because otherwise a multi-line string
 		# is ambiguous with multiple single-line strings, since TXT
@@ -200,8 +206,10 @@ deploy_challenge() {
 		is_record_found="$(
 			cf dns query "$w_record_name" TXT \
 			| jq --arg token_value "$token_value" '
+				import "/usr/lib/jq/dns" as dns;
 				any(
-					.Answer[]?.data | gsub("\""; "");
+					.Answer[]?.data
+					| dns::decode_character_strings;
 					. == $token_value
 				)
 			'

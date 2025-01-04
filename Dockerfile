@@ -22,8 +22,10 @@ RUN apk add --no-cache \
     # Let's Encrypt that we own the domain we're requesting certificates for.
     jq
 
-# Copy our scripts into the image, and set permissions to allow only privileged
-# users to execute them.
+# Copy our library utilities into the image, and let all users access them.
+COPY --chmod=0444 usr/lib /usr/lib
+
+# Copy our scripts into the image, and let only privileged users execute them.
 COPY --chmod=0500 usr/local/bin /usr/local/bin
 
 # Run our image prebuild script.

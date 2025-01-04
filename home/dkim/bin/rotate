@@ -150,7 +150,14 @@ sync_key_to_dns() {
 	if [[ "$record_json" == "null" ]]; then
 		printf '%s\n' "Creating DNS record for DKIM at '$record_name'..."
 
-		local record_data='{"type":"TXT","name":"'"$record_name"'","content":"'"$correct_record_content"'"}'
+		local record_data
+		record_data="$(
+			printf '%s\n' '{"type":"TXT","name":"'"$record_name"'","content":"'"$correct_record_content"'"}' \
+			| jq -c '
+				import "/usr/lib/jq/dns" as dns;
+				.content |= dns::encode_character_strings
+			'
+		)"
 
 		cf api "/zones/$zone_id/dns_records" \
 			-X POST \
@@ -165,7 +172,13 @@ sync_key_to_dns() {
 
 	# Get the DNS record's current value.
 	local record_content
-	record_content="$(printf '%s\n' "$record_json" | jq -r '.content')"
+	record_content="$(
+		printf '%s\n' "$record_json" \
+		| jq -r '
+			import "/usr/lib/jq/dns" as dns;
+			.content | dns::decode_character_strings
+		'
+	)"
 
 	# If the DNS record already has the correct value, no need to continue
 	# syncing.
@@ -175,7 +188,14 @@ sync_key_to_dns() {
 
 	printf '%s\n' "Updating DNS record for DKIM at '$record_name'..."
 
-	local record_patch='{"content":"'"$correct_record_content"'"}'
+	local record_patch
+	record_patch="$(
+		printf '%s\n' '{"content":"'"$correct_record_content"'"}' \
+		| jq -c '
+			import "/usr/lib/jq/dns" as dns;
+			.content |= dns::encode_character_strings
+		'
+	)"
 
 	cf api "/zones/$zone_id/dns_records/$record_id" \
 		-X PATCH \

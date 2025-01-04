@@ -161,7 +161,13 @@ _check_hostname_spf() {
 	# Get the SPF record's content. If the record isn't found, this will be
 	# empty.
 	local spf_data
-	spf_data="$(printf '%s\n' "$record_json" | jq -r '.content')"
+	spf_data="$(
+		printf '%s\n' "$record_json" \
+		| jq -r '
+			import "/usr/lib/jq/dns" as dns;
+			.content | dns::decode_character_strings
+		'
+	)"
 
 	# Ensure the SPF record is set correctly.
 	require_dns_record SPF TXT "$record_name" \

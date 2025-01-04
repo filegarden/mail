@@ -66,6 +66,9 @@ chgrp acme /usr/local/bin/deploy_tls
 chmod g=rx /usr/local/bin/deploy_dkim
 chgrp dkim /usr/local/bin/deploy_dkim
 
+# Let anyone access our `jq` utilities.
+chmod a+x /usr/lib/jq
+
 # Create a `cron` job to automatically run our `daily` script every 24 hours.
 # Generate a random hour number (0-23) and minute number (0-59) as the time of
 # day to run the script. Since the script can renew our TLS certificates, it's
