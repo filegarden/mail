@@ -33,7 +33,7 @@ myorigin = $myhostname
 # it sends them to `postmaster`, using this config option to determine the full
 # address `postmaster` should be remapped to. This remaps `postmaster` to the
 # address in the `_postmaster_address` config variable, which is set by our
-# `usr/local/bin/setup` script.
+# `usr/local/bin/load_env` script.
 virtual_alias_maps = inline:{ { postmaster = $_postmaster_address } }
 
 # Disable "new mail" notifications. It's useless without local mail, and it's

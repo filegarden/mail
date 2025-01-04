@@ -35,6 +35,10 @@ _load() {
 # can send us notifications for problems concerning our TLS certificates.
 _load POSTMASTER_ADDRESS acme
 
+# Set our postmaster's address so `etc/postfix/main.cf` can configure Postfix to
+# use it.
+postconf "_postmaster_address = $POSTMASTER_ADDRESS"
+
 # Load the Cloudflare API token for our domain, so our server can manage its DNS
 # records automatically.
 _load CF_API_TOKEN cf-api-token
