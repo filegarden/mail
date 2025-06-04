@@ -62,7 +62,7 @@ zone() {
 		return 0
 	fi
 
-	printf '%s\n' "Fetching your Cloudflare zone information..."
+	printf '%s\n' "Fetching your Cloudflare zone information..." >&2
 
 	# Get JSON values for all the zones the token has access to.
 	local zone_json
