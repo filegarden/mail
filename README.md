@@ -3,35 +3,36 @@
 This README walks you through setting up an instance of our mail server.
 
 Note we aren't interested in maintaining a mail server that can handle every use case. This mail server is opinionated, catering primarily to our own needs with no configuration. Currently, that means:
-* Only sending/replying is supported, not receiving. We receive mail using Cloudflare Email Routing.
-* This doesn't store any mail persistently (and thus doesn't support IMAP or POP3). We store mail in the inbox at the address Cloudflare Email Routing forwards to.
-* This is a batteries-included solution. Some automation features require a domain using Cloudflare DNS and can't be disabled:
-  * Let's Encrypt TLS certificates are renewed every 60 days.
-  * DKIM keys are rotated every 30 days.
-* Mail-related DNS records are checked and strictly enforced to maximize your mail's deliverability and minimize any possibility of abuse.
+
+- Only sending/replying is supported, not receiving. We receive mail using Cloudflare Email Routing.
+- This doesn't store any mail persistently (and thus doesn't support IMAP or POP3). We store mail in the inbox at the address Cloudflare Email Routing forwards to.
+- This is a batteries-included solution. Some automation features require a domain using Cloudflare DNS and can't be disabled:
+  - Let's Encrypt TLS certificates are renewed every 60 days.
+  - DKIM keys are rotated every 30 days.
+- Mail-related DNS records are checked and strictly enforced to maximize your mail's deliverability and minimize any possibility of abuse.
 
 If you want an unopinionated, configurable mail server with none of the above, you might be interested in [Docker Mailserver](https://github.com/docker-mailserver/docker-mailserver).
 
 ## Table of Contents
 
-* [Installation](#installation)
-* [Configuration](#configuration)
-  * [Docker Compose File](#docker-compose-file)
-  * [Environment Variables](#environment-variables)
-* [Setting DNS Records](#setting-dns-records)
-* [Managing the Server](#managing-the-server)
-  * [Start the Server](#start-the-server)
-  * [Viewing Server Logs](#viewing-server-logs)
-  * [Restart the Server](#restart-the-server)
-  * [Update the Server](#update-the-server)
-  * [Stop the Server](#stop-the-server)
-  * [Uninstall the Server](#uninstall-the-server)
-* [Managing Email Addresses](#managing-email-addresses)
-  * [Add a User](#add-a-user)
-  * [Reset a User's Password](#reset-a-users-password)
-  * [Remove a User](#remove-a-user)
-  * [List All Users](#list-all-users)
-* [Sending Mail](#sending-mail)
+- [Installation](#installation)
+- [Configuration](#configuration)
+  - [Docker Compose File](#docker-compose-file)
+  - [Environment Variables](#environment-variables)
+- [Setting DNS Records](#setting-dns-records)
+- [Managing the Server](#managing-the-server)
+  - [Start the Server](#start-the-server)
+  - [Viewing Server Logs](#viewing-server-logs)
+  - [Restart the Server](#restart-the-server)
+  - [Update the Server](#update-the-server)
+  - [Stop the Server](#stop-the-server)
+  - [Uninstall the Server](#uninstall-the-server)
+- [Managing Email Addresses](#managing-email-addresses)
+  - [Add a User](#add-a-user)
+  - [Reset a User's Password](#reset-a-users-password)
+  - [Remove a User](#remove-a-user)
+  - [List All Users](#list-all-users)
+- [Sending Mail](#sending-mail)
 
 ## Installation
 
@@ -95,6 +96,7 @@ Set `POSTMASTER_ADDRESS` equal to an email address you own. If there's ever a pr
 To set `CF_API_TOKEN`, you must own a domain that uses [Cloudflare](https://www.cloudflare.com/) for DNS. Cloudflare DNS is free and can be used with any domain. Setting a Cloudflare API token here lets the mail server automatically manage DNS records under the domain you choose.
 
 To obtain a Cloudflare API token:
+
 1. Go to [My Profile > API Tokens](https://dash.cloudflare.com/profile/api-tokens) from the Cloudflare dashboard.
 2. Select **Create Token**.
 3. Select the **Edit zone DNS** template.
@@ -165,7 +167,7 @@ docker compose logs -f | grep -F ' status=bounced '
 It's recommended you occasionally check this for any fixable issues.
 
 > [!TIP]
-> If the output of any of these commmands doesn't fit in your terminal, you can enter the same command but with ` | less` at the end to see only one screen of its output at a time, starting from the beginning.
+> If the output of any of these commands doesn't fit in your terminal, you can enter the same command but with ` | less` at the end to see only one screen of its output at a time, starting from the beginning.
 >
 > When using `less`, type `q` to stop viewing, and don't scroll to navigate. Instead, use the arrow keys, `Page Up`, and `Page Down`.
 >
