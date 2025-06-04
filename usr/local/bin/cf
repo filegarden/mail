@@ -51,7 +51,8 @@ api() {
 # Note that this request is cached until the container restarts.
 zone() {
 	# Delete any cached zone data older than 10 minutes.
-	find /var/cache/cf_zone.json -maxdepth 0 -mmin +10 -delete
+	find /var/cache -mindepth 1 -maxdepth 1 -name cf_zone.json -mmin +10 \
+		-delete
 
 	# Check if the zone data is still cached in this file.
 	if [[ -s /var/cache/cf_zone.json ]]; then
