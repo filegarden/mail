@@ -50,13 +50,18 @@ api() {
 #
 # Note that this request is cached until the container restarts.
 zone() {
-	# Check if this file already has the zone data cached.
+	# Delete any cached zone data older than 10 minutes.
+	find /var/cache/cf_zone.json -maxdepth 0 -mmin +10 -delete
+
+	# Check if the zone data is still cached in this file.
 	if [[ -s /var/cache/cf_zone.json ]]; then
 		# Output the cached data from the file to save time otherwise
 		# spent loading a request to the Cloudflare API.
 		cat /var/cache/cf_zone.json
 		return 0
 	fi
+
+	printf '%s\n' "Fetching your Cloudflare zone information..."
 
 	# Get JSON values for all the zones the token has access to.
 	local zone_json

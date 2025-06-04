@@ -29,8 +29,6 @@ load_env
 # it could be outdated now.
 rm -f /var/cache/cf_zone.json
 
-printf '%s\n' "Fetching your Cloudflare zone information..."
-
 # Make a fresh request for our zone information to create its cache file with
 # the correct permissions (but don't output the zone information).
 zone_name="$(cf zone | jq -r '.name')"
