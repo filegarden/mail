@@ -12,6 +12,9 @@ enable=require-double-brackets
 # Fix koalaman/shellcheck#1678.
 disable=SC3003
 
+# Fix koalaman/shellcheck#2998.
+disable=SC2330
+
 # Disable warnings that try to correct `$variable[...]` into `${variable[...]}`
 # even though that's never the intention.
 disable=SC1087
