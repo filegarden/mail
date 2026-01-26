@@ -51,14 +51,14 @@ api() {
 # Note that this request is cached until the container restarts.
 zone() {
 	# Delete any cached zone data older than 10 minutes.
-	find /var/cache -mindepth 1 -maxdepth 1 -name cf_zone.json -mmin +10 \
+	find /var/cache/cf -mindepth 1 -maxdepth 1 -name zone.json -mmin +10 \
 		-delete
 
 	# Check if the zone data is still cached in this file.
-	if [[ -s /var/cache/cf_zone.json ]]; then
+	if [[ -s /var/cache/cf/zone.json ]]; then
 		# Output the cached data from the file to save time otherwise
 		# spent loading a request to the Cloudflare API.
-		cat /var/cache/cf_zone.json
+		cat /var/cache/cf/zone.json
 		return 0
 	fi
 
@@ -97,12 +97,12 @@ zone() {
 	fi
 
 	# Output and cache the zone data.
-	printf '%s\n' "$zone_json" | tee /var/cache/cf_zone.json
+	printf '%s\n' "$zone_json" | tee /var/cache/cf/zone.json
 
 	# Let any user with Cloudflare API access read the zone information from
 	# the cache file.
-	chmod g=r /var/cache/cf_zone.json
-	chgrp cf-api-token /var/cache/cf_zone.json
+	chmod g=r /var/cache/cf/zone.json
+	chgrp cf-api-token /var/cache/cf/zone.json
 }
 
 # Calls one of the below DNS functions.
