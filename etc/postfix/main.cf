@@ -1,8 +1,7 @@
-# Pin this Postfix version so our config keeps working when Postfix updates.
-# Before increasing this value, read any release announcements, check the
-# container's logs for warnings, and consider if anything should be changed
-# accordingly.
-compatibility_level = 3.9
+# Pin our config's defaults to this Postfix version. Before increasing this,
+# read the full release notes, check the container's logs for warnings, and
+# consider if anything should be changed accordingly.
+compatibility_level = 3.10
 
 # Log all Postfix output to the container's output.
 maillog_file = /dev/stdout

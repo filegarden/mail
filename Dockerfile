@@ -2,7 +2,7 @@
 
 # Pin this Alpine Linux version because changes to the second part of the
 # version number indicate breaking changes in Alpine Linux.
-FROM alpine:3.22
+FROM alpine:3.23
 
 # This installs the following packages.
 RUN apk add --no-cache \
