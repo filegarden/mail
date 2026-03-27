@@ -9,9 +9,6 @@ enable=quote-safe-variables
 # `[[` is generally better than `[`. We should use it when possible.
 enable=require-double-brackets
 
-# Fix koalaman/shellcheck#1678.
-disable=SC3003
-
 # Fix koalaman/shellcheck#2998.
 disable=SC2330
 
