@@ -121,13 +121,10 @@ add() {
 	check_sender_dns "$domain"
 
 	# Generate a cryptographically secure pseudorandom password in Base64.
-	# We generate 192 bytes because that encodes into 256 Base64 characters,
-	# which is as close as Base64 can get to 255, the maximum SASL password
-	# length as per RFC 4616 (section 2). Then cut the password off at that
-	# maximum length.
+	# We generate 18 bytes because that encodes into 24 Base64 characters,
+	# which is plenty secure.
 	local password
-	password="$(openssl rand 192 | openssl base64 -A)"
-	password="${password:0:255}"
+	password="$(openssl rand 18 | openssl base64 -A)"
 
 	# Hash the password using Argon2.
 	local password_hash
@@ -159,8 +156,7 @@ add() {
 
 	Username: ${lblue}$address${reset}
 
-	Password:
-	${lblue}$password${reset}
+	Password: ${lblue}$password${reset}
 
 	${gray}To learn how to sign into your mail server and send mail, see:
 	https://github.com/filegarden/mail/blob/main/README.md#sending-mail${reset}

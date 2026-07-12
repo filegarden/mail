@@ -284,8 +284,7 @@ SMTP Server: mail.example.com
 
 Username: user@example.com
 
-Password:
-AVnJwwbQcg5SEJac0/WSZhI6IxOXIB9PfVfdNBn5NJTxEA8IA6Aqp2pPzLHYMRSpgI5kKDw3No/OOooM+ui1qMX/NbeuVONDprTqRI8Z/tmRHVatNoc4NYrp4RvsT48d0NCGFO8RiRG2NU9/4mJR/KwMLFe88PoCKMZpVvG4MkiTDZs2LVlFajunvhfbvuNqAoe4c3saL2v/vosuA0HW4yh5yi4ANwdEoKuGuc+x/DGnYHG6ZPHATQHxM49vJ8q
+Password: m7vDGcAE/2OiueFhOd+AYA1S
 ```
 
 The credentials you see can be used in your mail client to log into your mail server and send mail. For example, here's [instructions for Gmail](https://support.google.com/mail/answer/22370). You can look up how to send as a different address for your mail client.
