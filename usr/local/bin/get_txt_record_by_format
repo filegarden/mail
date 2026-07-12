@@ -30,7 +30,7 @@ else
 	exit 1
 fi
 
-# Decode data before checking that it follows specified format.
+# Decode data before checking that it follows the specified format.
 jq_predicate='dns::decode_character_strings | '"$jq_predicate"
 
 # Exits the script with no output when no records are passed in, or exits with
