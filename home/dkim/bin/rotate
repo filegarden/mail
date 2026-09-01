@@ -81,7 +81,7 @@ zone_json="$(cf zone)"
 zone_name="$(printf '%s\n' "$zone_json" | jq -r '.name')"
 zone_id="$(printf '%s\n' "$zone_json" | jq -r '.id')"
 
-# Get our mail server's hostname (e.g. `mail.example.com`).
+# Get our mail server's hostname (e.g., `mail.example.com`).
 hostname="$(hostname)"
 
 # Ensures our DNS records reflect the current value of the specified key file

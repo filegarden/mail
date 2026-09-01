@@ -3,7 +3,7 @@
 # Exit if an error occurs or an unset variable is referenced.
 set -euo pipefail
 
-# Get our mail server's hostname (e.g. `mail.example.com`).
+# Get our mail server's hostname (e.g., `mail.example.com`).
 hostname="$(hostname)"
 
 # Delete all outdated certificate files no longer in use.

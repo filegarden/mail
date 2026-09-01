@@ -20,7 +20,7 @@ if [[ ! "$ipv4$ipv6" ]]; then
 	exit 1
 fi
 
-# Get our mail server's hostname (e.g. `mail.example.com`).
+# Get our mail server's hostname (e.g., `mail.example.com`).
 hostname="$(hostname)"
 
 # Checks our hostname's A or AAAA DNS records.

@@ -18,7 +18,7 @@ message_size_limit = 52428800
 # A message's reverse-path normally determines which domain's SPF policy to
 # check, but because internally generated mail has a null reverse-path, our
 # hostname is checked instead as per RFC 7208 (section 2.4). So to ensure this
-# mail passes DMARC alignment for SPF (i.e. the domain SPF is checked for
+# mail passes DMARC alignment for SPF (i.e., the domain SPF is checked for
 # matches the domain in the message's `From` address), such mail must use the
 # hostname itself as the `From` address's domain.
 #

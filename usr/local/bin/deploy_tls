@@ -23,7 +23,7 @@ _require_root() {
 files() {
 	_require_root
 
-	# Get our mail server's hostname (e.g. `mail.example.com`).
+	# Get our mail server's hostname (e.g., `mail.example.com`).
 	local hostname
 	hostname="$(hostname)"
 

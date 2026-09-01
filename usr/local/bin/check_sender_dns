@@ -22,7 +22,7 @@ if [[ ".$sender_domain" == *".$zone_name" ]]; then
 	can_access_dns=y
 fi
 
-# Get our mail server's hostname (e.g. `mail.example.com`).
+# Get our mail server's hostname (e.g., `mail.example.com`).
 hostname="$(hostname)"
 
 # The domain name all our DNS records are under which the sender domain should
@@ -134,7 +134,7 @@ _check_spf() {
 	# Check if there's an existing SPF record.
 	if [[ "$spf_data" ]]; then
 		# Use the current value as a base for the new value so the
-		# existing SPF configuration (e.g. allowing other mail servers
+		# existing SPF configuration (e.g., allowing other mail servers
 		# to send for the domain) isn't lost, but replace any line
 		# breaks with spaces since line breaks aren't allowed in SPF
 		# records, and otherwise extra care would have to be taken to
