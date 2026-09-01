@@ -38,6 +38,14 @@ services:
       # related files.
       - dehydrated-basedir:/home/acme/dehydrated
 
+    # Prevent logs from infinitely consuming disk space, and don't retain users'
+    # personal data (e.g., email addresses) in old logs indefinitely.
+    logging:
+      driver: json-file
+      options:
+        max-file: "1"
+        max-size: "100m"
+
     # Load our `.env` file into the server (at `/run/secrets/.env`).
     secrets:
       - .env

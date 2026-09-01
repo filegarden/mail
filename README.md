@@ -164,7 +164,7 @@ If you only want the logs for when your mail is bounced and fails to send, run t
 docker compose logs -f | grep -F ' status=bounced '
 ```
 
-It's recommended you occasionally check this for any fixable issues.
+It's recommended you occasionally check this for any fixable issues. Note that, by default, old log output is deleted after 100 MB to save space and preserve user privacy.
 
 > [!TIP]
 > If the output of any of these commands doesn't fit in your terminal, you can enter the same command but with ` | less` at the end to see only one screen of its output at a time, starting from the beginning.
